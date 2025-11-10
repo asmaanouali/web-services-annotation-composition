@@ -1,23 +1,17 @@
-"""
-ContextualPerformanceAnalyzer - Analyse des performances selon le contexte
-"""
-
 from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List
 import statistics
+from collections import Counter
 import logging
-
 from src.core.registry import ServiceRegistry
-
-logger = logging.getLogger(__name__)
-
 
 class ContextualPerformanceAnalyzer:
     """Analyse les performances selon différentes dimensions contextuelles"""
     
     def __init__(self, registry: ServiceRegistry):
         self.registry = registry
+        self.logger = logging.getLogger(__name__)
     
     def analyze_all_services(self):
         """Analyse les performances contextuelles pour tous les services"""
@@ -31,17 +25,16 @@ class ContextualPerformanceAnalyzer:
                     service['service_id'],
                     {'interaction_annotations.contextual_performance': contextual_perf}
                 )
-                
-                logger.info(f"Analyzed contextual performance for {service['service_name']}")
     
     def analyze_service(self, service_id: str) -> Dict:
         """Analyse les performances d'un service selon le contexte"""
+        # Récupérer l'historique
         history = list(self.registry.execution_history.find({
             'service_id': service_id,
             'status': 'success'
         }))
         
-        if len(history) < 10:
+        if len(history) < 10:  # Pas assez de données
             return {}
         
         return {
@@ -69,7 +62,7 @@ class ContextualPerformanceAnalyzer:
                     'median_response_ms': int(statistics.median(times)),
                     'std_dev': int(statistics.stdev(times)) if len(times) > 1 else 0,
                     'sample_size': len(times),
-                    'success_rate': 1.0
+                    'success_rate': 1.0  # Tous sont en succès déjà
                 }
         
         return results
@@ -148,12 +141,14 @@ class ContextualPerformanceAnalyzer:
     
     def _find_optimal_conditions(self, history: List[Dict]) -> Dict:
         """Identifie les conditions optimales d'exécution"""
+        # Trouver les 10% d'exécutions les plus rapides
         sorted_history = sorted(history, key=lambda x: x.get('execution_time_ms', float('inf')))
         top_10_percent = sorted_history[:max(1, len(sorted_history) // 10)]
         
         if not top_10_percent:
             return {}
         
+        # Analyser les caractéristiques communes
         locations = [r.get('context', {}).get('user', {}).get('location', {}).get('country') 
                     for r in top_10_percent]
         

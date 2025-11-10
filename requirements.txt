@@ -1,0 +1,22 @@
+# Core dependencies
+zeep==4.2.1
+pymongo==4.6.0
+requests==2.31.0
+
+# Data processing
+python-dateutil==2.8.2
+pandas==2.1.0
+
+# Utilities
+pyyaml==6.0.1
+python-dotenv==1.0.0
+
+# Testing
+pytest==7.4.3
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+
+# Development
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1

@@ -1,18 +1,9 @@
-"""
-WSDLParser - Extraction et analyse de fichiers WSDL
-"""
-
 from zeep import Client
+from zeep.wsdl import wsdl
+import json
 from typing import Dict, List, Any
-import hashlib
-import logging
-
-logger = logging.getLogger(__name__)
-
 
 class WSDLParser:
-    """Parse les fichiers WSDL et extrait les métadonnées"""
-    
     def __init__(self, wsdl_url: str):
         self.wsdl_url = wsdl_url
         self.client = Client(wsdl_url)
@@ -31,11 +22,16 @@ class WSDLParser:
     
     def get_service_name(self) -> str:
         """Récupère le nom du service"""
-        return list(self.wsdl_doc.services.keys())[0] if self.wsdl_doc.services else "Unknown"
+        if self.wsdl_doc.services:
+            return list(self.wsdl_doc.services.keys())[0]
+        return "Unknown"
     
     def get_target_namespace(self) -> str:
         """Récupère le namespace cible"""
-        return self.wsdl_doc.target_namespace
+        # ✅ Utiliser hasattr pour vérifier l'existence
+        if hasattr(self.wsdl_doc, 'target_namespace'):
+            return self.wsdl_doc.target_namespace  # type: ignore
+        return ""
     
     def get_endpoint_url(self) -> str:
         """Récupère l'URL de l'endpoint"""
@@ -43,7 +39,9 @@ class WSDLParser:
         service = self.wsdl_doc.services.get(service_name)
         if service and service.ports:
             port = list(service.ports.values())[0]
-            return port.binding_options['address']
+            # ✅ Vérifier que binding_options existe
+            if hasattr(port, 'binding_options') and 'address' in port.binding_options:
+                return port.binding_options['address']  # type: ignore
         return ""
     
     def extract_operations(self) -> List[Dict[str, Any]]:
@@ -59,8 +57,8 @@ class WSDLParser:
                         "name": operation.name,
                         "input": self.extract_message_parts(operation.input),
                         "output": self.extract_message_parts(operation.output),
-                        "documentation": operation.abstract.documentation if hasattr(operation.abstract, 'documentation') else "",
-                        "soap_action": operation.soapaction if hasattr(operation, 'soapaction') else ""
+                        "documentation": getattr(operation.abstract, 'documentation', '') if hasattr(operation, 'abstract') else "",
+                        "soap_action": getattr(operation, 'soapaction', '')
                     }
                     operations.append(op_info)
         
@@ -68,20 +66,22 @@ class WSDLParser:
     
     def extract_message_parts(self, message) -> List[Dict[str, Any]]:
         """Extrait les parties d'un message (paramètres)"""
-        if not message or not message.body:
+        if not message or not hasattr(message, 'body') or not message.body:
             return []
         
         parts = []
-        for element in message.body.type.elements:
-            part_info = {
-                "name": element[0],
-                "type": str(element[1].type.name) if hasattr(element[1].type, 'name') else "complex",
-                "required": not element[1].is_optional,
-                "default": element[1].default,
-                "min_occurs": element[1].min_occurs,
-                "max_occurs": element[1].max_occurs
-            }
-            parts.append(part_info)
+        # ✅ Vérifier que body.type existe et a des éléments
+        if hasattr(message.body, 'type') and hasattr(message.body.type, 'elements'):
+            for element in message.body.type.elements:
+                part_info = {
+                    "name": element[0],  # Nom du paramètre
+                    "type": str(element[1].type.name) if hasattr(element[1].type, 'name') else "complex",
+                    "required": not element[1].is_optional if hasattr(element[1], 'is_optional') else True,
+                    "default": getattr(element[1], 'default', None),
+                    "min_occurs": getattr(element[1], 'min_occurs', None),
+                    "max_occurs": getattr(element[1], 'max_occurs', None)
+                }
+                parts.append(part_info)
         
         return parts
     
@@ -89,7 +89,12 @@ class WSDLParser:
         """Extrait les types complexes définis"""
         types_info = {}
         
-        for type_name, type_def in self.wsdl_doc.types.types.items():
+        # ✅ Vérifier que types existe
+        if not hasattr(self.wsdl_doc, 'types'):
+            return types_info
+            
+        types_dict = dict(self.wsdl_doc.types.types)  # type: ignore
+        for type_name, type_def in types_dict.items():
             if hasattr(type_def, 'elements'):
                 types_info[str(type_name)] = {
                     "elements": [
@@ -108,8 +113,9 @@ class WSDLParser:
         service_name = self.get_service_name()
         service = self.wsdl_doc.services.get(service_name)
         
+        # ✅ Utiliser hasattr pour vérifier
         if service and hasattr(service, 'documentation'):
-            return service.documentation
+            return service.documentation  # type: ignore
         return ""
     
     def generate_functional_annotations(self) -> Dict[str, Any]:
@@ -149,5 +155,17 @@ class WSDLParser:
     
     def generate_service_id(self, service_name: str) -> str:
         """Génère un ID unique pour le service"""
+        import hashlib
         unique_str = f"{service_name}_{self.wsdl_url}"
         return hashlib.md5(unique_str.encode()).hexdigest()[:16]
+
+
+# Exemple d'utilisation
+if __name__ == "__main__":
+    # Exemple avec un service SOAP public
+    wsdl_url = "http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL"
+    
+    parser = WSDLParser(wsdl_url)
+    annotations = parser.generate_functional_annotations()
+    
+    print(json.dumps(annotations, indent=2))

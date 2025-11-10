@@ -1,0 +1,64 @@
+# Configuration du système d'annotation de services
+
+database:
+  mongo_uri: "mongodb://localhost:27017/"
+  db_name: "service_registry"
+  collections:
+    services: "services"
+    execution_history: "execution_history"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/system.log"
+
+annotation:
+  # Pattern detection
+  pattern_detection:
+    time_window_days: 30
+    min_frequency: 3
+    max_sequence_delay_seconds: 300
+  
+  # Performance analysis
+  performance_analysis:
+    min_samples_for_analysis: 10
+    percentile_threshold: 10
+  
+  # Auto-enrichment
+  auto_enrichment:
+    enabled: true
+    schedule: "daily"  # daily, hourly, or cron expression
+    time: "02:00"
+
+recommendation:
+  weights:
+    contextual_performance: 0.30
+    reliability: 0.25
+    qos: 0.20
+    privacy_compliance: 0.15
+    cost: 0.10
+  
+  top_k_default: 5
+
+policies:
+  # Default policies for new services
+  default_security:
+    authentication_required: false
+    encryption: "TLS_1.2"
+  
+  default_privacy:
+    data_sensitivity: "unknown"
+    stores_personal_data: false
+  
+  default_qos:
+    sla_availability: 0.95
+    sla_response_time_ms: 5000
+
+services:
+  # List of services to auto-register on startup
+  auto_register: []
+  
+  # Service invocation settings
+  timeout_seconds: 30
+  max_retries: 3
+  retry_delay_seconds: 1

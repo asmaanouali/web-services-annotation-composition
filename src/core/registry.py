@@ -1,20 +1,12 @@
-"""
-ServiceRegistry - Gestion du registre de services avec MongoDB
-"""
-
 from pymongo import MongoClient
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 import logging
-
 from src.core.wsdl_parser import WSDLParser
 
 logger = logging.getLogger(__name__)
 
-
 class ServiceRegistry:
-    """Gestionnaire du registre de services"""
-    
     def __init__(self, mongo_uri: str = "mongodb://localhost:27017/", db_name: str = "service_registry"):
         self.client = MongoClient(mongo_uri)
         self.db = self.client[db_name]
@@ -26,13 +18,11 @@ class ServiceRegistry:
         self.services.create_index("service_name")
         self.execution_history.create_index([("service_id", 1), ("timestamp", -1)])
         
-        logger.info("ServiceRegistry initialized")
+        self.logger = logging.getLogger(__name__)
     
     def register_service(self, wsdl_url: str) -> str:
         """Enregistre un nouveau service"""
         try:
-            logger.info(f"Registering service from WSDL: {wsdl_url}")
-            
             # Parser le WSDL
             parser = WSDLParser(wsdl_url)
             annotations = parser.generate_functional_annotations()
@@ -50,8 +40,6 @@ class ServiceRegistry:
                 'execution_history': [],
                 'statistics': {
                     'total_invocations': 0,
-                    'success_count': 0,
-                    'failure_count': 0,
                     'success_rate': 0.0,
                     'avg_response_time_ms': 0.0
                 },
@@ -69,11 +57,11 @@ class ServiceRegistry:
             # Insérer dans la base
             self.services.insert_one(annotations)
             
-            logger.info(f"Service registered: {annotations['service_name']} (ID: {annotations['service_id']})")
+            self.logger.info(f"Service registered: {annotations['service_name']} (ID: {annotations['service_id']})")
             return annotations['service_id']
             
         except Exception as e:
-            logger.error(f"Error registering service: {e}")
+            self.logger.error(f"Error registering service: {e}")
             raise
     
     def get_service(self, service_id: str) -> Optional[Dict[str, Any]]:
@@ -109,6 +97,7 @@ class ServiceRegistry:
     
     def _rank_by_context(self, services: List[Dict[str, Any]], context: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Classe les services par pertinence contextuelle"""
+        # Implémentation simplifiée - à enrichir
         for service in services:
             service['context_score'] = self._compute_context_score(service, context)
         
@@ -118,6 +107,7 @@ class ServiceRegistry:
         """Calcule un score de pertinence contextuelle"""
         score = 0.0
         
+        # Exemple : bonus si le service a été utilisé avec succès dans un contexte similaire
         contextual_perf = service.get('interaction_annotations', {}).get('contextual_performance', {})
         
         if 'user' in context and 'location' in context['user']:
@@ -126,6 +116,7 @@ class ServiceRegistry:
                 loc_perf = contextual_perf['by_location'][location]
                 score += loc_perf.get('success_rate', 0) * 50
         
+        # Pénalité si temps de réponse trop élevé
         avg_response = service.get('interaction_annotations', {}).get('statistics', {}).get('avg_response_time_ms', 1000)
         if 'application' in context and 'constraints' in context['application']:
             max_time = context['application']['constraints'].get('max_response_time', 5000)
@@ -148,7 +139,7 @@ class ServiceRegistry:
             )
             return result.modified_count > 0
         except Exception as e:
-            logger.error(f"Error updating annotations: {e}")
+            self.logger.error(f"Error updating annotations: {e}")
             return False
     
     def list_all_services(self) -> List[Dict[str, Any]]:

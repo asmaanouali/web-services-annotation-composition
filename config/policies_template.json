@@ -1,0 +1,34 @@
+{
+  "security": {
+    "authentication_required": false,
+    "authentication_method": "none",
+    "authorization_rules": [],
+    "encryption": "TLS_1.2",
+    "allowed_origins": ["*"]
+  },
+  "privacy": {
+    "data_sensitivity": "public",
+    "stores_personal_data": false,
+    "personal_data_types": [],
+    "retention_policy_days": 0,
+    "gdpr_compliant": true,
+    "consent_required": false
+  },
+  "usage": {
+    "rate_limit": "1000/hour",
+    "rate_limit_per_user": "100/hour",
+    "cost_per_call": 0.0,
+    "cost_currency": "USD",
+    "free_tier": true,
+    "free_tier_limit": 1000,
+    "access_restrictions": []
+  },
+  "qos": {
+    "sla_availability": 0.99,
+    "sla_response_time_ms": 1000,
+    "sla_throughput_rps": 100,
+    "max_concurrent_requests": 50,
+    "circuit_breaker_enabled": true,
+    "circuit_breaker_threshold": 0.5
+  }
+}

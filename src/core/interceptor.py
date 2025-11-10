@@ -1,18 +1,10 @@
-"""
-Intercepteur SOAP pour capturer les invocations et annotations
-"""
-
 from zeep import Client
 from zeep.plugins import Plugin
 import time
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import logging
-
 from src.core.registry import ServiceRegistry
-
-logger = logging.getLogger(__name__)
-
 
 class AnnotationInterceptor(Plugin):
     """Plugin zeep pour intercepter et enregistrer les invocations SOAP"""
@@ -21,7 +13,9 @@ class AnnotationInterceptor(Plugin):
         self.registry = registry
         self.service_id = service_id
         self.context = context
+        self.logger = logging.getLogger(__name__)
         
+        # Variables pour mesurer le temps
         self.start_time = None
         self.operation_name = None
     
@@ -30,13 +24,13 @@ class AnnotationInterceptor(Plugin):
         self.start_time = time.time()
         self.operation_name = operation.name
         
-        logger.debug(f"Invoking operation: {operation.name}")
+        self.logger.debug(f"Invoking operation: {operation.name}")
         return envelope, http_headers
     
     def egress(self, envelope, http_headers, operation, binding_options):
         """Appelé après réception de la réponse"""
-        execution_time_ms = int((time.time() - self.start_time) * 1000)
-        
+        execution_time_ms = int((time.time() - (self.start_time or time.time())) * 1000)
+
         # Enregistrer l'exécution
         execution_record = {
             'service_id': self.service_id,
@@ -54,7 +48,7 @@ class AnnotationInterceptor(Plugin):
         # Mettre à jour les statistiques
         self._update_statistics(execution_time_ms, 'success')
         
-        logger.info(f"Operation {self.operation_name} completed in {execution_time_ms}ms")
+        self.logger.info(f"Operation {self.operation_name} completed in {execution_time_ms}ms")
         return envelope, http_headers
     
     def _update_statistics(self, execution_time_ms: int, status: str):
@@ -65,13 +59,16 @@ class AnnotationInterceptor(Plugin):
         
         stats = service.get('interaction_annotations', {}).get('statistics', {})
         
+        # Calculer les nouvelles statistiques
         total = stats.get('total_invocations', 0) + 1
         success_count = stats.get('success_count', 0) + (1 if status == 'success' else 0)
         failure_count = stats.get('failure_count', 0) + (1 if status == 'failure' else 0)
         
+        # Moyenne mobile du temps de réponse
         old_avg = stats.get('avg_response_time_ms', 0)
         new_avg = ((old_avg * (total - 1)) + execution_time_ms) / total
         
+        # Mettre à jour
         self.registry.services.update_one(
             {'service_id': self.service_id},
             {
@@ -93,12 +90,13 @@ class AnnotationInterceptor(Plugin):
 class InstrumentedSOAPClient:
     """Client SOAP instrumenté pour capturer les interactions"""
     
-    def __init__(self, wsdl_url: str, service_id: str, registry: ServiceRegistry, context: Dict[str, Any] = None):
+    def __init__(self, wsdl_url: str, service_id: str, registry: ServiceRegistry, context: Optional[Dict[str, Any]] = None):
         self.wsdl_url = wsdl_url
         self.service_id = service_id
         self.registry = registry
         self.context = context or {}
         
+        # Créer le client avec l'intercepteur
         interceptor = AnnotationInterceptor(registry, service_id, self.context)
         self.client = Client(wsdl_url, plugins=[interceptor])
         self.service = self.client.service
@@ -109,15 +107,17 @@ class InstrumentedSOAPClient:
             operation = getattr(self.service, operation_name)
             result = operation(**kwargs)
             
+            # Enregistrer les paramètres et résultats
             self._record_invocation(operation_name, kwargs, result, 'success')
             
             return result
             
         except Exception as e:
+            # Enregistrer l'échec
             self._record_invocation(operation_name, kwargs, None, 'failure', str(e))
             raise
     
-    def _record_invocation(self, operation_name: str, inputs: Dict, output: Any, status: str, error: str = None):
+    def _record_invocation(self, operation_name: str, inputs: Dict, output: Any, status: str, error: Optional[str] = None):
         """Enregistre les détails de l'invocation"""
         record = {
             'service_id': self.service_id,
@@ -137,6 +137,7 @@ class InstrumentedSOAPClient:
         if data is None:
             return None
         
+        # Conversion simple - à améliorer selon les types
         if isinstance(data, (str, int, float, bool)):
             return data
         elif isinstance(data, dict):
@@ -145,3 +146,26 @@ class InstrumentedSOAPClient:
             return [self._serialize_data(item) for item in data]
         else:
             return str(data)
+
+
+# Exemple d'utilisation
+if __name__ == "__main__":
+    # Initialiser le registre
+    registry = ServiceRegistry()
+    
+    # Enregistrer un service
+    wsdl_url = "http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL"
+    service_id = registry.register_service(wsdl_url)
+    
+    # Créer un client instrumenté
+    context = {
+        'user': {'id': 'user123', 'location': {'country': 'DZ'}},
+        'temporal': {'timestamp': datetime.utcnow().isoformat()},
+        'application': {'goal': 'get_country_info'}
+    }
+    
+    client = InstrumentedSOAPClient(wsdl_url, service_id, registry, context)
+    
+    # Invoquer une opération
+    result = client.invoke('CountryName', sCountryISOCode='DZ')
+    print(f"Result: {result}")

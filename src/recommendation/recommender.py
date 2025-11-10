@@ -1,38 +1,38 @@
-"""
-ContextualServiceRecommender - Recommandation intelligente de services
-"""
-
-from typing import List, Dict, Tuple
-from datetime import datetime
+from typing import List, Dict, Tuple, Any
 import math
-import logging
-
 from src.core.registry import ServiceRegistry
-
-logger = logging.getLogger(__name__)
-
+from datetime import datetime
+import logging
 
 class ContextualServiceRecommender:
     """Recommande les meilleurs services selon le contexte"""
     
     def __init__(self, registry: ServiceRegistry):
         self.registry = registry
+        self.logger = logging.getLogger(__name__)
     
-    def recommend_services(self, query: Dict, context: Dict, top_k: int = 5) -> List[Dict]:
+    def recommend_services(self, 
+                          query: Dict[str, Any], 
+                          context: Dict[str, Any], 
+                          top_k: int = 5) -> List[Dict[str, Any]]:
         """Recommande les meilleurs services pour une requête donnée"""
         
+        # Rechercher les services candidats
         candidates = self.registry.search_services(query, context)
         
         if not candidates:
             return []
         
+        # Calculer un score pour chaque candidat
         scored_services = []
         for service in candidates:
             score = self._compute_recommendation_score(service, context, query)
             scored_services.append((service, score))
         
+        # Trier par score décroissant
         scored_services.sort(key=lambda x: x[1], reverse=True)
         
+        # Retourner les top-k
         return [
             {
                 **service,
@@ -42,7 +42,10 @@ class ContextualServiceRecommender:
             for service, score in scored_services[:top_k]
         ]
     
-    def _compute_recommendation_score(self, service: Dict, context: Dict, query: Dict) -> float:
+    def _compute_recommendation_score(self, 
+                                     service: Dict[str, Any], 
+                                     context: Dict[str, Any],
+                                     query: Dict[str, Any]) -> float:
         """Calcule un score de recommandation multi-critères"""
         
         scores = {
@@ -53,6 +56,7 @@ class ContextualServiceRecommender:
             'cost': self._score_cost(service, context)
         }
         
+        # Pondérations (à ajuster selon les besoins)
         weights = {
             'contextual_performance': 0.30,
             'reliability': 0.25,
@@ -61,26 +65,30 @@ class ContextualServiceRecommender:
             'cost': 0.10
         }
         
+        # Score pondéré
         total_score = sum(scores[k] * weights[k] for k in scores)
         
         return total_score
     
-    def _score_contextual_performance(self, service: Dict, context: Dict) -> float:
+    def _score_contextual_performance(self, service: Dict[str, Any], context: Dict[str, Any]) -> float:
         """Score basé sur les performances dans le contexte actuel"""
         contextual_perf = service.get('interaction_annotations', {}).get('contextual_performance', {})
         
         if not contextual_perf:
-            return 0.5
+            return 0.5  # Score neutre si pas de données
         
         score = 0.0
         
+        # Localisation
         user_location = context.get('user', {}).get('location', {}).get('country')
         if user_location:
             location_perf = contextual_perf.get('by_location', {}).get(user_location, {})
             if location_perf:
+                # Normaliser le temps de réponse (meilleur = plus rapide)
                 avg_time = location_perf.get('avg_response_ms', 1000)
-                score += max(0, 1 - (avg_time / 5000))
+                score += max(0, 1 - (avg_time / 5000))  # 5000ms = score 0
         
+        # Heure de la journée
         current_hour = datetime.utcnow().hour
         time_period = self._get_time_period(current_hour)
         time_perf = contextual_perf.get('by_time_of_day', {}).get(time_period, {})
@@ -88,43 +96,48 @@ class ContextualServiceRecommender:
             avg_time = time_perf.get('avg_response_ms', 1000)
             score += max(0, 1 - (avg_time / 5000))
         
+        # Qualité réseau
         network_quality = context.get('environmental', {}).get('network_quality', 'unknown')
         network_perf = contextual_perf.get('by_network_quality', {}).get(network_quality, {})
         if network_perf:
             avg_time = network_perf.get('avg_response_ms', 1000)
             score += max(0, 1 - (avg_time / 5000))
         
-        return min(1.0, score / 3)
+        return min(1.0, score / 3)  # Moyenne des 3 dimensions
     
-    def _score_reliability(self, service: Dict) -> float:
+    def _score_reliability(self, service: Dict[str, Any]) -> float:
         """Score de fiabilité basé sur le taux de succès"""
         stats = service.get('interaction_annotations', {}).get('statistics', {})
         success_rate = stats.get('success_rate', 0.0)
         total_invocations = stats.get('total_invocations', 0)
         
+        # Pénaliser si peu d'invocations (incertitude)
         confidence = min(1.0, total_invocations / 100)
         
         return success_rate * confidence
     
-    def _score_qos(self, service: Dict, context: Dict) -> float:
+    def _score_qos(self, service: Dict[str, Any], context: Dict[str, Any]) -> float:
         """Score basé sur la qualité de service"""
         stats = service.get('interaction_annotations', {}).get('statistics', {})
         avg_response_time = stats.get('avg_response_time_ms', 1000)
         
+        # Contraintes de l'application
         max_response_time = context.get('application', {}).get('constraints', {}).get('max_response_time', 5000)
         
         if avg_response_time > max_response_time:
-            return 0.0
+            return 0.0  # Ne respecte pas les contraintes
         
+        # Score proportionnel (plus rapide = meilleur)
         return 1 - (avg_response_time / max_response_time)
     
-    def _score_privacy_compliance(self, service: Dict, context: Dict) -> float:
+    def _score_privacy_compliance(self, service: Dict[str, Any], context: Dict[str, Any]) -> float:
         """Score de conformité aux exigences de confidentialité"""
         privacy_policy = service.get('policy_annotations', {}).get('privacy', {})
         user_privacy_level = context.get('user', {}).get('preferences', {}).get('privacy_level', 'medium')
         
         data_sensitivity = privacy_policy.get('data_sensitivity', 'unknown')
         
+        # Mapping des niveaux de confidentialité
         sensitivity_scores = {
             'public': 1.0,
             'internal': 0.7,
@@ -134,12 +147,13 @@ class ContextualServiceRecommender:
         
         score = sensitivity_scores.get(data_sensitivity, 0.5)
         
+        # Ajuster selon le niveau de confidentialité utilisateur
         if user_privacy_level == 'high' and data_sensitivity in ['confidential', 'internal']:
             score *= 0.5
         
         return score
     
-    def _score_cost(self, service: Dict, context: Dict) -> float:
+    def _score_cost(self, service: Dict[str, Any], context: Dict[str, Any]) -> float:
         """Score basé sur le coût"""
         usage_policy = service.get('policy_annotations', {}).get('usage', {})
         cost_per_call = usage_policy.get('cost_per_call', 0.0)
@@ -150,7 +164,7 @@ class ContextualServiceRecommender:
             return 0.0
         
         if cost_per_call == 0:
-            return 1.0
+            return 1.0  # Service gratuit
         
         return 1 - (cost_per_call / max_cost)
     
@@ -165,10 +179,11 @@ class ContextualServiceRecommender:
         else:
             return 'evening'
     
-    def _explain_recommendation(self, service: Dict, context: Dict) -> List[str]:
+    def _explain_recommendation(self, service: Dict[str, Any], context: Dict[str, Any]) -> List[str]:
         """Génère des explications pour la recommandation"""
         reasons = []
         
+        # Performance contextuelle
         contextual_perf = service.get('interaction_annotations', {}).get('contextual_performance', {})
         user_location = context.get('user', {}).get('location', {}).get('country')
         
@@ -176,15 +191,18 @@ class ContextualServiceRecommender:
             loc_perf = contextual_perf['by_location'][user_location]
             reasons.append(f"Performances optimales dans votre région ({loc_perf.get('avg_response_ms')}ms en moyenne)")
         
+        # Fiabilité
         stats = service.get('interaction_annotations', {}).get('statistics', {})
         success_rate = stats.get('success_rate', 0.0)
         if success_rate >= 0.95:
             reasons.append(f"Très fiable ({success_rate*100:.1f}% de succès)")
         
+        # Coût
         usage_policy = service.get('policy_annotations', {}).get('usage', {})
         if usage_policy.get('free_tier', False):
             reasons.append("Niveau gratuit disponible")
         
+        # Confidentialité
         privacy_policy = service.get('policy_annotations', {}).get('privacy', {})
         if privacy_policy.get('data_sensitivity') == 'public':
             reasons.append("Aucune donnée sensible traitée")

@@ -1,10 +1,7 @@
-"""
-ServiceAnnotationSystem - Point d'entrée principal du système
-"""
-
 import logging
 from datetime import datetime
-from typing import Dict, Any, List
+import json  # Ajouter cet import
+from typing import Dict, Any, List, Optional  # Ajouter Optional
 
 from src.core.registry import ServiceRegistry
 from src.core.interceptor import InstrumentedSOAPClient
@@ -12,10 +9,13 @@ from src.annotation.pattern_detector import CompositionPatternDetector
 from src.annotation.performance_analyzer import ContextualPerformanceAnalyzer
 from src.annotation.policy_manager import PolicyManager
 from src.recommendation.recommender import ContextualServiceRecommender
-from src.utils.logger import setup_logger
+import logging
 
-logger = setup_logger(__name__, log_level="INFO", log_file="logs/system.log")
-
+# Configuration du logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 class ServiceAnnotationSystem:
     """Système principal d'annotation et de gestion de services"""
@@ -27,15 +27,17 @@ class ServiceAnnotationSystem:
         self.recommender = ContextualServiceRecommender(self.registry)
         self.policy_manager = PolicyManager(self.registry)
         
-        logger.info("ServiceAnnotationSystem initialized")
+        self.logger = logging.getLogger(__name__)
     
-    def register_and_annotate_service(self, wsdl_url: str, policies: Dict[str, Any] = None) -> str:
+    def register_and_annotate_service(self, wsdl_url: str, policies: Optional[Dict[str, Any]] = None) -> str:
         """Enregistre un service et applique les annotations initiales"""
         
-        logger.info(f"Registering service from WSDL: {wsdl_url}")
+        self.logger.info(f"Registering service from WSDL: {wsdl_url}")
         
+        # Enregistrer le service
         service_id = self.registry.register_service(wsdl_url)
         
+        # Appliquer les politiques si fournies
         if policies:
             if 'security' in policies:
                 self.policy_manager.define_security_policy(service_id, policies['security'])
@@ -46,20 +48,23 @@ class ServiceAnnotationSystem:
             if 'qos' in policies:
                 self.policy_manager.define_qos_policy(service_id, policies['qos'])
         
-        logger.info(f"Service registered successfully: {service_id}")
+        self.logger.info(f"Service registered successfully: {service_id}")
         return service_id
     
     def invoke_service(self, service_id: str, operation: str, params: Dict[str, Any], context: Dict[str, Any]) -> Any:
         """Invoque un service avec capture d'annotations"""
         
+        # Valider les politiques
         valid, violations = self.policy_manager.validate_policies(service_id, context)
         if not valid:
             raise Exception(f"Policy violations: {violations}")
         
+        # Récupérer le service
         service = self.registry.get_service(service_id)
         if not service:
             raise Exception(f"Service not found: {service_id}")
         
+        # Créer un client instrumenté
         client = InstrumentedSOAPClient(
             service['wsdl_url'],
             service_id,
@@ -67,6 +72,7 @@ class ServiceAnnotationSystem:
             context
         )
         
+        # Invoquer l'opération
         result = client.invoke(operation, **params)
         
         return result
@@ -74,15 +80,17 @@ class ServiceAnnotationSystem:
     def analyze_and_enrich(self):
         """Analyse l'historique et enrichit les annotations"""
         
-        logger.info("Starting analysis and enrichment")
+        self.logger.info("Starting analysis and enrichment")
         
-        logger.info("Detecting composition patterns...")
+        # Détecter les patterns de composition
+        self.logger.info("Detecting composition patterns...")
         self.pattern_detector.detect_patterns()
         
-        logger.info("Analyzing contextual performance...")
+        # Analyser les performances contextuelles
+        self.logger.info("Analyzing contextual performance...")
         self.perf_analyzer.analyze_all_services()
         
-        logger.info("Analysis and enrichment completed")
+        self.logger.info("Analysis and enrichment completed")
     
     def find_best_services(self, query: Dict[str, Any], context: Dict[str, Any], top_k: int = 5) -> List[Dict[str, Any]]:
         """Trouve les meilleurs services pour une requête"""
@@ -96,8 +104,9 @@ class ServiceAnnotationSystem:
         
         service = self.registry.get_service(service_id)
         if not service:
-            return None
+            return {}
         
+        # Calculer des métriques supplémentaires
         stats = service.get('interaction_annotations', {}).get('statistics', {})
         
         summary = {
@@ -118,9 +127,87 @@ class ServiceAnnotationSystem:
         }
         
         return summary
+# Exemple d'utilisation complète
+def demo():
+    """Démonstration du système"""
+    
+    # Initialiser le système
+    system = ServiceAnnotationSystem()
+    
+    # 1. Enregistrer un service
+    wsdl_url = "http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL"
+    
+    policies = {
+        'security': {
+            'authentication_required': False,
+            'authentication_method': 'none',
+            'encryption': 'TLS_1.2'
+        },
+        'privacy': {
+            'data_sensitivity': 'public',
+            'stores_personal_data': False,
+            'gdpr_compliant': True
+        },
+        'usage': {
+            'rate_limit': '1000/day',
+            'cost_per_call': 0.0,
+            'free_tier': True
+        },
+        'qos': {
+            'sla_availability': 0.99,
+            'sla_response_time_ms': 1000
+        }
+    }
+    
+    service_id = system.register_and_annotate_service(wsdl_url, policies)
+    print(f"Service registered: {service_id}")
+    
+    # 2. Invoquer le service plusieurs fois avec différents contextes
+    contexts = [
+        {
+            'user': {'id': 'user1', 'location': {'country': 'DZ'}, 'authenticated': True},
+            'temporal': {'timestamp': datetime.utcnow().isoformat()},
+            'environmental': {'network_quality': 'good'},
+            'application': {'goal': 'get_country_info'}
+        },
+        {
+            'user': {'id': 'user2', 'location': {'country': 'FR'}, 'authenticated': True},
+            'temporal': {'timestamp': datetime.utcnow().isoformat()},
+            'environmental': {'network_quality': 'excellent'},
+            'application': {'goal': 'get_country_info'}
+        }
+    ]
+    
+    for ctx in contexts:
+        try:
+            result = system.invoke_service(
+                service_id,
+                'CountryName',
+                {'sCountryISOCode': ctx['user']['location']['country']},
+                ctx
+            )
+            print(f"Result for {ctx['user']['location']['country']}: {result}")
+        except Exception as e:
+            print(f"Error: {e}")
+    
+    # 3. Analyser et enrichir les annotations
+    system.analyze_and_enrich()
+    
+    # 4. Obtenir le résumé du service
+    summary = system.get_service_summary(service_id)
+    print("\nService Summary:")
+    print(json.dumps(summary, indent=2, default=str))
+    
+    # 5. Rechercher les meilleurs services
+    query = {'operation': 'CountryName'}
+    context = contexts[0]
+    
+    recommendations = system.find_best_services(query, context, top_k=3)
+    print("\nRecommendations:")
+    for i, rec in enumerate(recommendations, 1):
+        print(f"{i}. {rec['service_name']} (Score: {rec['recommendation_score']:.2f})")
+        print(f"   Reasons: {', '.join(rec['recommendation_reasons'])}")
 
 
 if __name__ == "__main__":
-    # Test rapide
-    system = ServiceAnnotationSystem()
-    print("System initialized successfully!")
+    demo()
