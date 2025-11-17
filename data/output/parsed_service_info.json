@@ -1,0 +1,74 @@
+{
+  "service_name": "WeatherService",
+  "target_namespace": "http://example.com/weather",
+  "operations": [
+    {
+      "name": "GetWeather",
+      "input_message": "GetWeatherRequestMessage",
+      "output_message": "GetWeatherResponseMessage"
+    }
+  ],
+  "messages": {
+    "GetWeatherRequestMessage": {
+      "parts": [
+        {
+          "name": "parameters",
+          "element": "GetWeatherRequest",
+          "type": ""
+        }
+      ]
+    },
+    "GetWeatherResponseMessage": {
+      "parts": [
+        {
+          "name": "parameters",
+          "element": "GetWeatherResponse",
+          "type": ""
+        }
+      ]
+    }
+  },
+  "types": [
+    {
+      "name": "GetWeatherRequest",
+      "type": "complexType",
+      "fields": [
+        {
+          "name": "city",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "city",
+      "type": "string",
+      "fields": []
+    },
+    {
+      "name": "GetWeatherResponse",
+      "type": "complexType",
+      "fields": [
+        {
+          "name": "temperature",
+          "type": "float"
+        },
+        {
+          "name": "condition",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "temperature",
+      "type": "float",
+      "fields": []
+    },
+    {
+      "name": "condition",
+      "type": "string",
+      "fields": []
+    }
+  ],
+  "endpoint": "http://example.com/weather",
+  "raw_wsdl": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<definitions name=\"WeatherService\"\n             targetNamespace=\"http://example.com/weather\"\n             xmlns=\"http://schemas.xmlsoap.org/wsdl/\"\n             xmlns:soap=\"http://schemas.xmlsoap.org/wsdl/soap/\"\n             xmlns:tns=\"http://example.com/weather\"\n             xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n    \n    <types>\n        <xsd:schema targetNamespace=\"http://example.com/weather\">\n            <xsd:element name=\"GetWeatherRequest\">\n                <xsd:complexType>\n                    <xsd:sequence>\n                        <xsd:element name=\"city\" type=\"xsd:string\"/>\n                    </xsd:sequence>\n                </xsd:complexType>\n            </xsd:element>\n            \n            <xsd:element name=\"GetWeatherResponse\">\n                <xsd:complexType>\n                    <xsd:sequence>\n                        <xsd:element name=\"temperature\" type=\"xsd:float\"/>\n                        <xsd:element name=\"condition\" type=\"xsd:string\"/>\n                    </xsd:sequence>\n                </xsd:complexType>\n            </xsd:element>\n        </xsd:schema>\n    </types>\n    \n    <message name=\"GetWeatherRequestMessage\">\n        <part name=\"parameters\" element=\"tns:GetWeatherRequest\"/>\n    </message>\n    \n    <message name=\"GetWeatherResponseMessage\">\n        <part name=\"parameters\" element=\"tns:GetWeatherResponse\"/>\n    </message>\n    \n    <portType name=\"WeatherPortType\">\n        <operation name=\"GetWeather\">\n            <input message=\"tns:GetWeatherRequestMessage\"/>\n            <output message=\"tns:GetWeatherResponseMessage\"/>\n        </operation>\n    </portType>\n    \n    <binding name=\"WeatherBinding\" type=\"tns:WeatherPortType\">\n        <soap:binding transport=\"http://schemas.xmlsoap.org/soap/http\"/>\n        <operation name=\"GetWeather\">\n            <soap:operation soapAction=\"http://example.com/weather/GetWeather\"/>\n            <input>\n                <soap:body use=\"literal\"/>\n            </input>\n            <output>\n                <soap:body use=\"literal\"/>\n            </output>\n        </operation>\n    </binding>\n    \n    <service name=\"WeatherService\">\n        <port name=\"WeatherPort\" binding=\"tns:WeatherBinding\">\n            <soap:address location=\"http://example.com/weather\"/>\n        </port>\n    </service>\n</definitions>"
+}

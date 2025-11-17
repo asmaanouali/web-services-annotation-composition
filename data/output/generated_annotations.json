@@ -1,0 +1,26 @@
+{
+  "domain": "météo",
+  "description": "Service de récupération des informations météorologiques pour une ville spécifique",
+  "keywords": [
+    "météo",
+    "température",
+    "condition"
+  ],
+  "use_cases": [
+    "rechercher les conditions météorologiques d'une ville",
+    "obtenir la température actuelle"
+  ],
+  "operations": [
+    {
+      "name": "GetWeather",
+      "semantic_description": "Récupérer les informations météorologiques pour une ville spécifique",
+      "input_semantic": {
+        "city": "nom de la ville"
+      },
+      "output_semantic": {
+        "temperature": "température actuelle en degrés Celsius",
+        "condition": "condition météorologique (soleil, pluie, etc.)"
+      }
+    }
+  ]
+}
