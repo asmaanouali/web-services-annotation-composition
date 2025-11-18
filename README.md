@@ -1,17 +1,17 @@
 # Stage - Annotation Sémantique de Services SOAP
 
-## 📋 Description
+## Description
 
 Ce projet permet d'enrichir automatiquement des fichiers WSDL (Web Services Description Language) avec des annotations sémantiques en utilisant un modèle de langage local (LLM). L'objectif est de faciliter la découverte, la compréhension et la composition intelligente de services web SOAP.
 
-## 🎯 Objectifs
+## Objectifs
 
 - **Parser** des fichiers WSDL pour extraire les informations structurées
 - **Générer** des annotations sémantiques via un LLM (Ollama)
 - **Enrichir** le WSDL original avec ces annotations
 - Fournir une **API REST** pour l'intégration dans d'autres systèmes
 
-## 🏗️ Architecture
+## Architecture
 ```
 ┌─────────────┐      ┌──────────────┐      ┌─────────────┐      ┌──────────────┐
 │ WSDL        │─────▶│ WSDL Parser  │─────▶│ LLM         │─────▶│ WSDL         │
@@ -28,7 +28,7 @@ Ce projet permet d'enrichir automatiquement des fichiers WSDL (Web Services Desc
 2. **`services/llm_annotator.py`** : Génère des annotations sémantiques via Ollama
 3. **`services/wsdl_enricher.py`** : Enrichit le WSDL avec les annotations générées
 
-## 🚀 Installation
+## Installation
 
 ### Prérequis
 
@@ -71,7 +71,7 @@ curl -fsSL https://ollama.com/install.sh | sh
 ollama pull llama3.2:3b
 ```
 
-## 📂 Structure du projet
+## Structure du projet
 ```
 stage-intelligent-services/
 ├── venv/                           # Environnement virtuel Python
@@ -96,7 +96,7 @@ stage-intelligent-services/
 └── README.md
 ```
 
-## 🎮 Utilisation
+## Utilisation
 
 ### Option 1 : Script de démonstration (Recommandé)
 ```cmd
@@ -108,10 +108,10 @@ python tests/test_demo.py
 ```
 
 **Ce script exécute :**
-1. ✅ Parsing du WSDL
-2. ✅ Génération des annotations via LLM
-3. ✅ Enrichissement du WSDL
-4. ✅ Sauvegarde de tous les résultats
+1. Parsing du WSDL
+2. Génération des annotations via LLM
+3. Enrichissement du WSDL
+4. Sauvegarde de tous les résultats
 
 ### Option 2 : API REST
 
@@ -177,7 +177,7 @@ Annoter et enrichir un fichier WSDL
 }
 ```
 
-## 🧪 Tests et validation
+## Tests et validation
 
 ### Vérifier que tout fonctionne
 ```cmd
@@ -194,7 +194,7 @@ curl -X POST http://127.0.0.1:5000/annotate \
   -d "{\"wsdl_filename\": \"exemple_service.wsdl\"}"
 ```
 
-## 📊 Exemple de résultat
+## Exemple de résultat
 
 ### WSDL Original
 ```xml
@@ -228,7 +228,7 @@ Use Cases:
 </service>
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 Le fichier `config.py` contient les paramètres principaux :
 ```python
@@ -245,7 +245,7 @@ class Config:
     FLASK_PORT = 5000
 ```
 
-## 🐛 Dépannage
+## Dépannage
 
 ### Problème : Ollama ne répond pas
 
@@ -268,7 +268,7 @@ Puis modifier `config.py` : `OLLAMA_MODEL = "llama3.2:1b"`
 
 **Solution :** Vérifier que le fichier WSDL est bien formé (pas de contenu après `</definitions>`)
 
-## 📚 Technologies utilisées
+## Technologies utilisées
 
 - **Python 3.13** : Langage principal
 - **Flask 3.0** : Framework web pour l'API REST
