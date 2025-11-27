@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="SkyscannerFlightService"
+             targetNamespace="http://travel.example.com/skyscanner/flights"
+             xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="http://travel.example.com/skyscanner/flights"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+    <types>
+        <xsd:schema targetNamespace="http://travel.example.com/skyscanner/flights">
+            
+            <xsd:complexType name="SearchRequest">
+                <xsd:sequence>
+                    <xsd:element name="from" type="xsd:string"/>
+                    <xsd:element name="to" type="xsd:string"/>
+                    <xsd:element name="outboundDate" type="xsd:date"/>
+                    <xsd:element name="inboundDate" type="xsd:date" minOccurs="0"/>
+                    <xsd:element name="adults" type="xsd:int"/>
+                    <xsd:element name="children" type="xsd:int" minOccurs="0"/>
+                    <xsd:element name="infants" type="xsd:int" minOccurs="0"/>
+                    <xsd:element name="cabinClass" type="xsd:string"/>
+                    <xsd:element name="directFlightsOnly" type="xsd:boolean" minOccurs="0"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:complexType name="FlightOffer">
+                <xsd:sequence>
+                    <xsd:element name="id" type="xsd:string"/>
+                    <xsd:element name="carrierCode" type="xsd:string"/>
+                    <xsd:element name="carrierName" type="xsd:string"/>
+                    <xsd:element name="flightNumber" type="xsd:string"/>
+                    <xsd:element name="departureAirport" type="xsd:string"/>
+                    <xsd:element name="arrivalAirport" type="xsd:string"/>
+                    <xsd:element name="departureDateTime" type="xsd:dateTime"/>
+                    <xsd:element name="arrivalDateTime" type="xsd:dateTime"/>
+                    <xsd:element name="price" type="xsd:decimal"/>
+                    <xsd:element name="currency" type="xsd:string"/>
+                    <xsd:element name="seatsAvailable" type="xsd:int"/>
+                    <xsd:element name="stopCount" type="xsd:int"/>
+                    <xsd:element name="rating" type="xsd:decimal"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:complexType name="SearchResponse">
+                <xsd:sequence>
+                    <xsd:element name="offers" type="tns:FlightOffer" minOccurs="0" maxOccurs="unbounded"/>
+                    <xsd:element name="cheapestPrice" type="xsd:decimal"/>
+                    <xsd:element name="fastestDuration" type="xsd:duration"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+        </xsd:schema>
+    </types>
+
+    <message name="FindFlightsRequest">
+        <part name="parameters" type="tns:SearchRequest"/>
+    </message>
+
+    <message name="FindFlightsResponse">
+        <part name="result" type="tns:SearchResponse"/>
+    </message>
+
+    <portType name="SkyscannerPortType">
+        <operation name="FindFlights">
+            <documentation>Find best flight deals across multiple airlines</documentation>
+            <input message="tns:FindFlightsRequest"/>
+            <output message="tns:FindFlightsResponse"/>
+        </operation>
+    </portType>
+
+    <binding name="SkyscannerBinding" type="tns:SkyscannerPortType">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <operation name="FindFlights">
+            <soap:operation soapAction="http://travel.example.com/skyscanner/FindFlights"/>
+            <input><soap:body use="literal"/></input>
+            <output><soap:body use="literal"/></output>
+        </operation>
+    </binding>
+
+    <service name="SkyscannerFlightService">
+        <documentation>Skyscanner Flight Comparison Service - Best for budget travelers</documentation>
+        <port name="SkyscannerPort" binding="tns:SkyscannerBinding">
+            <soap:address location="http://api.skyscanner.example.com/flights"/>
+        </port>
+    </service>
+
+</definitions>

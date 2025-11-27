@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="PayPalPaymentService"
+             targetNamespace="http://payment.example.com/paypal"
+             xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="http://payment.example.com/paypal"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+    <types>
+        <xsd:schema targetNamespace="http://payment.example.com/paypal">
+            
+            <xsd:complexType name="ChargeRequest">
+                <xsd:sequence>
+                    <xsd:element name="totalAmount" type="xsd:decimal"/>
+                    <xsd:element name="currencyCode" type="xsd:string"/>
+                    <xsd:element name="paypalEmail" type="xsd:string"/>
+                    <xsd:element name="orderId" type="xsd:string"/>
+                    <xsd:element name="description" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:complexType name="ChargeResponse">
+                <xsd:sequence>
+                    <xsd:element name="paymentId" type="xsd:string"/>
+                    <xsd:element name="paymentStatus" type="xsd:string"/>
+                    <xsd:element name="completedAt" type="xsd:dateTime"/>
+                    <xsd:element name="processingFee" type="xsd:decimal"/>
+                    <xsd:element name="buyerProtection" type="xsd:boolean"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+        </xsd:schema>
+    </types>
+
+    <message name="ChargeAccountRequest">
+        <part name="parameters" type="tns:ChargeRequest"/>
+    </message>
+
+    <message name="ChargeAccountResponse">
+        <part name="result" type="tns:ChargeResponse"/>
+    </message>
+
+    <portType name="PayPalPortType">
+        <operation name="ChargeAccount">
+            <documentation>Charge PayPal account</documentation>
+            <input message="tns:ChargeAccountRequest"/>
+            <output message="tns:ChargeAccountResponse"/>
+        </operation>
+    </portType>
+
+    <binding name="PayPalBinding" type="tns:PayPalPortType">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <operation name="ChargeAccount">
+            <soap:operation soapAction="http://payment.example.com/paypal/ChargeAccount"/>
+            <input><soap:body use="literal"/></input>
+            <output><soap:body use="literal"/></output>
+        </operation>
+    </binding>
+
+    <service name="PayPalPaymentService">
+        <documentation>PayPal Payment Service - Includes buyer protection, 3.49% + fixed fee</documentation>
+        <port name="PayPalPort" binding="tns:PayPalBinding">
+            <soap:address location="https://api.paypal.example.com/payments"/>
+        </port>
+    </service>
+
+</definitions>

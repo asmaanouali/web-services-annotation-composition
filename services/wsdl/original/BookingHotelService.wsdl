@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="BookingHotelService"
+             targetNamespace="http://travel.example.com/booking/hotels"
+             xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="http://travel.example.com/booking/hotels"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+    <types>
+        <xsd:schema targetNamespace="http://travel.example.com/booking/hotels">
+            
+            <xsd:complexType name="HotelSearchRequest">
+                <xsd:sequence>
+                    <xsd:element name="city" type="xsd:string"/>
+                    <xsd:element name="checkInDate" type="xsd:date"/>
+                    <xsd:element name="checkOutDate" type="xsd:date"/>
+                    <xsd:element name="guests" type="xsd:int"/>
+                    <xsd:element name="rooms" type="xsd:int"/>
+                    <xsd:element name="minStars" type="xsd:int" minOccurs="0"/>
+                    <xsd:element name="maxPrice" type="xsd:decimal" minOccurs="0"/>
+                    <xsd:element name="amenities" type="xsd:string" minOccurs="0"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:complexType name="Hotel">
+                <xsd:sequence>
+                    <xsd:element name="hotelId" type="xsd:string"/>
+                    <xsd:element name="name" type="xsd:string"/>
+                    <xsd:element name="address" type="xsd:string"/>
+                    <xsd:element name="stars" type="xsd:int"/>
+                    <xsd:element name="rating" type="xsd:decimal"/>
+                    <xsd:element name="reviewCount" type="xsd:int"/>
+                    <xsd:element name="pricePerNight" type="xsd:decimal"/>
+                    <xsd:element name="totalPrice" type="xsd:decimal"/>
+                    <xsd:element name="currency" type="xsd:string"/>
+                    <xsd:element name="availableRooms" type="xsd:int"/>
+                    <xsd:element name="amenities" type="xsd:string"/>
+                    <xsd:element name="distanceFromCenter" type="xsd:decimal"/>
+                    <xsd:element name="freeCancellation" type="xsd:boolean"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:complexType name="HotelSearchResponse">
+                <xsd:sequence>
+                    <xsd:element name="hotels" type="tns:Hotel" minOccurs="0" maxOccurs="unbounded"/>
+                    <xsd:element name="totalResults" type="xsd:int"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+        </xsd:schema>
+    </types>
+
+    <message name="SearchHotelsRequest">
+        <part name="parameters" type="tns:HotelSearchRequest"/>
+    </message>
+
+    <message name="SearchHotelsResponse">
+        <part name="result" type="tns:HotelSearchResponse"/>
+    </message>
+
+    <portType name="HotelServicePortType">
+        <operation name="SearchHotels">
+            <documentation>Search for hotels in a specific location</documentation>
+            <input message="tns:SearchHotelsRequest"/>
+            <output message="tns:SearchHotelsResponse"/>
+        </operation>
+    </portType>
+
+    <binding name="HotelServiceBinding" type="tns:HotelServicePortType">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <operation name="SearchHotels">
+            <soap:operation soapAction="http://travel.example.com/booking/SearchHotels"/>
+            <input><soap:body use="literal"/></input>
+            <output><soap:body use="literal"/></output>
+        </operation>
+    </binding>
+
+    <service name="BookingHotelService">
+        <documentation>Booking.com Hotel Search Service - Largest hotel inventory worldwide</documentation>
+        <port name="HotelServicePort" binding="tns:HotelServiceBinding">
+            <soap:address location="http://api.booking.example.com/hotels/v2"/>
+        </port>
+    </service>
+
+</definitions>

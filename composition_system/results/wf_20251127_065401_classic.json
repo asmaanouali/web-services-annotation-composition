@@ -1,0 +1,95 @@
+{
+  "workflow_id": "wf_20251127_065401",
+  "goal": "book_complete_travel",
+  "success": true,
+  "total_steps": 3,
+  "created_at": "2025-11-27T06:54:01.108007",
+  "errors": [],
+  "steps": [
+    {
+      "step_number": 1,
+      "category": "flight",
+      "selected_service": "SkyscannerFlightService",
+      "selected_operation": "FindFlights",
+      "input_parameters": {
+        "from": "Paris",
+        "to": "New York",
+        "outboundDate": "2025-07-15",
+        "inboundDate": "2025-07-22",
+        "adults": 2
+      },
+      "expected_outputs": [
+        "offers",
+        "cheapestPrice",
+        "fastestDuration"
+      ],
+      "selection_reason": "Amadeus a une couverture mondiale supérieure",
+      "alternatives_rejected": [],
+      "mapping_coverage": 0.5555555555555556,
+      "missing_parameters": [
+        "children",
+        "infants",
+        "cabinClass",
+        "directFlightsOnly"
+      ]
+    },
+    {
+      "step_number": 2,
+      "category": "hotel",
+      "selected_service": "BookingHotelService",
+      "selected_operation": "SearchHotels",
+      "input_parameters": {
+        "city": "New York",
+        "checkInDate": "2025-07-15",
+        "checkOutDate": "2025-07-22",
+        "guests": 2,
+        "maxPrice": 2000.0
+      },
+      "expected_outputs": [
+        "hotels",
+        "totalResults"
+      ],
+      "selection_reason": "Booking.com a le plus grand inventaire d'hôtels",
+      "alternatives_rejected": [
+        "ExpediaHotelService"
+      ],
+      "mapping_coverage": 0.625,
+      "missing_parameters": [
+        "rooms",
+        "minStars",
+        "amenities"
+      ]
+    },
+    {
+      "step_number": 3,
+      "category": "payment",
+      "selected_service": "StripePaymentService",
+      "selected_operation": "ProcessPayment",
+      "input_parameters": {
+        "currency": "EUR"
+      },
+      "expected_outputs": [
+        "transactionId",
+        "status",
+        "authorizationCode",
+        "processedAt",
+        "fees"
+      ],
+      "selection_reason": "Stripe a des frais de transaction plus bas",
+      "alternatives_rejected": [
+        "PayPalPaymentService"
+      ],
+      "mapping_coverage": 0.1111111111111111,
+      "missing_parameters": [
+        "amount",
+        "cardNumber",
+        "expiryMonth",
+        "expiryYear",
+        "cvv",
+        "cardHolderName",
+        "billingAddress",
+        "merchantReference"
+      ]
+    }
+  ]
+}
