@@ -9,10 +9,6 @@ Ce projet implémente un **système complet de composition de services web** com
 2. **Résoudre le problème de composition** : "Un service A a besoin d'une fonction X, mais plusieurs services la fournissent - lequel choisir ?"
 3. **Comparer deux approches** : Composition classique vs composition intelligente (avec LLM)
 
-### Contexte
-Stage ESI - CERIST  
-**Superviseur** : Amel Benna, DSISM, CERIST  
-**Référence** : [1] A. Benna, Z. Maamar, M. Ahmed-Nacer: A MOF-based Social Web Services Description Metamodel. MODELSWARD 2016: 217-224
 
 ---
 
