@@ -70,7 +70,7 @@ Enrichir automatiquement les descriptions WSDL avec des annotations sémantiques
 
 Basé sur le papier de référence [1], le modèle définit **4 types d'annotations** :
 
-#### 📋 Annotation Fonctionnelle
+#### Annotation Fonctionnelle
 ```python
 @dataclass
 class FunctionalAnnotation:
@@ -95,7 +95,7 @@ class FunctionalAnnotation:
 }
 ```
 
-#### 🔗 Annotation d'Interaction
+#### Annotation d'Interaction
 ```python
 @dataclass
 class InteractionAnnotation:
