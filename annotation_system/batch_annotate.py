@@ -49,10 +49,10 @@ def annotate_all_services(wsdl_dir: str = "services/wsdl/original",
     # Créer le générateur
     try:
         generator = AnnotationGenerator(ollama_model=ollama_model)
-        print(f"\n✅ Générateur initialisé (modèle: {ollama_model})")
+        print(f"\nGénérateur initialisé (modèle: {ollama_model})")
     except ConnectionError as e:
         print(f"\n{e}")
-        print("💡 Lancez Ollama avec: ollama serve")
+        print("Lancez Ollama avec: ollama serve")
         return
     
     # Annoter chaque service
@@ -101,7 +101,7 @@ def annotate_all_services(wsdl_dir: str = "services/wsdl/original",
     print("RAPPORT FINAL")
     print("="*80)
     
-    print(f"\n✅ Services annotés avec succès: {len(results['success'])}/{len(wsdl_files)}")
+    print(f"\nServices annotés avec succès: {len(results['success'])}/{len(wsdl_files)}")
     for item in results["success"]:
         print(f"   • {item['service']}")
         print(f"     - Catégorie: {item['category']}")
