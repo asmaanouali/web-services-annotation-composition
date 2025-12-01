@@ -1,62 +1,56 @@
 {
-  "annotation_id": "76db7837-6ba1-47bd-b4a2-d9578eabae81",
-  "service_name": "SkyscannerFlightService",
-  "wsdl_location": "services/wsdl/original\\AmadeusFlightService.wsdl",
-  "created_at": "2025-12-01T13:05:33.212644",
-  "updated_at": "2025-12-01T13:05:33.212644",
+  "annotation_id": "680d043a-6d5b-4846-9638-d38525ecd4de",
+  "service_name": "WeatherService",
+  "wsdl_location": "services/wsdl/original\\WeatherService.wsdl",
+  "created_at": "2025-12-01T13:18:41.663312",
+  "updated_at": "2025-12-01T13:18:41.663312",
   "version": "1.0",
   "functional": {
     "annotation_type": "functional",
     "service_name": "",
-    "service_category": "search",
+    "service_category": "information",
     "operation_name": "",
     "capabilities": [
-      "Flight comparison",
-      "Price finding",
-      "Route suggestion"
+      "provides weather forecast data",
+      "supports location-based queries",
+      "returns forecast data in a structured format"
     ],
     "input_parameters": [
-      "from",
-      "to",
-      "outboundDate",
-      "inboundDate",
-      "adults",
-      "children",
-      "infants",
-      "cabinClass",
-      "directFlightsOnly"
+      "location",
+      "startDate",
+      "endDate"
     ],
     "output_parameters": [
-      "offers",
-      "cheapestPrice",
-      "fastestDuration"
+      "forecasts",
+      "location"
     ],
-    "semantic_description": "Compares flights across multiple airlines to find the best deals for a given travel date and passenger details.",
+    "semantic_description": "Provides accurate weather forecasts for destinations based on specific date ranges.",
     "keywords": [
-      "flight search",
-      "price comparison",
-      "travel deals"
+      "weather forecast",
+      "location-based query",
+      "structured data output"
     ],
     "required_inputs": [],
     "optional_inputs": [],
     "special_features": {
-      "supports_multi_currency": true,
-      " Loyalty_points_integration": false
+      "supports_multi_currency": false,
+      "returns_location_info": true,
+      "supports_date_range_queries": true
     }
   },
   "interaction": {
     "annotation_type": "interaction",
     "compatible_services": [
       "HotelSearchService",
-      "AirlineSearchService"
+      "FlightSearchService"
     ],
     "requires_services": [
       "BookingService",
       "PaymentService"
     ],
     "provides_for_services": [
-      "BookingConfirmationService",
-      "NotificationService"
+      "NotificationService",
+      "BookingConfirmationService"
     ],
     "parameter_mappings": [],
     "orchestration_hints": {},
@@ -67,7 +61,7 @@
       "response_time_ms": 1000,
       "availability": 0.0,
       "success_rate": 0.95,
-      "cost_per_call": 0.0
+      "cost_per_call": 0.01
     }
   },
   "context": {
@@ -83,7 +77,7 @@
       "24/7_available",
       "business_hours_only"
     ],
-    "timezone_support": false,
+    "timezone_support": true,
     "user_preferences": {},
     "network_requirements": {},
     "application_context": {},
@@ -104,8 +98,8 @@
         "encryption_required": true,
         "can_be_shared": false,
         "compliance_requirements": [
-          "GDPR",
           "PCI-DSS",
+          "GDPR",
           "SOC2"
         ]
       },
@@ -116,8 +110,8 @@
         "encryption_required": true,
         "can_be_shared": false,
         "compliance_requirements": [
-          "GDPR",
           "PCI-DSS",
+          "GDPR",
           "SOC2"
         ]
       },
@@ -128,8 +122,8 @@
         "encryption_required": true,
         "can_be_shared": false,
         "compliance_requirements": [
-          "GDPR",
           "PCI-DSS",
+          "GDPR",
           "SOC2"
         ]
       }
@@ -139,7 +133,7 @@
       "quota_per_day": null,
       "requires_authentication": true,
       "authentication_methods": [],
-      "pricing_model": "pay_per_use",
+      "pricing_model": "free/subscription/pay_per_use",
       "cost_per_request": 0.01,
       "currency": "USD",
       "guaranteed_uptime": 0.99,
@@ -148,13 +142,11 @@
     "security_requirements": [
       "TLS_1.3",
       "API_KEY",
-      "OAUTH2",
-      "PCI-DSS",
-      -1
+      "OAUTH2"
     ],
     "compliance_standards": [
-      "GDPR",
       "PCI-DSS",
+      "GDPR",
       "SOC2"
     ],
     "usage_restrictions": [],

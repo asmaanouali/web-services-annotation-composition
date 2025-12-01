@@ -129,8 +129,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model",
         type=str,
-        default="llama3.2",
-        help="Modèle Ollama à utiliser (défaut: llama3.2)"
+        default="llama3.2:3b",
+        help="Modèle Ollama à utiliser (défaut: llama3.2:3b)"
     )
     parser.add_argument(
         "--input",

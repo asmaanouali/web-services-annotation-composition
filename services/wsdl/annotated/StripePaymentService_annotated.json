@@ -1,62 +1,69 @@
 {
-  "annotation_id": "76db7837-6ba1-47bd-b4a2-d9578eabae81",
-  "service_name": "SkyscannerFlightService",
-  "wsdl_location": "services/wsdl/original\\AmadeusFlightService.wsdl",
-  "created_at": "2025-12-01T13:05:33.212644",
-  "updated_at": "2025-12-01T13:05:33.212644",
+  "annotation_id": "a53bafed-936c-49e3-831a-95438d0d260f",
+  "service_name": "StripePaymentService",
+  "wsdl_location": "services/wsdl/original\\StripePaymentService.wsdl",
+  "created_at": "2025-12-01T13:16:27.765535",
+  "updated_at": "2025-12-01T13:16:27.765535",
   "version": "1.0",
   "functional": {
     "annotation_type": "functional",
     "service_name": "",
-    "service_category": "search",
+    "service_category": "payment",
     "operation_name": "",
     "capabilities": [
-      "Flight comparison",
-      "Price finding",
-      "Route suggestion"
+      "credit_card_payment_processing",
+      "transaction_management",
+      "payment_status_update",
+      "authorization_code_generation"
     ],
     "input_parameters": [
-      "from",
-      "to",
-      "outboundDate",
-      "inboundDate",
-      "adults",
-      "children",
-      "infants",
-      "cabinClass",
-      "directFlightsOnly"
+      "amount",
+      "currency",
+      "cardNumber",
+      "expiryMonth",
+      "expiryYear",
+      "cvv",
+      "cardHolderName",
+      "billingAddress",
+      "merchantReference"
     ],
     "output_parameters": [
-      "offers",
-      "cheapestPrice",
-      "fastestDuration"
+      "transactionId",
+      "status",
+      "authorizationCode",
+      "processedAt",
+      "fees"
     ],
-    "semantic_description": "Compares flights across multiple airlines to find the best deals for a given travel date and passenger details.",
+    "semantic_description": "Processes credit card payments and returns transaction details",
     "keywords": [
-      "flight search",
-      "price comparison",
-      "travel deals"
+      "Stripe Payment Processing",
+      "Credit Card Payments",
+      "Transaction Management",
+      "Payment Status Update",
+      "Authorization Code Generation"
     ],
     "required_inputs": [],
     "optional_inputs": [],
     "special_features": {
       "supports_multi_currency": true,
-      " Loyalty_points_integration": false
+      "requires_card_expiration_date": true,
+      "supports_loyalty_programs": false
     }
   },
   "interaction": {
     "annotation_type": "interaction",
     "compatible_services": [
       "HotelSearchService",
-      "AirlineSearchService"
+      "FlightSearchService",
+      "RoomSearchService"
     ],
     "requires_services": [
       "BookingService",
-      "PaymentService"
+      "NotificationService"
     ],
     "provides_for_services": [
       "BookingConfirmationService",
-      "NotificationService"
+      "PaymentReceiptService"
     ],
     "parameter_mappings": [],
     "orchestration_hints": {},
@@ -64,10 +71,10 @@
     "failed_compositions": [],
     "quality_metrics": {
       "reliability": 0.0,
-      "response_time_ms": 1000,
+      "response_time_ms": 500,
       "availability": 0.0,
-      "success_rate": 0.95,
-      "cost_per_call": 0.0
+      "success_rate": 0.98,
+      "cost_per_call": 0.005
     }
   },
   "context": {
@@ -78,12 +85,11 @@
       "US",
       "ASIA"
     ],
-    "location_aware": true,
+    "location_aware": false,
     "temporal_constraints": [
-      "24/7_available",
-      "business_hours_only"
+      "24/7_available"
     ],
-    "timezone_support": false,
+    "timezone_support": true,
     "user_preferences": {},
     "network_requirements": {},
     "application_context": {},
@@ -104,8 +110,8 @@
         "encryption_required": true,
         "can_be_shared": false,
         "compliance_requirements": [
-          "GDPR",
           "PCI-DSS",
+          "GDPR",
           "SOC2"
         ]
       },
@@ -116,20 +122,32 @@
         "encryption_required": true,
         "can_be_shared": false,
         "compliance_requirements": [
-          "GDPR",
           "PCI-DSS",
+          "GDPR",
           "SOC2"
         ]
       },
       {
-        "data_field": "personal_identifiable_information",
+        "data_field": "expiration_date",
         "privacy_level": "confidential",
         "retention_days": 90,
         "encryption_required": true,
         "can_be_shared": false,
         "compliance_requirements": [
-          "GDPR",
           "PCI-DSS",
+          "GDPR",
+          "SOC2"
+        ]
+      },
+      {
+        "data_field": "card_security_code",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "PCI-DSS",
+          "GDPR",
           "SOC2"
         ]
       }
@@ -139,7 +157,7 @@
       "quota_per_day": null,
       "requires_authentication": true,
       "authentication_methods": [],
-      "pricing_model": "pay_per_use",
+      "pricing_model": "free/subscription/pay_per_use",
       "cost_per_request": 0.01,
       "currency": "USD",
       "guaranteed_uptime": 0.99,
@@ -150,11 +168,11 @@
       "API_KEY",
       "OAUTH2",
       "PCI-DSS",
-      -1
+      "GDPR"
     ],
     "compliance_standards": [
-      "GDPR",
       "PCI-DSS",
+      "GDPR",
       "SOC2"
     ],
     "usage_restrictions": [],

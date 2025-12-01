@@ -1,9 +1,9 @@
 {
-  "annotation_id": "76db7837-6ba1-47bd-b4a2-d9578eabae81",
+  "annotation_id": "5fe63fd0-a823-4ba2-a5af-4537f27eaea0",
   "service_name": "SkyscannerFlightService",
-  "wsdl_location": "services/wsdl/original\\AmadeusFlightService.wsdl",
-  "created_at": "2025-12-01T13:05:33.212644",
-  "updated_at": "2025-12-01T13:05:33.212644",
+  "wsdl_location": "services/wsdl/original\\SkyscannerFlightService.wsdl",
+  "created_at": "2025-12-01T13:14:09.139803",
+  "updated_at": "2025-12-01T13:14:09.139803",
   "version": "1.0",
   "functional": {
     "annotation_type": "functional",
@@ -11,9 +11,10 @@
     "service_category": "search",
     "operation_name": "",
     "capabilities": [
-      "Flight comparison",
-      "Price finding",
-      "Route suggestion"
+      "Flight search with multiple parameters",
+      "Price comparison across airlines",
+      "Direct flight filtering",
+      "Flexible date range support"
     ],
     "input_parameters": [
       "from",
@@ -31,24 +32,26 @@
       "cheapestPrice",
       "fastestDuration"
     ],
-    "semantic_description": "Compares flights across multiple airlines to find the best deals for a given travel date and passenger details.",
+    "semantic_description": "Compares flights across multiple airlines based on user-defined criteria, including departure and return dates, adults, children, infants, and cabin class.",
     "keywords": [
       "flight search",
       "price comparison",
-      "travel deals"
+      "airline selection",
+      "date range filtering",
+      "adult/child/infant support"
     ],
     "required_inputs": [],
     "optional_inputs": [],
     "special_features": {
       "supports_multi_currency": true,
-      " Loyalty_points_integration": false
+      "loyalty_points_integration": false
     }
   },
   "interaction": {
     "annotation_type": "interaction",
     "compatible_services": [
-      "HotelSearchService",
-      "AirlineSearchService"
+      "TravelItineraryService",
+      "FlightStatusService"
     ],
     "requires_services": [
       "BookingService",
@@ -80,18 +83,16 @@
     ],
     "location_aware": true,
     "temporal_constraints": [
-      "24/7_available",
-      "business_hours_only"
+      "24/7_available"
     ],
-    "timezone_support": false,
+    "timezone_support": true,
     "user_preferences": {},
     "network_requirements": {},
     "application_context": {},
     "constraints": [],
     "adaptation_capabilities": [
-      "auto_retry",
-      "fallback_available",
-      "caching_enabled"
+      "caching_enabled",
+      "fallback_available"
     ]
   },
   "policy": {
@@ -122,7 +123,7 @@
         ]
       },
       {
-        "data_field": "personal_identifiable_information",
+        "data_field": "email_address",
         "privacy_level": "confidential",
         "retention_days": 90,
         "encryption_required": true,
@@ -139,7 +140,7 @@
       "quota_per_day": null,
       "requires_authentication": true,
       "authentication_methods": [],
-      "pricing_model": "pay_per_use",
+      "pricing_model": "free/subscription/pay_per_use",
       "cost_per_request": 0.01,
       "currency": "USD",
       "guaranteed_uptime": 0.99,
