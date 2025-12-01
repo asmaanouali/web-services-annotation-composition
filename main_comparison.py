@@ -36,9 +36,9 @@ def print_section(title: str):
 def main():
     """Démonstration complète avec comparaison"""
     
-    print_header("🚀 SYSTÈME DE COMPOSITION DE SERVICES WEB - COMPARAISON COMPLÈTE")
+    print_header(" SYSTÈME DE COMPOSITION DE SERVICES WEB - COMPARAISON COMPLÈTE")
     
-    print("📋 Ce programme compare deux approches de composition de services :")
+    print(" Ce programme compare deux approches de composition de services :")
     print("   • Solution A : Composition CLASSIQUE (règles prédéfinies)")
     print("   • Solution B : Composition INTELLIGENTE (annotations LLM)")
     
@@ -66,14 +66,14 @@ def main():
         }
     }
     
-    print(f"\n👤 Profil utilisateur:")
+    print(f"\nProfil utilisateur:")
     print(f"   • Nom: {scenario['user_profile']['name']}")
     print(f"   • Entreprise: {scenario['user_profile']['company']}")
     print(f"   • Type: {scenario['user_profile']['role']}")
     print(f"   • Budget: {scenario['user_profile']['budget']}")
     print(f"   • Priorité: {scenario['user_profile']['priority']}")
     
-    print(f"\n✈️  Détails du voyage:")
+    print(f"\nDétails du voyage:")
     print(f"   • {scenario['trip_details']['origin']} → {scenario['trip_details']['destination']}")
     print(f"   • Départ: {scenario['trip_details']['departureDate']}")
     print(f"   • Retour: {scenario['trip_details']['returnDate']}")
@@ -100,14 +100,14 @@ def main():
     # =========================================================================
     print_header("SOLUTION A : COMPOSITION CLASSIQUE", "=")
     
-    print("📚 Chargement du registre classique...")
+    print(" Chargement du registre classique...")
     classic_registry = ClassicServiceRegistry()
     
     if not classic_registry.services:
-        print("❌ Erreur : Aucun service WSDL trouvé")
+        print(" Erreur : Aucun service WSDL trouvé")
         return
     
-    print(f"✅ {len(classic_registry.services)} services chargés depuis WSDL")
+    print(f" {len(classic_registry.services)} services chargés depuis WSDL")
     
     print("\n🔧 Initialisation du moteur classique...")
     classic_engine = ClassicCompositionEngine(classic_registry)
@@ -116,7 +116,7 @@ def main():
     print("   • Sélection: Priorité fixe (Amadeus > Skyscanner)")
     print("   • Mapping: Dictionnaire prédéfini")
     
-    print("\n🚀 Exécution de la composition classique...")
+    print("\n Exécution de la composition classique...")
     classic_result = classic_engine.compose(
         goal="book_complete_travel",
         user_input=user_input
@@ -128,38 +128,38 @@ def main():
     print("─"*80)
     
     if classic_result.success:
-        print(f"✅ Statut: Composition réussie")
-        print(f"📊 Étapes: {len(classic_result.steps)}/{classic_result.total_steps}")
+        print(f" Statut: Composition réussie")
+        print(f" Étapes: {len(classic_result.steps)}/{classic_result.total_steps}")
         
         avg_coverage = sum(s.mapping_coverage for s in classic_result.steps) / len(classic_result.steps)
         total_missing = sum(len(s.missing_parameters) for s in classic_result.steps)
         
-        print(f"📈 Couverture moyenne: {avg_coverage*100:.1f}%")
-        print(f"⚠️  Paramètres manquants: {total_missing}")
+        print(f" Couverture moyenne: {avg_coverage*100:.1f}%")
+        print(f"  Paramètres manquants: {total_missing}")
         
-        print(f"\n📋 Services sélectionnés:")
+        print(f"\n Services sélectionnés:")
         for step in classic_result.steps:
             print(f"   {step.step_number}. {step.selected_service}")
             print(f"      Raison: {step.selection_reason}")
     else:
-        print(f"❌ Statut: Échec")
+        print(f" Statut: Échec")
     
     # =========================================================================
     # SOLUTION B : COMPOSITION INTELLIGENTE
     # =========================================================================
     print_header("SOLUTION B : COMPOSITION INTELLIGENTE", "=")
     
-    print("📚 Chargement du registre intelligent...")
+    print(" Chargement du registre intelligent...")
     intelligent_registry = IntelligentServiceRegistry()
     
     if not intelligent_registry.services:
-        print("❌ Erreur : Aucune annotation trouvée")
+        print(" Erreur : Aucune annotation trouvée")
         print("   Exécutez d'abord: python annotation_system/batch_annotate.py")
         return
     
-    print(f"✅ {len(intelligent_registry.services)} services chargés avec annotations LLM")
+    print(f" {len(intelligent_registry.services)} services chargés avec annotations LLM")
     
-    print("\n🔧 Initialisation du moteur intelligent...")
+    print("\nInitialisation du moteur intelligent...")
     intelligent_engine = IntelligentCompositionEngine(intelligent_registry)
     
     print("   • Mode: Sélection basée sur annotations")
@@ -180,11 +180,11 @@ def main():
         "min_quality": 0.90
     }
     
-    print("\n🎯 Contexte utilisateur enrichi:")
+    print("\nContexte utilisateur enrichi:")
     for key, value in user_context.items():
         print(f"   • {key}: {value}")
     
-    print("\n🚀 Exécution de la composition intelligente...")
+    print("\n Exécution de la composition intelligente...")
     intelligent_result = intelligent_engine.compose(
         goal="book_complete_travel",
         user_input=user_input,
@@ -198,24 +198,24 @@ def main():
     print("─"*80)
     
     if intelligent_result.success:
-        print(f"✅ Statut: Composition réussie")
-        print(f"📊 Étapes: {len(intelligent_result.steps)}/{intelligent_result.total_steps}")
-        print(f"⭐ Score moyen services: {intelligent_result.avg_service_score:.3f}")
-        print(f"📈 Couverture moyenne: {intelligent_result.avg_mapping_coverage*100:.1f}%")
-        print(f"⚠️  Paramètres manquants: {intelligent_result.total_missing_params}")
+        print(f" Statut: Composition réussie")
+        print(f" Étapes: {len(intelligent_result.steps)}/{intelligent_result.total_steps}")
+        print(f" Score moyen services: {intelligent_result.avg_service_score:.3f}")
+        print(f" Couverture moyenne: {intelligent_result.avg_mapping_coverage*100:.1f}%")
+        print(f"  Paramètres manquants: {intelligent_result.total_missing_params}")
         
-        print(f"\n📋 Services sélectionnés:")
+        print(f"\n Services sélectionnés:")
         for step in intelligent_result.steps:
             print(f"   {step.step_number}. {step.selected_service}")
             print(f"      Score: {step.service_score.total_score:.3f}")
             print(f"      Raison principale: {step.service_score.reasons[0]}")
     else:
-        print(f"❌ Statut: Échec")
+        print(f" Statut: Échec")
     
     # =========================================================================
     # COMPARAISON DÉTAILLÉE
     # =========================================================================
-    print_header("📊 COMPARAISON DÉTAILLÉE DES DEUX APPROCHES")
+    print_header(" COMPARAISON DÉTAILLÉE DES DEUX APPROCHES")
     
     # Tableau comparatif
     print("\n" + "="*80)
@@ -223,8 +223,8 @@ def main():
     print("="*80)
     
     # Succès
-    classic_status = "✅ Succès" if classic_result.success else "❌ Échec"
-    intel_status = "✅ Succès" if intelligent_result.success else "❌ Échec"
+    classic_status = " Succès" if classic_result.success else " Échec"
+    intel_status = " Succès" if intelligent_result.success else " Échec"
     print(f"{'Statut':<30} | {classic_status:<20} | {intel_status:<20}")
     
     # Étapes
@@ -283,9 +283,9 @@ def main():
         
         # Comparaison
         if classic_step.selected_service == intel_step.selected_service:
-            print(f"\n   ✅ Les deux solutions ont sélectionné le même service")
+            print(f"\n    Les deux solutions ont sélectionné le même service")
         else:
-            print(f"\n   ⚠️  Services différents sélectionnés")
+            print(f"\n     Services différents sélectionnés")
             if intel_step.alternatives_scores:
                 for alt in intel_step.alternatives_scores:
                     if alt.service_name == classic_step.selected_service:
@@ -295,30 +295,30 @@ def main():
     # =========================================================================
     # POINTS FORTS ET LIMITATIONS
     # =========================================================================
-    print_header("🎯 ÉVALUATION COMPARATIVE")
+    print_header("ÉVALUATION COMPARATIVE")
     
-    print("✅ POINTS FORTS - Solution A (Classique):")
+    print(" POINTS FORTS - Solution A (Classique):")
     print("   • Transparence totale des règles")
     print("   • Déterminisme complet (même entrée = même sortie)")
     print("   • Simplicité d'implémentation")
     print("   • Aucune dépendance externe (pas de LLM)")
     print("   • Facile à déboguer")
     
-    print("\n❌ LIMITATIONS - Solution A (Classique):")
+    print("\n LIMITATIONS - Solution A (Classique):")
     print("   • Rigidité : ne s'adapte pas au contexte")
     print(f"   • Couverture limitée : {classic_cov_str}")
     print(f"   • Paramètres manquants : {classic_missing}")
     print("   • Pas d'optimisation qualité/coût")
     print("   • Maintenance : toute modification = code")
     
-    print("\n✅ POINTS FORTS - Solution B (Intelligente):")
+    print("\n POINTS FORTS - Solution B (Intelligente):")
     print("   • Adaptation contextuelle (budget, qualité, etc.)")
     print(f"   • Meilleure couverture : {intel_cov_str}")
     print(f"   • Sélection optimisée (score: {intelligent_result.avg_service_score:.3f})")
     print("   • Justifications riches et détaillées")
     print("   • Considère QoS, coûts, compliance")
     
-    print("\n❌ LIMITATIONS - Solution B (Intelligente):")
+    print("\n LIMITATIONS - Solution B (Intelligente):")
     print("   • Dépendance aux annotations LLM")
     print("   • Moins déterministe (poids adaptatifs)")
     print("   • Complexité accrue")
@@ -327,7 +327,7 @@ def main():
     # =========================================================================
     # GAINS MESURABLES
     # =========================================================================
-    print_header("📈 GAINS MESURABLES")
+    print_header(" GAINS MESURABLES")
     
     if classic_result.steps and intelligent_result.steps:
         # Amélioration couverture
@@ -336,21 +336,21 @@ def main():
             intel_cov_val = float(intel_cov_str.rstrip('%'))
             improvement_cov = intel_cov_val - classic_cov_val
             
-            print(f"\n📊 Amélioration de la couverture:")
+            print(f"\n Amélioration de la couverture:")
             print(f"   Classique: {classic_cov_str}")
             print(f"   Intelligente: {intel_cov_str}")
             if improvement_cov > 0:
-                print(f"   Gain: +{improvement_cov:.1f}% ✅")
+                print(f"   Gain: +{improvement_cov:.1f}% ")
             else:
                 print(f"   Différence: {improvement_cov:.1f}%")
         
         # Réduction paramètres manquants
         reduction = classic_missing - intelligent_result.total_missing_params
-        print(f"\n📉 Réduction des paramètres manquants:")
+        print(f"\nRéduction des paramètres manquants:")
         print(f"   Classique: {classic_missing}")
         print(f"   Intelligente: {intelligent_result.total_missing_params}")
         if reduction > 0:
-            print(f"   Réduction: -{reduction} paramètres ✅")
+            print(f"   Réduction: -{reduction} paramètres ")
             print(f"   Taux: {(reduction/classic_missing*100):.1f}% de moins")
         else:
             print(f"   Différence: {reduction} paramètres")
@@ -358,33 +358,33 @@ def main():
     # =========================================================================
     # CONCLUSION
     # =========================================================================
-    print_header("🎓 CONCLUSION")
+    print_header("CONCLUSION")
     
     print("Ce projet démontre l'apport des annotations LLM dans la composition de services :\n")
     
-    print("1️⃣  ANNOTATION AUTOMATIQUE:")
+    print("1️. ANNOTATION AUTOMATIQUE:")
     print("   • Le LLM enrichit les WSDL avec des métadonnées sémantiques")
     print("   • 4 types d'annotations : Fonctionnel, Interaction, Contexte, Politique")
     print("   • Information exploitable pour la composition")
     
-    print("\n2️⃣  COMPOSITION CLASSIQUE (Baseline):")
+    print("\n2.  COMPOSITION CLASSIQUE (Baseline):")
     print("   • Approche traditionnelle avec règles hardcodées")
     print("   • Déterministe et simple mais limitée")
     print(f"   • Couverture: {classic_cov_str}, Manquants: {classic_missing}")
     
-    print("\n3️⃣  COMPOSITION INTELLIGENTE (LLM-Enhanced):")
+    print("\n3.  COMPOSITION INTELLIGENTE (LLM-Enhanced):")
     print("   • Utilise les annotations pour décisions contextuelles")
     print("   • Sélection multi-critères adaptative")
     print(f"   • Couverture: {intel_cov_str}, Manquants: {intelligent_result.total_missing_params}")
     
-    print("\n💡 IMPACT:")
+    print("\nIMPACT:")
     if classic_result.steps and intelligent_result.steps:
         if intelligent_result.avg_mapping_coverage > (classic_cov if classic_cov_str != "N/A" else 0):
-            print("   ✅ L'approche intelligente améliore significativement la composition")
-            print("   ✅ Moins d'intervention manuelle nécessaire")
-            print("   ✅ Meilleure adaptation aux besoins utilisateur")
+            print("    L'approche intelligente améliore significativement la composition")
+            print("    Moins d'intervention manuelle nécessaire")
+            print("    Meilleure adaptation aux besoins utilisateur")
     
-    print("\n🚀 PROCHAINES ÉTAPES:")
+    print("\n PROCHAINES ÉTAPES:")
     print("   • Évaluation sur des scénarios plus complexes")
     print("   • Mesure de performance (temps d'exécution)")
     print("   • Test avec différents contextes utilisateur")
@@ -393,11 +393,11 @@ def main():
     # =========================================================================
     # TABLEAU RÉCAPITULATIF FINAL
     # =========================================================================
-    print_header("📊 TABLEAU RÉCAPITULATIF FINAL")
+    print_header(" TABLEAU RÉCAPITULATIF FINAL")
     
     # Préparer les données
-    classic_success = "✅ OUI" if classic_result.success else "❌ NON"
-    intel_success = "✅ OUI" if intelligent_result.success else "❌ NON"
+    classic_success = " OUI" if classic_result.success else " NON"
+    intel_success = " OUI" if intelligent_result.success else " NON"
     
     classic_steps_completed = len(classic_result.steps)
     intel_steps_completed = len(intelligent_result.steps)
@@ -478,7 +478,7 @@ def main():
     print("├" + "─"*30 + "┼" + "─"*23 + "┼" + "─"*23 + "┤")
     
     # Ligne 9: Adaptation
-    print(f"│ {'Adaptation contextuelle':<28} │ {'❌ Non':<21} │ {'✅ Oui':<21} │")
+    print(f"│ {'Adaptation contextuelle':<28} │ {' Non':<21} │ {' Oui':<21} │")
     print("└" + "─"*30 + "┴" + "─"*23 + "┴" + "─"*23 + "┘")
     
     # Tableau des gains
@@ -491,11 +491,11 @@ def main():
         
         # Gain couverture
         if gain_coverage > 0:
-            gain_cov_display = f"+{gain_coverage:.1f}% 📈"
-            status_cov = "✅"
+            gain_cov_display = f"+{gain_coverage:.1f}% "
+            status_cov = ""
         elif gain_coverage < 0:
             gain_cov_display = f"{gain_coverage:.1f}% 📉"
-            status_cov = "⚠️"
+            status_cov = ""
         else:
             gain_cov_display = "0% ➡️"
             status_cov = "="
@@ -506,10 +506,10 @@ def main():
         # Gain paramètres manquants
         if gain_missing > 0:
             gain_miss_display = f"-{gain_missing:.1f}% 📉"
-            status_miss = "✅"
+            status_miss = ""
         elif gain_missing < 0:
-            gain_miss_display = f"+{abs(gain_missing):.1f}% 📈"
-            status_miss = "⚠️"
+            gain_miss_display = f"+{abs(gain_missing):.1f}% "
+            status_miss = ""
         else:
             gain_miss_display = "0% ➡️"
             status_miss = "="
@@ -521,10 +521,10 @@ def main():
         diff_params = classic_missing_val - intel_missing_val
         if diff_params > 0:
             diff_display = f"-{diff_params} paramètres"
-            status_diff = "✅"
+            status_diff = ""
         else:
             diff_display = f"+{abs(diff_params)} paramètres"
-            status_diff = "⚠️"
+            status_diff = ""
         
         print(f"│ {status_diff} {'Différence absolue':<45} │ {diff_display:<25} │")
         print("└" + "─"*50 + "┴" + "─"*27 + "┘")
@@ -536,15 +536,15 @@ def main():
     
     if classic_result.success and intelligent_result.success and intelligent_result.steps:
         if intel_cov_val > classic_cov_val:
-            verdict = "✅ La Solution B (Intelligente) AMÉLIORE significativement la composition"
+            verdict = " La Solution B (Intelligente) AMÉLIORE significativement la composition"
         elif intel_cov_val == classic_cov_val:
             verdict = "➡️  Les deux solutions ont des performances ÉQUIVALENTES"
         else:
-            verdict = "⚠️  La Solution A (Classique) performe mieux sur ce scénario"
+            verdict = "  La Solution A (Classique) performe mieux sur ce scénario"
     elif classic_result.success and not intelligent_result.success:
-        verdict = "⚠️  La Solution B a ÉCHOUÉ - vérifier les annotations"
+        verdict = "  La Solution B a ÉCHOUÉ - vérifier les annotations"
     else:
-        verdict = "❌ Impossible de comparer - une ou plusieurs solutions ont échoué"
+        verdict = " Impossible de comparer - une ou plusieurs solutions ont échoué"
     
     print(f"\n{verdict}")
     
@@ -565,7 +565,7 @@ def main():
     classic_engine.save_result(classic_result)
     intelligent_engine.save_result(intelligent_result)
     
-    print("\n✅ Résultats sauvegardés dans: composition_system/results/")
+    print("\n Résultats sauvegardés dans: composition_system/results/")
     print(f"   • {classic_result.workflow_id}_classic.json")
     print(f"   • {intelligent_result.workflow_id}_intelligent.json")
     
@@ -578,8 +578,8 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\n⚠️  Démonstration interrompue")
+        print("\n\n  Démonstration interrompue")
     except Exception as e:
-        print(f"\n\n❌ ERREUR: {e}")
+        print(f"\n\n ERREUR: {e}")
         import traceback
         traceback.print_exc()
