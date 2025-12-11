@@ -1,0 +1,158 @@
+{
+  "annotation_id": "d07a583c-e1c6-49e5-8c2b-a37d02cd1214",
+  "service_name": "ExpediaHotelService",
+  "wsdl_location": "services/wsdl/original\\ExpediaHotelService.wsdl",
+  "created_at": "2025-12-01T13:09:59.053650",
+  "updated_at": "2025-12-01T13:09:59.053650",
+  "version": "1.0",
+  "functional": {
+    "annotation_type": "functional",
+    "service_name": "",
+    "service_category": "search",
+    "operation_name": "",
+    "capabilities": [
+      "Searches for accommodation options with rewards program integration",
+      "Returns a list of properties matching the search criteria"
+    ],
+    "input_parameters": [
+      "destination",
+      "arrivalDate",
+      "departureDate",
+      "numberOfGuests",
+      "numberOfRooms",
+      "starRating",
+      "propertyType"
+    ],
+    "output_parameters": [
+      "properties",
+      "count"
+    ],
+    "semantic_description": "Finds and returns a list of properties that match specific search criteria, including destination, dates, number of guests, and room requirements, with optional star rating and property type filters.",
+    "keywords": [
+      "accommodation search",
+      "rewards program integration",
+      "property filtering"
+    ],
+    "required_inputs": [],
+    "optional_inputs": [],
+    "special_features": {
+      "supports_multi_currency": false,
+      "loyalty_points": true
+    }
+  },
+  "interaction": {
+    "annotation_type": "interaction",
+    "compatible_services": [
+      "FlightSearchService",
+      "CarRentalService"
+    ],
+    "requires_services": [
+      "BookingService",
+      "PaymentService"
+    ],
+    "provides_for_services": [
+      "BookingConfirmationService",
+      "NotificationService"
+    ],
+    "parameter_mappings": [],
+    "orchestration_hints": {},
+    "successful_compositions": [],
+    "failed_compositions": [],
+    "quality_metrics": {
+      "reliability": 0.0,
+      "response_time_ms": 1000,
+      "availability": 0.0,
+      "success_rate": 0.95,
+      "cost_per_call": 0.0
+    }
+  },
+  "context": {
+    "annotation_type": "context",
+    "geographic_coverage": [
+      "GLOBAL",
+      "EU",
+      "US"
+    ],
+    "location_aware": false,
+    "temporal_constraints": [
+      "24/7_available",
+      "business_hours_only"
+    ],
+    "timezone_support": true,
+    "user_preferences": {},
+    "network_requirements": {},
+    "application_context": {},
+    "constraints": [],
+    "adaptation_capabilities": [
+      "caching_enabled",
+      "auto_retry"
+    ]
+  },
+  "policy": {
+    "annotation_type": "policy",
+    "privacy_policies": [
+      {
+        "data_field": "passport_number",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "PCI-DSS",
+          "GDPR",
+          "SOC2"
+        ]
+      },
+      {
+        "data_field": "credit_card_number",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "PCI-DSS",
+          "GDPR",
+          "SOC2"
+        ]
+      },
+      {
+        "data_field": "email_address",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "PCI-DSS",
+          "GDPR",
+          "SOC2"
+        ]
+      }
+    ],
+    "usage_policy": {
+      "rate_limit": 1000,
+      "quota_per_day": null,
+      "requires_authentication": true,
+      "authentication_methods": [],
+      "pricing_model": "free/subscription/pay_per_use",
+      "cost_per_request": 0.01,
+      "currency": "USD",
+      "guaranteed_uptime": 0.99,
+      "max_response_time_ms": 5000
+    },
+    "security_requirements": [
+      "TLS_1.3",
+      "API_KEY",
+      "OAUTH2"
+    ],
+    "compliance_standards": [
+      "PCI-DSS",
+      "GDPR",
+      "SOC2"
+    ],
+    "usage_restrictions": [],
+    "terms_url": null,
+    "privacy_policy_url": null
+  },
+  "tags": [],
+  "confidence_score": 1.0
+}

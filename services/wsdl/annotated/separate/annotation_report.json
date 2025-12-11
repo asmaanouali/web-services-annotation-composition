@@ -1,0 +1,77 @@
+{
+  "services": [
+    {
+      "service_name": "AmadeusFlightService",
+      "annotations": {
+        "functional": "✓",
+        "interaction": "✓",
+        "context": "✓",
+        "policy": "✓"
+      },
+      "status": "success"
+    },
+    {
+      "service_name": "BookingHotelService",
+      "annotations": {
+        "functional": "✓",
+        "interaction": "✓",
+        "context": "✓",
+        "policy": "✓"
+      },
+      "status": "success"
+    },
+    {
+      "service_name": "ExpediaHotelService",
+      "annotations": {
+        "functional": "✓",
+        "interaction": "✓",
+        "context": "✓",
+        "policy": "✓"
+      },
+      "status": "success"
+    },
+    {
+      "service_name": "PayPalPaymentService",
+      "annotations": {
+        "functional": "✓",
+        "interaction": "✓",
+        "context": "✓",
+        "policy": "✓"
+      },
+      "status": "success"
+    },
+    {
+      "service_name": "SkyscannerFlightService",
+      "annotations": {
+        "functional": "✓",
+        "interaction": "✓",
+        "context": "✓",
+        "policy": "✓"
+      },
+      "status": "success"
+    },
+    {
+      "service_name": "StripePaymentService",
+      "annotations": {
+        "functional": "✓",
+        "interaction": "✓",
+        "context": "✓",
+        "policy": "✓"
+      },
+      "status": "success"
+    },
+    {
+      "service_name": "WeatherService",
+      "annotations": {
+        "functional": "✓",
+        "interaction": "✓",
+        "context": "✓",
+        "policy": "✓"
+      },
+      "status": "success"
+    }
+  ],
+  "total": 7,
+  "completed": 7,
+  "failed": []
+}

@@ -1,0 +1,47 @@
+{
+  "success": [
+    {
+      "service": "SkyscannerFlightService",
+      "file": "AmadeusFlightService_annotated.json",
+      "category": "search",
+      "capabilities": 3
+    },
+    {
+      "service": "BookingHotelService",
+      "file": "BookingHotelService_annotated.json",
+      "category": "search",
+      "capabilities": 2
+    },
+    {
+      "service": "ExpediaHotelService",
+      "file": "ExpediaHotelService_annotated.json",
+      "category": "search",
+      "capabilities": 2
+    },
+    {
+      "service": "PayPalPaymentService",
+      "file": "PayPalPaymentService_annotated.json",
+      "category": "payment",
+      "capabilities": 3
+    },
+    {
+      "service": "SkyscannerFlightService",
+      "file": "SkyscannerFlightService_annotated.json",
+      "category": "search",
+      "capabilities": 4
+    },
+    {
+      "service": "StripePaymentService",
+      "file": "StripePaymentService_annotated.json",
+      "category": "payment",
+      "capabilities": 4
+    },
+    {
+      "service": "WeatherService",
+      "file": "WeatherService_annotated.json",
+      "category": "information",
+      "capabilities": 3
+    }
+  ],
+  "failed": []
+}

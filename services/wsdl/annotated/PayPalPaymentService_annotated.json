@@ -1,0 +1,167 @@
+{
+  "annotation_id": "607e6f2d-97e0-486b-8dbb-ea6216aadccc",
+  "service_name": "PayPalPaymentService",
+  "wsdl_location": "services/wsdl/original\\PayPalPaymentService.wsdl",
+  "created_at": "2025-12-01T13:12:05.949980",
+  "updated_at": "2025-12-07T22:51:03.759842",
+  "version": "1.0",
+  "functional": {
+    "annotation_type": "functional",
+    "service_name": "",
+    "service_category": "payment",
+    "operation_name": "",
+    "capabilities": [
+      "processes payments using PayPal",
+      "supports buyer protection",
+      "returns payment status and details"
+    ],
+    "input_parameters": [
+      "totalAmount",
+      "currencyCode",
+      "paypalEmail",
+      "orderId",
+      "description"
+    ],
+    "output_parameters": [
+      "paymentId",
+      "paymentStatus",
+      "completedAt",
+      "processingFee",
+      "buyerProtection"
+    ],
+    "semantic_description": "This service allows charging a PayPal account with specified amount and currency, and returns the payment ID, status, and other relevant information.",
+    "keywords": [
+      "PayPal payment processing",
+      "buyer protection",
+      "payment status update"
+    ],
+    "required_inputs": [],
+    "optional_inputs": [],
+    "special_features": {
+      "supports_multi_currency": true,
+      "returns_buyer_protection_info": true
+    }
+  },
+  "interaction": {
+    "annotation_type": "interaction",
+    "compatible_services": [
+      "PaymentGatewayService",
+      "HotelSearchService"
+    ],
+    "requires_services": [
+      "BookingService"
+    ],
+    "provides_for_services": [
+      "NotificationService",
+      "OrderConfirmationService"
+    ],
+    "parameter_mappings": [],
+    "orchestration_hints": {},
+    "successful_compositions": [
+      "iwf_20251207_225101"
+    ],
+    "failed_compositions": [],
+    "quality_metrics": {
+      "reliability": 0.0,
+      "response_time_ms": 0,
+      "availability": 0.0,
+      "success_rate": 1.0,
+      "cost_per_call": 0.0,
+      "total_executions": 1,
+      "total_retries": 0
+    },
+    "parameter_usage_stats": {
+      "transactionId": 1,
+      "status": 1,
+      "amount": 1,
+      "currency": 1
+    }
+  },
+  "context": {
+    "annotation_type": "context",
+    "geographic_coverage": [
+      "GLOBAL",
+      "EU",
+      "US",
+      "ASIA"
+    ],
+    "location_aware": false,
+    "temporal_constraints": [
+      "24/7_available",
+      "business_hours_only"
+    ],
+    "timezone_support": true,
+    "user_preferences": {},
+    "network_requirements": {},
+    "application_context": {},
+    "constraints": [],
+    "adaptation_capabilities": [
+      "auto_retry",
+      "fallback_available",
+      "caching_enabled"
+    ]
+  },
+  "policy": {
+    "annotation_type": "policy",
+    "privacy_policies": [
+      {
+        "data_field": "passport_number",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "PCI-DSS",
+          "GDPR"
+        ]
+      },
+      {
+        "data_field": "credit_card_number",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "PCI-DSS",
+          "GDPR"
+        ]
+      },
+      {
+        "data_field": "expiration_date",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "PCI-DSS",
+          "GDPR"
+        ]
+      }
+    ],
+    "usage_policy": {
+      "rate_limit": 1000,
+      "quota_per_day": null,
+      "requires_authentication": true,
+      "authentication_methods": [],
+      "pricing_model": "free/subscription/pay_per_use",
+      "cost_per_request": 0.01,
+      "currency": "USD",
+      "guaranteed_uptime": 0.99,
+      "max_response_time_ms": 5000
+    },
+    "security_requirements": [
+      "TLS_1.3",
+      "API_KEY",
+      "OAUTH2"
+    ],
+    "compliance_standards": [
+      "PCI-DSS",
+      "GDPR"
+    ],
+    "usage_restrictions": [],
+    "terms_url": null,
+    "privacy_policy_url": null
+  },
+  "tags": [],
+  "confidence_score": 1.0
+}

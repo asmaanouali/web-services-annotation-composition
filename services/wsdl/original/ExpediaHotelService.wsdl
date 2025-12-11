@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="ExpediaHotelService"
+             targetNamespace="http://travel.example.com/expedia/hotels"
+             xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="http://travel.example.com/expedia/hotels"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+    <types>
+        <xsd:schema targetNamespace="http://travel.example.com/expedia/hotels">
+            
+            <xsd:complexType name="AccommodationSearchRequest">
+                <xsd:sequence>
+                    <xsd:element name="destination" type="xsd:string"/>
+                    <xsd:element name="arrivalDate" type="xsd:date"/>
+                    <xsd:element name="departureDate" type="xsd:date"/>
+                    <xsd:element name="numberOfGuests" type="xsd:int"/>
+                    <xsd:element name="numberOfRooms" type="xsd:int"/>
+                    <xsd:element name="starRating" type="xsd:int" minOccurs="0"/>
+                    <xsd:element name="propertyType" type="xsd:string" minOccurs="0"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:complexType name="Property">
+                <xsd:sequence>
+                    <xsd:element name="propertyId" type="xsd:string"/>
+                    <xsd:element name="propertyName" type="xsd:string"/>
+                    <xsd:element name="location" type="xsd:string"/>
+                    <xsd:element name="starRating" type="xsd:int"/>
+                    <xsd:element name="guestRating" type="xsd:decimal"/>
+                    <xsd:element name="numberOfReviews" type="xsd:int"/>
+                    <xsd:element name="nightly_rate" type="xsd:decimal"/>
+                    <xsd:element name="total_cost" type="xsd:decimal"/>
+                    <xsd:element name="currency_code" type="xsd:string"/>
+                    <xsd:element name="rooms_available" type="xsd:int"/>
+                    <xsd:element name="features" type="xsd:string"/>
+                    <xsd:element name="rewardsPoints" type="xsd:int"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:complexType name="AccommodationSearchResponse">
+                <xsd:sequence>
+                    <xsd:element name="properties" type="tns:Property" minOccurs="0" maxOccurs="unbounded"/>
+                    <xsd:element name="count" type="xsd:int"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+        </xsd:schema>
+    </types>
+
+    <message name="FindAccommodationRequest">
+        <part name="parameters" type="tns:AccommodationSearchRequest"/>
+    </message>
+
+    <message name="FindAccommodationResponse">
+        <part name="result" type="tns:AccommodationSearchResponse"/>
+    </message>
+
+    <portType name="AccommodationPortType">
+        <operation name="FindAccommodation">
+            <documentation>Find accommodation options with rewards program</documentation>
+            <input message="tns:FindAccommodationRequest"/>
+            <output message="tns:FindAccommodationResponse"/>
+        </operation>
+    </portType>
+
+    <binding name="AccommodationBinding" type="tns:AccommodationPortType">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <operation name="FindAccommodation">
+            <soap:operation soapAction="http://travel.example.com/expedia/FindAccommodation"/>
+            <input><soap:body use="literal"/></input>
+            <output><soap:body use="literal"/></output>
+        </operation>
+    </binding>
+
+    <service name="ExpediaHotelService">
+        <documentation>Expedia Accommodation Service - Includes rewards program integration</documentation>
+        <port name="AccommodationPort" binding="tns:AccommodationBinding">
+            <soap:address location="http://api.expedia.example.com/accommodation"/>
+        </port>
+    </service>
+
+</definitions>

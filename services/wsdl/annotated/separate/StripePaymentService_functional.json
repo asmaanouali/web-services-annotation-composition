@@ -1,0 +1,43 @@
+{
+  "annotation_type": "functional",
+  "service_name": "",
+  "service_category": "payment",
+  "operation_name": "",
+  "capabilities": [
+    "Credit Card Payment Processing",
+    "Stripe Integration",
+    "Global Payment Provider"
+  ],
+  "input_parameters": [
+    "amount",
+    "currency",
+    "cardNumber",
+    "expiryMonth",
+    "expiryYear",
+    "cvv",
+    "cardHolderName",
+    "billingAddress",
+    "merchantReference"
+  ],
+  "output_parameters": [
+    "transactionId",
+    "status",
+    "authorizationCode",
+    "processedAt",
+    "fees"
+  ],
+  "semantic_description": "Processes credit card payments using Stripe's global payment provider with a fee of 2.9% + $0.30.",
+  "keywords": [
+    "stripe payment processing",
+    "credit card payment",
+    "payment gateway",
+    "online payment processing"
+  ],
+  "required_inputs": [],
+  "optional_inputs": [],
+  "special_features": {
+    "supports_multi_currency": true,
+    "requires_card_details": true,
+    "supports_billing_address": true
+  }
+}

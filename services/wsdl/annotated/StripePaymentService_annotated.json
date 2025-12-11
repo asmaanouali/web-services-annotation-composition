@@ -1,0 +1,208 @@
+{
+  "annotation_id": "a53bafed-936c-49e3-831a-95438d0d260f",
+  "service_name": "StripePaymentService",
+  "wsdl_location": "services/wsdl/original\\StripePaymentService.wsdl",
+  "created_at": "2025-12-01T13:16:27.765535",
+  "updated_at": "2025-12-07T22:51:03.775059",
+  "version": "1.0",
+  "functional": {
+    "annotation_type": "functional",
+    "service_name": "",
+    "service_category": "payment",
+    "operation_name": "",
+    "capabilities": [
+      "credit_card_payment_processing",
+      "transaction_management",
+      "payment_status_update",
+      "authorization_code_generation"
+    ],
+    "input_parameters": [
+      "amount",
+      "currency",
+      "cardNumber",
+      "expiryMonth",
+      "expiryYear",
+      "cvv",
+      "cardHolderName",
+      "billingAddress",
+      "merchantReference"
+    ],
+    "output_parameters": [
+      "transactionId",
+      "status",
+      "authorizationCode",
+      "processedAt",
+      "fees"
+    ],
+    "semantic_description": "Processes credit card payments and returns transaction details",
+    "keywords": [
+      "Stripe Payment Processing",
+      "Credit Card Payments",
+      "Transaction Management",
+      "Payment Status Update",
+      "Authorization Code Generation"
+    ],
+    "required_inputs": [],
+    "optional_inputs": [],
+    "special_features": {
+      "supports_multi_currency": true,
+      "requires_card_expiration_date": true,
+      "supports_loyalty_programs": false
+    }
+  },
+  "interaction": {
+    "annotation_type": "interaction",
+    "compatible_services": [
+      "HotelSearchService",
+      "FlightSearchService",
+      "RoomSearchService"
+    ],
+    "requires_services": [
+      "BookingService",
+      "NotificationService"
+    ],
+    "provides_for_services": [
+      "BookingConfirmationService",
+      "PaymentReceiptService"
+    ],
+    "parameter_mappings": [],
+    "orchestration_hints": {},
+    "successful_compositions": [
+      "wf_6",
+      "iwf_20251207_223725",
+      "wf_1",
+      "wf_2",
+      "iwf_20251207_225101",
+      "wf_8",
+      "wf_3",
+      "iwf_20251207_225100",
+      "wf_4",
+      "wf_5",
+      "iwf_20251207_225103",
+      "wf_7",
+      "wf_0"
+    ],
+    "failed_compositions": [
+      "wf_9"
+    ],
+    "quality_metrics": {
+      "reliability": 0.0,
+      "response_time_ms": 450,
+      "availability": 0.0,
+      "success_rate": 0.9333,
+      "cost_per_call": 0.005,
+      "total_executions": 36,
+      "total_retries": 4
+    },
+    "parameter_usage_stats": {
+      "transactionId": 14,
+      "status": 5,
+      "amount": 5,
+      "currency": 5
+    }
+  },
+  "context": {
+    "annotation_type": "context",
+    "geographic_coverage": [
+      "GLOBAL",
+      "EU",
+      "US",
+      "ASIA"
+    ],
+    "location_aware": false,
+    "temporal_constraints": [
+      "24/7_available"
+    ],
+    "timezone_support": true,
+    "user_preferences": {},
+    "network_requirements": {},
+    "application_context": {},
+    "constraints": [],
+    "adaptation_capabilities": [
+      "auto_retry",
+      "fallback_available",
+      "caching_enabled"
+    ]
+  },
+  "policy": {
+    "annotation_type": "policy",
+    "privacy_policies": [
+      {
+        "data_field": "passport_number",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "PCI-DSS",
+          "GDPR",
+          "SOC2"
+        ]
+      },
+      {
+        "data_field": "credit_card_number",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "PCI-DSS",
+          "GDPR",
+          "SOC2"
+        ]
+      },
+      {
+        "data_field": "expiration_date",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "PCI-DSS",
+          "GDPR",
+          "SOC2"
+        ]
+      },
+      {
+        "data_field": "card_security_code",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "PCI-DSS",
+          "GDPR",
+          "SOC2"
+        ]
+      }
+    ],
+    "usage_policy": {
+      "rate_limit": 1000,
+      "quota_per_day": null,
+      "requires_authentication": true,
+      "authentication_methods": [],
+      "pricing_model": "free/subscription/pay_per_use",
+      "cost_per_request": 0.01,
+      "currency": "USD",
+      "guaranteed_uptime": 0.99,
+      "max_response_time_ms": 5000
+    },
+    "security_requirements": [
+      "TLS_1.3",
+      "API_KEY",
+      "OAUTH2",
+      "PCI-DSS",
+      "GDPR"
+    ],
+    "compliance_standards": [
+      "PCI-DSS",
+      "GDPR",
+      "SOC2"
+    ],
+    "usage_restrictions": [],
+    "terms_url": null,
+    "privacy_policy_url": null
+  },
+  "tags": [],
+  "confidence_score": 1.0
+}

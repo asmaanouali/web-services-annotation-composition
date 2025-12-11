@@ -1,0 +1,158 @@
+{
+  "annotation_id": "680d043a-6d5b-4846-9638-d38525ecd4de",
+  "service_name": "WeatherService",
+  "wsdl_location": "services/wsdl/original\\WeatherService.wsdl",
+  "created_at": "2025-12-01T13:18:41.663312",
+  "updated_at": "2025-12-01T13:18:41.663312",
+  "version": "1.0",
+  "functional": {
+    "annotation_type": "functional",
+    "service_name": "",
+    "service_category": "information",
+    "operation_name": "",
+    "capabilities": [
+      "provides weather forecast data",
+      "supports location-based queries",
+      "returns forecast data in a structured format"
+    ],
+    "input_parameters": [
+      "location",
+      "startDate",
+      "endDate"
+    ],
+    "output_parameters": [
+      "forecasts",
+      "location"
+    ],
+    "semantic_description": "Provides accurate weather forecasts for destinations based on specific date ranges.",
+    "keywords": [
+      "weather forecast",
+      "location-based query",
+      "structured data output"
+    ],
+    "required_inputs": [],
+    "optional_inputs": [],
+    "special_features": {
+      "supports_multi_currency": false,
+      "returns_location_info": true,
+      "supports_date_range_queries": true
+    }
+  },
+  "interaction": {
+    "annotation_type": "interaction",
+    "compatible_services": [
+      "HotelSearchService",
+      "FlightSearchService"
+    ],
+    "requires_services": [
+      "BookingService",
+      "PaymentService"
+    ],
+    "provides_for_services": [
+      "NotificationService",
+      "BookingConfirmationService"
+    ],
+    "parameter_mappings": [],
+    "orchestration_hints": {},
+    "successful_compositions": [],
+    "failed_compositions": [],
+    "quality_metrics": {
+      "reliability": 0.0,
+      "response_time_ms": 1000,
+      "availability": 0.0,
+      "success_rate": 0.95,
+      "cost_per_call": 0.01
+    }
+  },
+  "context": {
+    "annotation_type": "context",
+    "geographic_coverage": [
+      "GLOBAL",
+      "EU",
+      "US",
+      "ASIA"
+    ],
+    "location_aware": true,
+    "temporal_constraints": [
+      "24/7_available",
+      "business_hours_only"
+    ],
+    "timezone_support": true,
+    "user_preferences": {},
+    "network_requirements": {},
+    "application_context": {},
+    "constraints": [],
+    "adaptation_capabilities": [
+      "auto_retry",
+      "fallback_available",
+      "caching_enabled"
+    ]
+  },
+  "policy": {
+    "annotation_type": "policy",
+    "privacy_policies": [
+      {
+        "data_field": "passport_number",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "PCI-DSS",
+          "GDPR",
+          "SOC2"
+        ]
+      },
+      {
+        "data_field": "credit_card_number",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "PCI-DSS",
+          "GDPR",
+          "SOC2"
+        ]
+      },
+      {
+        "data_field": "personal_identifiable_information",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "PCI-DSS",
+          "GDPR",
+          "SOC2"
+        ]
+      }
+    ],
+    "usage_policy": {
+      "rate_limit": 1000,
+      "quota_per_day": null,
+      "requires_authentication": true,
+      "authentication_methods": [],
+      "pricing_model": "free/subscription/pay_per_use",
+      "cost_per_request": 0.01,
+      "currency": "USD",
+      "guaranteed_uptime": 0.99,
+      "max_response_time_ms": 5000
+    },
+    "security_requirements": [
+      "TLS_1.3",
+      "API_KEY",
+      "OAUTH2"
+    ],
+    "compliance_standards": [
+      "PCI-DSS",
+      "GDPR",
+      "SOC2"
+    ],
+    "usage_restrictions": [],
+    "terms_url": null,
+    "privacy_policy_url": null
+  },
+  "tags": [],
+  "confidence_score": 1.0
+}

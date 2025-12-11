@@ -1,0 +1,33 @@
+{
+  "annotation_type": "functional",
+  "service_name": "",
+  "service_category": "information",
+  "operation_name": "",
+  "capabilities": [
+    "Retrieves weather forecast data",
+    "Validates input parameters for accuracy"
+  ],
+  "input_parameters": [
+    "location",
+    "startDate",
+    "endDate"
+  ],
+  "output_parameters": [
+    "forecasts",
+    "location"
+  ],
+  "semantic_description": "Provides accurate weather predictions based on location and date range",
+  "keywords": [
+    "weather forecast",
+    "location-based",
+    "date-range-based",
+    "weather prediction"
+  ],
+  "required_inputs": [],
+  "optional_inputs": [],
+  "special_features": {
+    "supports_multi_currency": false,
+    "returns_location_info": true,
+    "uses_date_range_validation": true
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "annotation_type": "functional",
+  "service_name": "",
+  "service_category": "search",
+  "operation_name": "",
+  "capabilities": [
+    "Hotel search with filtering by city, dates, guests, rooms, and amenities",
+    "Retrieval of hotel details including total number of results"
+  ],
+  "input_parameters": [
+    "city",
+    "checkInDate",
+    "checkOutDate",
+    "guests",
+    "rooms",
+    "minStars",
+    "maxPrice",
+    "amenities"
+  ],
+  "output_parameters": [
+    "hotels",
+    "totalResults"
+  ],
+  "semantic_description": "Searches for hotels based on user-provided criteria and returns a list of matching hotels along with their details",
+  "keywords": [
+    "hotel search",
+    "location-based search",
+    "date-based filtering",
+    "guest capacity filtering",
+    "room type filtering",
+    "amenity filtering"
+  ],
+  "required_inputs": [],
+  "optional_inputs": [],
+  "special_features": {
+    "supports_multi_currency": false,
+    "loyalty_points": false,
+    "supports_multiple_language_support": true
+  }
+}

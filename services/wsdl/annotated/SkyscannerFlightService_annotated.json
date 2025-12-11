@@ -1,0 +1,167 @@
+{
+  "annotation_id": "5fe63fd0-a823-4ba2-a5af-4537f27eaea0",
+  "service_name": "SkyscannerFlightService",
+  "wsdl_location": "services/wsdl/original\\SkyscannerFlightService.wsdl",
+  "created_at": "2025-12-01T13:14:09.139803",
+  "updated_at": "2025-12-01T13:14:09.139803",
+  "version": "1.0",
+  "functional": {
+    "annotation_type": "functional",
+    "service_name": "",
+    "service_category": "search",
+    "operation_name": "",
+    "capabilities": [
+      "Flight search with multiple parameters",
+      "Price comparison across airlines",
+      "Direct flight filtering",
+      "Flexible date range support"
+    ],
+    "input_parameters": [
+      "from",
+      "to",
+      "outboundDate",
+      "inboundDate",
+      "adults",
+      "children",
+      "infants",
+      "cabinClass",
+      "directFlightsOnly"
+    ],
+    "output_parameters": [
+      "offers",
+      "cheapestPrice",
+      "fastestDuration"
+    ],
+    "semantic_description": "Compares flights across multiple airlines based on user-defined criteria, including departure and return dates, adults, children, infants, and cabin class.",
+    "keywords": [
+      "flight search",
+      "price comparison",
+      "airline selection",
+      "date range filtering",
+      "adult/child/infant support"
+    ],
+    "required_inputs": [],
+    "optional_inputs": [],
+    "special_features": {
+      "supports_multi_currency": true,
+      "loyalty_points_integration": false
+    }
+  },
+  "interaction": {
+    "annotation_type": "interaction",
+    "compatible_services": [
+      "TravelItineraryService",
+      "FlightStatusService"
+    ],
+    "requires_services": [
+      "BookingService",
+      "PaymentService"
+    ],
+    "provides_for_services": [
+      "BookingConfirmationService",
+      "NotificationService"
+    ],
+    "parameter_mappings": [],
+    "orchestration_hints": {},
+    "successful_compositions": [],
+    "failed_compositions": [],
+    "quality_metrics": {
+      "reliability": 0.0,
+      "response_time_ms": 1000,
+      "availability": 0.0,
+      "success_rate": 0.95,
+      "cost_per_call": 0.0
+    }
+  },
+  "context": {
+    "annotation_type": "context",
+    "geographic_coverage": [
+      "GLOBAL",
+      "EU",
+      "US",
+      "ASIA"
+    ],
+    "location_aware": true,
+    "temporal_constraints": [
+      "24/7_available"
+    ],
+    "timezone_support": true,
+    "user_preferences": {},
+    "network_requirements": {},
+    "application_context": {},
+    "constraints": [],
+    "adaptation_capabilities": [
+      "caching_enabled",
+      "fallback_available"
+    ]
+  },
+  "policy": {
+    "annotation_type": "policy",
+    "privacy_policies": [
+      {
+        "data_field": "passport_number",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "GDPR",
+          "PCI-DSS",
+          "SOC2"
+        ]
+      },
+      {
+        "data_field": "credit_card_number",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "GDPR",
+          "PCI-DSS",
+          "SOC2"
+        ]
+      },
+      {
+        "data_field": "email_address",
+        "privacy_level": "confidential",
+        "retention_days": 90,
+        "encryption_required": true,
+        "can_be_shared": false,
+        "compliance_requirements": [
+          "GDPR",
+          "PCI-DSS",
+          "SOC2"
+        ]
+      }
+    ],
+    "usage_policy": {
+      "rate_limit": 1000,
+      "quota_per_day": null,
+      "requires_authentication": true,
+      "authentication_methods": [],
+      "pricing_model": "free/subscription/pay_per_use",
+      "cost_per_request": 0.01,
+      "currency": "USD",
+      "guaranteed_uptime": 0.99,
+      "max_response_time_ms": 5000
+    },
+    "security_requirements": [
+      "TLS_1.3",
+      "API_KEY",
+      "OAUTH2",
+      "PCI-DSS",
+      -1
+    ],
+    "compliance_standards": [
+      "GDPR",
+      "PCI-DSS",
+      "SOC2"
+    ],
+    "usage_restrictions": [],
+    "terms_url": null,
+    "privacy_policy_url": null
+  },
+  "tags": [],
+  "confidence_score": 1.0
+}

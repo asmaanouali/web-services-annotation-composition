@@ -1,0 +1,37 @@
+{
+  "annotation_type": "functional",
+  "service_name": "",
+  "service_category": "search",
+  "operation_name": "",
+  "capabilities": [
+    "Searches for accommodation options with rewards program integration",
+    "Finds properties based on user-defined criteria"
+  ],
+  "input_parameters": [
+    "destination",
+    "arrivalDate",
+    "departureDate",
+    "numberOfGuests",
+    "numberOfRooms",
+    "starRating",
+    "propertyType"
+  ],
+  "output_parameters": [
+    "properties",
+    "count"
+  ],
+  "semantic_description": "Provides a list of properties matching the user's search criteria, including count and property details",
+  "keywords": [
+    "accommodation search",
+    "rewards program",
+    "property listing",
+    "search by destination",
+    "search by dates"
+  ],
+  "required_inputs": [],
+  "optional_inputs": [],
+  "special_features": {
+    "supports_multi_currency": true,
+    "loyalty_points_integration": true
+  }
+}

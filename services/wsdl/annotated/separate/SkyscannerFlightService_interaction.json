@@ -1,0 +1,23 @@
+{
+  "annotation_type": "interaction",
+  "compatible_services": [
+    "HotelSearchService",
+    "AirportSearchService"
+  ],
+  "requires_services": [],
+  "provides_for_services": [
+    "BookingService",
+    "PaymentService"
+  ],
+  "parameter_mappings": [],
+  "orchestration_hints": {},
+  "successful_compositions": [],
+  "failed_compositions": [],
+  "quality_metrics": {
+    "reliability": 0.0,
+    "response_time_ms": 1000,
+    "availability": 0.0,
+    "success_rate": 0.95,
+    "cost_per_call": 0.0
+  }
+}

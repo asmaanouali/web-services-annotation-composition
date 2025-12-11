@@ -1,0 +1,41 @@
+{
+  "annotation_type": "functional",
+  "service_name": "",
+  "service_category": "search",
+  "operation_name": "",
+  "capabilities": [
+    "Flight comparison",
+    "Price search",
+    "Route finding"
+  ],
+  "input_parameters": [
+    "from",
+    "to",
+    "outboundDate",
+    "inboundDate",
+    "adults",
+    "children",
+    "infants",
+    "cabinClass",
+    "directFlightsOnly"
+  ],
+  "output_parameters": [
+    "offers",
+    "cheapestPrice",
+    "fastestDuration"
+  ],
+  "semantic_description": "Compares flights across multiple airlines to find the best deals based on user-specified parameters.",
+  "keywords": [
+    "flight comparison",
+    "price search",
+    "route finding",
+    "airline search",
+    "travel planning"
+  ],
+  "required_inputs": [],
+  "optional_inputs": [],
+  "special_features": {
+    "supports_multi_currency": true,
+    " Loyalty_points_integration": false
+  }
+}

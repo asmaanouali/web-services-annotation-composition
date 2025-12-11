@@ -1,0 +1,21 @@
+{
+  "generated_at": "2025-12-07T22:31:51.130430",
+  "total_feedbacks": 20,
+  "services_count": 2,
+  "services": {
+    "SkyscannerFlightService": {
+      "total_executions": 10,
+      "success_rate": 0.8,
+      "avg_response_time_ms": 1350.0,
+      "total_retries": 4,
+      "last_execution": "2025-12-07T22:31:51.101553"
+    },
+    "StripePaymentService": {
+      "total_executions": 10,
+      "success_rate": 0.9,
+      "avg_response_time_ms": 700.0,
+      "total_retries": 1,
+      "last_execution": "2025-12-07T22:31:51.103553"
+    }
+  }
+}

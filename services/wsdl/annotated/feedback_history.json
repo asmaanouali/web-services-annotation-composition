@@ -1,0 +1,557 @@
+[
+  {
+    "timestamp": "2025-12-07T22:31:51.100556",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "FindFlights",
+    "success": true,
+    "execution_time_ms": 1000,
+    "parameters_used": {
+      "price": 450.0
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_0"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.100556",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "FindFlights",
+    "success": true,
+    "execution_time_ms": 1100,
+    "parameters_used": {
+      "price": 460.0
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_1"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.100556",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "FindFlights",
+    "success": true,
+    "execution_time_ms": 1200,
+    "parameters_used": {
+      "price": 470.0
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_2"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.101553",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "FindFlights",
+    "success": true,
+    "execution_time_ms": 1300,
+    "parameters_used": {
+      "price": 480.0
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_3"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.101553",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "FindFlights",
+    "success": true,
+    "execution_time_ms": 1400,
+    "parameters_used": {
+      "price": 490.0
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_4"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.101553",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "FindFlights",
+    "success": true,
+    "execution_time_ms": 1500,
+    "parameters_used": {
+      "price": 500.0
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_5"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.101553",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "FindFlights",
+    "success": true,
+    "execution_time_ms": 1600,
+    "parameters_used": {
+      "price": 510.0
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_6"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.101553",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "FindFlights",
+    "success": true,
+    "execution_time_ms": 1700,
+    "parameters_used": {
+      "price": 520.0
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_7"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.101553",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "FindFlights",
+    "success": false,
+    "execution_time_ms": 1800,
+    "parameters_used": {},
+    "error_message": "Service indisponible",
+    "retry_count": 2,
+    "workflow_id": "wf_8"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.101553",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "FindFlights",
+    "success": false,
+    "execution_time_ms": 1900,
+    "parameters_used": {},
+    "error_message": "Service indisponible",
+    "retry_count": 2,
+    "workflow_id": "wf_9"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.102553",
+    "service_name": "StripePaymentService",
+    "operation_name": "ProcessPayment",
+    "success": true,
+    "execution_time_ms": 500,
+    "parameters_used": {
+      "transactionId": "TXN_0"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_0"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.102553",
+    "service_name": "StripePaymentService",
+    "operation_name": "ProcessPayment",
+    "success": true,
+    "execution_time_ms": 550,
+    "parameters_used": {
+      "transactionId": "TXN_1"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_1"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.102553",
+    "service_name": "StripePaymentService",
+    "operation_name": "ProcessPayment",
+    "success": true,
+    "execution_time_ms": 600,
+    "parameters_used": {
+      "transactionId": "TXN_2"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_2"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.102553",
+    "service_name": "StripePaymentService",
+    "operation_name": "ProcessPayment",
+    "success": true,
+    "execution_time_ms": 650,
+    "parameters_used": {
+      "transactionId": "TXN_3"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_3"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.102553",
+    "service_name": "StripePaymentService",
+    "operation_name": "ProcessPayment",
+    "success": true,
+    "execution_time_ms": 700,
+    "parameters_used": {
+      "transactionId": "TXN_4"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_4"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.102553",
+    "service_name": "StripePaymentService",
+    "operation_name": "ProcessPayment",
+    "success": true,
+    "execution_time_ms": 750,
+    "parameters_used": {
+      "transactionId": "TXN_5"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_5"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.102553",
+    "service_name": "StripePaymentService",
+    "operation_name": "ProcessPayment",
+    "success": true,
+    "execution_time_ms": 800,
+    "parameters_used": {
+      "transactionId": "TXN_6"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_6"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.102553",
+    "service_name": "StripePaymentService",
+    "operation_name": "ProcessPayment",
+    "success": true,
+    "execution_time_ms": 850,
+    "parameters_used": {
+      "transactionId": "TXN_7"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_7"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.102553",
+    "service_name": "StripePaymentService",
+    "operation_name": "ProcessPayment",
+    "success": true,
+    "execution_time_ms": 900,
+    "parameters_used": {
+      "transactionId": "TXN_8"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "wf_8"
+  },
+  {
+    "timestamp": "2025-12-07T22:31:51.103553",
+    "service_name": "StripePaymentService",
+    "operation_name": "ProcessPayment",
+    "success": false,
+    "execution_time_ms": 950,
+    "parameters_used": {},
+    "error_message": null,
+    "retry_count": 1,
+    "workflow_id": "wf_9"
+  },
+  {
+    "timestamp": "2025-12-07T22:37:26.028877",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "Flight search with multiple parameters",
+    "success": true,
+    "execution_time_ms": 1,
+    "parameters_used": {
+      "flightId": "FL_1765143445",
+      "price": 450.0,
+      "currency": "EUR",
+      "departureTime": "2025-08-10T10:00:00",
+      "arrivalTime": "2025-08-10T18:00:00"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "iwf_20251207_223725"
+  },
+  {
+    "timestamp": "2025-12-07T22:37:26.028877",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "Flight search with multiple parameters",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "flightId": "FL_1765143446",
+      "price": 450.0,
+      "currency": "EUR",
+      "departureTime": "2025-08-10T10:00:00",
+      "arrivalTime": "2025-08-10T18:00:00"
+    },
+    "error_message": null,
+    "retry_count": 1,
+    "workflow_id": "iwf_20251207_223725"
+  },
+  {
+    "timestamp": "2025-12-07T22:37:26.028877",
+    "service_name": "StripePaymentService",
+    "operation_name": "credit_card_payment_processing",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "transactionId": "TXN_1765143446",
+      "status": "completed",
+      "amount": 1290.0,
+      "currency": "EUR"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "iwf_20251207_223725"
+  },
+  {
+    "timestamp": "2025-12-07T22:51:00.582977",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "Flight search with multiple parameters",
+    "success": true,
+    "execution_time_ms": 2,
+    "parameters_used": {
+      "flightId": "FL_1765144260",
+      "price": 450.0,
+      "currency": "EUR",
+      "departureTime": "2025-08-10T10:00:00",
+      "arrivalTime": "2025-08-10T18:00:00"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "iwf_20251207_225100"
+  },
+  {
+    "timestamp": "2025-12-07T22:51:00.582977",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "Flight search with multiple parameters",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "flightId": "FL_1765144260",
+      "price": 450.0,
+      "currency": "EUR",
+      "departureTime": "2025-08-10T10:00:00",
+      "arrivalTime": "2025-08-10T18:00:00"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "iwf_20251207_225100"
+  },
+  {
+    "timestamp": "2025-12-07T22:51:00.582977",
+    "service_name": "StripePaymentService",
+    "operation_name": "credit_card_payment_processing",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "transactionId": "TXN_1765144260",
+      "status": "completed",
+      "amount": 1290.0,
+      "currency": "EUR"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "iwf_20251207_225100"
+  },
+  {
+    "timestamp": "2025-12-07T22:51:01.628933",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "Flight search with multiple parameters",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "flightId": "FL_1765144261",
+      "price": 450.0,
+      "currency": "EUR",
+      "departureTime": "2025-08-10T10:00:00",
+      "arrivalTime": "2025-08-10T18:00:00"
+    },
+    "error_message": null,
+    "retry_count": 1,
+    "workflow_id": "iwf_20251207_225100"
+  },
+  {
+    "timestamp": "2025-12-07T22:51:01.628933",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "Flight search with multiple parameters",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "flightId": "FL_1765144261",
+      "price": 450.0,
+      "currency": "EUR",
+      "departureTime": "2025-08-10T10:00:00",
+      "arrivalTime": "2025-08-10T18:00:00"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "iwf_20251207_225100"
+  },
+  {
+    "timestamp": "2025-12-07T22:51:01.628933",
+    "service_name": "StripePaymentService",
+    "operation_name": "credit_card_payment_processing",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "transactionId": "TXN_1765144261",
+      "status": "completed",
+      "amount": 1290.0,
+      "currency": "EUR"
+    },
+    "error_message": null,
+    "retry_count": 1,
+    "workflow_id": "iwf_20251207_225100"
+  },
+  {
+    "timestamp": "2025-12-07T22:51:01.665480",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "Flight search with multiple parameters",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "flightId": "FL_1765144261",
+      "price": 450.0,
+      "currency": "EUR",
+      "departureTime": "2025-08-10T10:00:00",
+      "arrivalTime": "2025-08-10T18:00:00"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "iwf_20251207_225101"
+  },
+  {
+    "timestamp": "2025-12-07T22:51:01.665480",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "Flight search with multiple parameters",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "flightId": "FL_1765144261",
+      "price": 450.0,
+      "currency": "EUR",
+      "departureTime": "2025-08-10T10:00:00",
+      "arrivalTime": "2025-08-10T18:00:00"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "iwf_20251207_225101"
+  },
+  {
+    "timestamp": "2025-12-07T22:51:01.665480",
+    "service_name": "PayPalPaymentService",
+    "operation_name": "processes payments using PayPal",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "transactionId": "TXN_1765144261",
+      "status": "completed",
+      "amount": 1290.0,
+      "currency": "EUR"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "iwf_20251207_225101"
+  },
+  {
+    "timestamp": "2025-12-07T22:51:03.722787",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "Flight search with multiple parameters",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "flightId": "FL_1765144261",
+      "price": 450.0,
+      "currency": "EUR",
+      "departureTime": "2025-08-10T10:00:00",
+      "arrivalTime": "2025-08-10T18:00:00"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "iwf_20251207_225101"
+  },
+  {
+    "timestamp": "2025-12-07T22:51:03.724230",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "Flight search with multiple parameters",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "flightId": "FL_1765144262",
+      "price": 450.0,
+      "currency": "EUR",
+      "departureTime": "2025-08-10T10:00:00",
+      "arrivalTime": "2025-08-10T18:00:00"
+    },
+    "error_message": null,
+    "retry_count": 1,
+    "workflow_id": "iwf_20251207_225101"
+  },
+  {
+    "timestamp": "2025-12-07T22:51:03.724230",
+    "service_name": "StripePaymentService",
+    "operation_name": "credit_card_payment_processing",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "transactionId": "TXN_1765144263",
+      "status": "completed",
+      "amount": 1290.0,
+      "currency": "EUR",
+      "_fallback": true
+    },
+    "error_message": "Fallback activé",
+    "retry_count": 0,
+    "workflow_id": "iwf_20251207_225101"
+  },
+  {
+    "timestamp": "2025-12-07T22:51:03.754018",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "Flight search with multiple parameters",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "flightId": "FL_1765144263",
+      "price": 450.0,
+      "currency": "EUR",
+      "departureTime": "2025-08-10T10:00:00",
+      "arrivalTime": "2025-08-10T18:00:00"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "iwf_20251207_225103"
+  },
+  {
+    "timestamp": "2025-12-07T22:51:03.754018",
+    "service_name": "SkyscannerFlightService",
+    "operation_name": "Flight search with multiple parameters",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "flightId": "FL_1765144263",
+      "price": 450.0,
+      "currency": "EUR",
+      "departureTime": "2025-08-10T10:00:00",
+      "arrivalTime": "2025-08-10T18:00:00"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "iwf_20251207_225103"
+  },
+  {
+    "timestamp": "2025-12-07T22:51:03.754018",
+    "service_name": "StripePaymentService",
+    "operation_name": "credit_card_payment_processing",
+    "success": true,
+    "execution_time_ms": 0,
+    "parameters_used": {
+      "transactionId": "TXN_1765144263",
+      "status": "completed",
+      "amount": 1290.0,
+      "currency": "EUR"
+    },
+    "error_message": null,
+    "retry_count": 0,
+    "workflow_id": "iwf_20251207_225103"
+  }
+]

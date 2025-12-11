@@ -1,0 +1,23 @@
+{
+  "annotation_type": "context",
+  "geographic_coverage": [
+    "GLOBAL",
+    "EU",
+    "US"
+  ],
+  "location_aware": true,
+  "temporal_constraints": [
+    "24/7_available",
+    "business_hours_only"
+  ],
+  "timezone_support": false,
+  "user_preferences": {},
+  "network_requirements": {},
+  "application_context": {},
+  "constraints": [],
+  "adaptation_capabilities": [
+    "auto_retry",
+    "fallback_available",
+    "caching_enabled"
+  ]
+}

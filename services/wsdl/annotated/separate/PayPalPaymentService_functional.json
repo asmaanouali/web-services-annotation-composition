@@ -1,0 +1,37 @@
+{
+  "annotation_type": "functional",
+  "service_name": "",
+  "service_category": "payment",
+  "operation_name": "",
+  "capabilities": [
+    "processes online payments",
+    "supports buyer protection",
+    "includes transaction fees calculation"
+  ],
+  "input_parameters": [
+    "totalAmount",
+    "currencyCode",
+    "paypalEmail",
+    "orderId",
+    "description"
+  ],
+  "output_parameters": [
+    "paymentId",
+    "paymentStatus",
+    "completedAt",
+    "processingFee",
+    "buyerProtection"
+  ],
+  "semantic_description": "This service enables the charging of PayPal accounts with specified details and retrieves payment information.",
+  "keywords": [
+    "online payment processing",
+    "buyer protection",
+    "transaction fee calculation"
+  ],
+  "required_inputs": [],
+  "optional_inputs": [],
+  "special_features": {
+    "supports_multi_currency": true,
+    "includes_buyer_protection": true
+  }
+}

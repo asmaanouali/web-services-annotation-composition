@@ -1,0 +1,67 @@
+{
+  "annotation_type": "policy",
+  "privacy_policies": [
+    {
+      "data_field": "passport_number",
+      "privacy_level": "confidential",
+      "retention_days": 90,
+      "encryption_required": true,
+      "can_be_shared": false,
+      "compliance_requirements": [
+        "GDPR",
+        "PCI-DSS",
+        "SOC2"
+      ]
+    },
+    {
+      "data_field": "credit_card_number",
+      "privacy_level": "confidential",
+      "retention_days": 90,
+      "encryption_required": true,
+      "can_be_shared": false,
+      "compliance_requirements": [
+        "GDPR",
+        "PCI-DSS",
+        "SOC2"
+      ]
+    },
+    {
+      "data_field": "email_address",
+      "privacy_level": "confidential",
+      "retention_days": 90,
+      "encryption_required": true,
+      "can_be_shared": false,
+      "compliance_requirements": [
+        "GDPR",
+        "PCI-DSS",
+        "SOC2"
+      ]
+    }
+  ],
+  "usage_policy": {
+    "rate_limit": 1000,
+    "quota_per_day": null,
+    "requires_authentication": true,
+    "authentication_methods": [],
+    "pricing_model": "pay_per_use",
+    "cost_per_request": 0.01,
+    "currency": "USD",
+    "guaranteed_uptime": 0.99,
+    "max_response_time_ms": 5000
+  },
+  "security_requirements": [
+    "TLS_1.3",
+    "API_KEY",
+    "OAUTH2",
+    "PCI-DSS",
+    -2019
+  ],
+  "compliance_standards": [
+    "GDPR",
+    "PCI-DSS",
+    "SOC2"
+  ],
+  "usage_restrictions": [],
+  "terms_url": null,
+  "privacy_policy_url": null
+}
