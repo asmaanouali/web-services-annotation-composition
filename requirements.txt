@@ -1,0 +1,204 @@
+# ====================================================================
+# REQUIREMENTS.TXT
+# Système Intelligent de Composition de Services Web
+# ====================================================================
+
+# ====================================================================
+# CORE DEPENDENCIES
+# ====================================================================
+
+# HTTP Requests
+requests>=2.31.0
+
+# XML Parsing (WSDL)
+lxml>=4.9.0
+
+# JSON handling (built-in, mais spécifier pour documentation)
+# json (built-in Python standard library)
+
+# ====================================================================
+# LLM / OLLAMA
+# ====================================================================
+
+# Ollama Python Client (optionnel si vous utilisez requests directement)
+# ollama>=0.1.0  # Décommenter si vous voulez le client officiel
+
+# ====================================================================
+# DATA STRUCTURES
+# ====================================================================
+
+# Dataclasses (built-in Python 3.7+)
+# dataclasses (built-in for Python 3.7+)
+
+# Datetime (built-in)
+# datetime (built-in Python standard library)
+
+# ====================================================================
+# OPTIONAL: TESTING
+# ====================================================================
+
+# Unit Testing Framework
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Mock/Stub
+pytest-mock>=3.11.0
+
+# ====================================================================
+# OPTIONAL: DEVELOPMENT
+# ====================================================================
+
+# Code Formatting
+black>=23.7.0
+autopep8>=2.0.4
+
+# Linting
+pylint>=2.17.5
+flake8>=6.1.0
+
+# Type Checking
+mypy>=1.5.0
+
+# ====================================================================
+# OPTIONAL: DOCUMENTATION
+# ====================================================================
+
+# Documentation Generator
+sphinx>=7.1.0
+sphinx-rtd-theme>=1.3.0
+
+# ====================================================================
+# OPTIONAL: WEB INTERFACE (si vous voulez créer une UI)
+# ====================================================================
+
+# Web Framework
+# fastapi>=0.103.0
+# uvicorn>=0.23.2
+
+# CORS
+# fastapi-cors>=0.0.6
+
+# Templates
+# jinja2>=3.1.2
+
+# ====================================================================
+# OPTIONAL: DATABASE (si vous voulez persister les données)
+# ====================================================================
+
+# SQLite (built-in)
+# sqlite3 (built-in Python standard library)
+
+# OU PostgreSQL
+# psycopg2-binary>=2.9.7
+
+# OU MongoDB
+# pymongo>=4.5.0
+
+# ORM
+# sqlalchemy>=2.0.20
+
+# ====================================================================
+# OPTIONAL: MONITORING & LOGGING
+# ====================================================================
+
+# Advanced Logging
+# structlog>=23.1.0
+
+# Metrics
+# prometheus-client>=0.17.1
+
+# ====================================================================
+# OPTIONAL: PERFORMANCE
+# ====================================================================
+
+# Async Support
+# aiohttp>=3.8.5
+
+# Caching
+# redis>=5.0.0
+
+# ====================================================================
+# VERSION NOTES
+# ====================================================================
+
+# Python Version: 3.8+
+# Tested on:
+#   - Python 3.8.10 (Ubuntu)
+#   - Python 3.11.5 (Windows)
+#   - Python 3.10.8 (macOS)
+
+# ====================================================================
+# INSTALLATION
+# ====================================================================
+
+# Basic installation (minimal):
+#   pip install requests lxml
+
+# Full development installation:
+#   pip install -r requirements.txt
+
+# Production installation (no dev tools):
+#   pip install requests lxml pytest
+
+# ====================================================================
+# PLATFORM-SPECIFIC NOTES
+# ====================================================================
+
+# Windows:
+#   - May need Microsoft C++ Build Tools for lxml
+#   - Download from: https://visualstudio.microsoft.com/downloads/
+#   - Or install pre-built wheels: pip install --only-binary :all: lxml
+
+# Linux:
+#   - May need: sudo apt-get install python3-dev libxml2-dev libxslt1-dev
+#   - For Ubuntu/Debian specifically
+
+# macOS:
+#   - Xcode command line tools may be required: xcode-select --install
+#   - lxml usually works out of the box with pip
+
+# ====================================================================
+# OLLAMA INSTALLATION
+# ====================================================================
+
+# Ollama is NOT a Python package installed via pip
+# Install separately:
+#
+#   Windows: https://ollama.ai/download
+#   Linux:   curl -fsSL https://ollama.ai/install.sh | sh
+#   macOS:   brew install ollama
+#
+# Then download model:
+#   ollama pull llama3.2:3b
+
+# ====================================================================
+# TROUBLESHOOTING
+# ====================================================================
+
+# If pip install fails:
+#   1. Update pip: pip install --upgrade pip
+#   2. Use specific versions: pip install requests==2.31.0
+#   3. Try with --user flag: pip install --user requests
+#   4. Check Python version: python --version (must be 3.8+)
+
+# ====================================================================
+# UPDATES
+# ====================================================================
+
+# To update all packages:
+#   pip install --upgrade -r requirements.txt
+
+# To check outdated packages:
+#   pip list --outdated
+
+# ====================================================================
+# VIRTUAL ENVIRONMENT
+# ====================================================================
+
+# Always use a virtual environment:
+#   python -m venv venv
+#   source venv/bin/activate  # Linux/Mac
+#   venv\Scripts\activate     # Windows
+#   pip install -r requirements.txt
+
+# ====================================================================

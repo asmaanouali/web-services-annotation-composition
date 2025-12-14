@@ -3,8 +3,7 @@
   "geographic_coverage": [
     "GLOBAL",
     "EU",
-    "US",
-    "ASIA"
+    "US"
   ],
   "location_aware": false,
   "temporal_constraints": [

@@ -4,9 +4,9 @@
   "service_category": "payment",
   "operation_name": "",
   "capabilities": [
-    "Credit Card Payment Processing",
-    "Stripe Integration",
-    "Global Payment Provider"
+    "credit card processing",
+    "transaction management",
+    "fee calculation and handling"
   ],
   "input_parameters": [
     "amount",
@@ -26,18 +26,18 @@
     "processedAt",
     "fees"
   ],
-  "semantic_description": "Processes credit card payments using Stripe's global payment provider with a fee of 2.9% + $0.30.",
+  "semantic_description": "Processes credit card payments with real-time fee calculation and transaction status updates.",
   "keywords": [
-    "stripe payment processing",
-    "credit card payment",
-    "payment gateway",
-    "online payment processing"
+    "Stripe Payment Processing",
+    "Credit Card Processing",
+    "Transaction Management",
+    "Fee Calculation"
   ],
   "required_inputs": [],
   "optional_inputs": [],
   "special_features": {
     "supports_multi_currency": true,
-    "requires_card_details": true,
-    "supports_billing_address": true
+    "requires_card_verification": true,
+    "supports_loyalty_programs": false
   }
 }

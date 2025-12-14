@@ -1,18 +1,15 @@
 {
   "annotation_type": "interaction",
   "compatible_services": [
-    "HotelSearchService",
-    "FlightSearchService",
-    "CruiseSearchService",
-    "PackageSearchService"
+    "BookingService",
+    "PaymentService"
   ],
   "requires_services": [
-    "BookingService",
-    "NotificationService"
+    "BookingConfirmationService"
   ],
   "provides_for_services": [
-    "BookingConfirmationService",
-    "PaymentConfirmationService"
+    "NotificationService",
+    "BookingConfirmationService"
   ],
   "parameter_mappings": [],
   "orchestration_hints": {},
@@ -23,6 +20,6 @@
     "response_time_ms": 1000,
     "availability": 0.0,
     "success_rate": 0.95,
-    "cost_per_call": 0.01
+    "cost_per_call": 0.0
   }
 }

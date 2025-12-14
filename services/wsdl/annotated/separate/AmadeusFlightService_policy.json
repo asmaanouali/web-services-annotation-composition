@@ -53,8 +53,7 @@
     "TLS_1.3",
     "API_KEY",
     "OAUTH2",
-    "PCI-DSS",
-    -2019
+    "PCI-DSS"
   ],
   "compliance_standards": [
     "GDPR",

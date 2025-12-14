@@ -4,10 +4,13 @@
     "HotelSearchService",
     "AirlineSearchService"
   ],
-  "requires_services": [],
-  "provides_for_services": [
+  "requires_services": [
     "BookingService",
     "PaymentService"
+  ],
+  "provides_for_services": [
+    "BookingConfirmationService",
+    "NotificationService"
   ],
   "parameter_mappings": [],
   "orchestration_hints": {},
@@ -18,6 +21,6 @@
     "response_time_ms": 1000,
     "availability": 0.0,
     "success_rate": 0.95,
-    "cost_per_call": 0.01
+    "cost_per_call": 0.0
   }
 }

@@ -4,8 +4,9 @@
   "service_category": "search",
   "operation_name": "",
   "capabilities": [
-    "Flight comparison and deal finding",
-    "Supports multiple airlines and travel dates"
+    "Flight comparison",
+    "Search by multiple parameters (from, to, dates, adults, children, infants)",
+    "Supports direct flights option"
   ],
   "input_parameters": [
     "from",
@@ -23,18 +24,18 @@
     "cheapestPrice",
     "fastestDuration"
   ],
-  "semantic_description": "Compares flight prices across multiple airlines for a given departure and arrival date, including options for different cabin classes and passenger types.",
+  "semantic_description": "Compares flight deals across multiple airlines based on user-specified parameters.",
   "keywords": [
     "flight comparison",
-    "deal finding",
+    "search by date",
     "airline search",
-    "travel dates",
-    "cabin class"
+    "multi-parameter search"
   ],
   "required_inputs": [],
   "optional_inputs": [],
   "special_features": {
     "supports_multi_currency": true,
-    "looyalty_points_integration": false
+    "returns_cheapest_price": true,
+    "returns_fastest_duration": true
   }
 }

@@ -9,8 +9,7 @@
       "can_be_shared": false,
       "compliance_requirements": [
         "GDPR",
-        "PCI-DSS",
-        "SOC2"
+        "PCI-DSS"
       ]
     },
     {
@@ -21,8 +20,18 @@
       "can_be_shared": false,
       "compliance_requirements": [
         "GDPR",
-        "PCI-DSS",
-        "SOC2"
+        "PCI-DSS"
+      ]
+    },
+    {
+      "data_field": "email_address",
+      "privacy_level": "confidential",
+      "retention_days": 90,
+      "encryption_required": true,
+      "can_be_shared": false,
+      "compliance_requirements": [
+        "GDPR",
+        "PCI-DSS"
       ]
     }
   ],
@@ -31,7 +40,7 @@
     "quota_per_day": null,
     "requires_authentication": true,
     "authentication_methods": [],
-    "pricing_model": "free/subscription/pay_per_use",
+    "pricing_model": "pay_per_use",
     "cost_per_request": 0.01,
     "currency": "USD",
     "guaranteed_uptime": 0.99,
@@ -46,8 +55,7 @@
   ],
   "compliance_standards": [
     "GDPR",
-    "PCI-DSS",
-    "SOC2"
+    "PCI-DSS"
   ],
   "usage_restrictions": [],
   "terms_url": null,

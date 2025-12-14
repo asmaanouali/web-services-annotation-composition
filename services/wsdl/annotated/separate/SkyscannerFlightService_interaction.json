@@ -2,7 +2,7 @@
   "annotation_type": "interaction",
   "compatible_services": [
     "HotelSearchService",
-    "AirportSearchService"
+    "AirlineSearchService"
   ],
   "requires_services": [],
   "provides_for_services": [
@@ -18,6 +18,6 @@
     "response_time_ms": 1000,
     "availability": 0.0,
     "success_rate": 0.95,
-    "cost_per_call": 0.0
+    "cost_per_call": 0.01
   }
 }

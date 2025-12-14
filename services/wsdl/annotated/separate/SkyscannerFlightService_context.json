@@ -5,19 +5,17 @@
     "EU",
     "US"
   ],
-  "location_aware": true,
+  "location_aware": false,
   "temporal_constraints": [
-    "24/7_available",
-    "business_hours_only"
+    "24/7_available"
   ],
-  "timezone_support": false,
+  "timezone_support": true,
   "user_preferences": {},
   "network_requirements": {},
   "application_context": {},
   "constraints": [],
   "adaptation_capabilities": [
-    "auto_retry",
-    "fallback_available",
-    "caching_enabled"
+    "caching_enabled",
+    "fallback_available"
   ]
 }

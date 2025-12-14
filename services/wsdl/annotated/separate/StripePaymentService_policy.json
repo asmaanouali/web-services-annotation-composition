@@ -36,6 +36,18 @@
         "PCI-DSS",
         "SOC2"
       ]
+    },
+    {
+      "data_field": "security_code",
+      "privacy_level": "confidential",
+      "retention_days": 90,
+      "encryption_required": true,
+      "can_be_shared": false,
+      "compliance_requirements": [
+        "GDPR",
+        "PCI-DSS",
+        "SOC2"
+      ]
     }
   ],
   "usage_policy": {

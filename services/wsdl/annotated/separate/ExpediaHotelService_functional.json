@@ -5,7 +5,7 @@
   "operation_name": "",
   "capabilities": [
     "Searches for accommodation options with rewards program integration",
-    "Finds properties based on user-defined criteria"
+    "Returns a list of properties matching the search criteria"
   ],
   "input_parameters": [
     "destination",
@@ -20,18 +20,17 @@
     "properties",
     "count"
   ],
-  "semantic_description": "Provides a list of properties matching the user's search criteria, including count and property details",
+  "semantic_description": "Finds and returns a list of properties that match the specified destination, dates, and guest requirements",
   "keywords": [
     "accommodation search",
     "rewards program",
     "property listing",
-    "search by destination",
-    "search by dates"
+    "date-based search"
   ],
   "required_inputs": [],
   "optional_inputs": [],
   "special_features": {
-    "supports_multi_currency": true,
-    "loyalty_points_integration": true
+    "supports_multi_currency": false,
+    "loyalty_points": true
   }
 }

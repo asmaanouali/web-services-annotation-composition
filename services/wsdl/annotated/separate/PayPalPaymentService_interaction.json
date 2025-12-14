@@ -1,8 +1,8 @@
 {
   "annotation_type": "interaction",
   "compatible_services": [
-    "BookingService",
-    "HotelSearchService"
+    "HotelSearchService",
+    "FlightSearchService"
   ],
   "requires_services": [
     "BookingService"

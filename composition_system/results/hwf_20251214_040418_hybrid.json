@@ -1,0 +1,39 @@
+{
+  "workflow_id": "hwf_20251214_040418",
+  "goal": "enhanced_travel_booking",
+  "success": false,
+  "created_at": "2025-12-14T04:04:18.617833",
+  "total_classic_steps": 2,
+  "total_llm_steps": 2,
+  "total_hybrid_steps": 0,
+  "avg_execution_time": 26469.5,
+  "steps": [
+    {
+      "step_number": 1,
+      "step_type": "llm",
+      "description": "Service LLM: recommendation.analyze_preferences",
+      "execution_time_ms": 25423
+    },
+    {
+      "step_number": 2,
+      "step_type": "classic",
+      "description": "Service classique: search",
+      "execution_time_ms": 1
+    },
+    {
+      "step_number": 4,
+      "step_type": "classic",
+      "description": "Service classique: payment",
+      "execution_time_ms": 0
+    },
+    {
+      "step_number": 5,
+      "step_type": "llm",
+      "description": "Service LLM: summary.generate_summary",
+      "execution_time_ms": 80454
+    }
+  ],
+  "errors": [
+    "Erreur étape 3: 'category'"
+  ]
+}

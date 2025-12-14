@@ -1,0 +1,110 @@
+{
+  "workflow_id": "iwf_20251214_040231",
+  "goal": "book_complete_travel",
+  "success": true,
+  "created_at": "2025-12-14T04:02:31.361790",
+  "avg_service_score": 0.8305533333333334,
+  "avg_mapping_coverage": 0.1111111111111111,
+  "total_missing_params": 24,
+  "user_context": {
+    "location": "EU",
+    "mission_critical": true,
+    "needs_multi_currency": true,
+    "needs_24_7": true,
+    "budget_conscious": false
+  },
+  "constraints": {
+    "max_cost": 0.05,
+    "min_quality": 0.9
+  },
+  "steps": [
+    {
+      "step_number": 1,
+      "category": "search",
+      "selected_service": "SkyscannerFlightService",
+      "service_score": {
+        "total": 0.805,
+        "functional": 0.85,
+        "quality": 0.7749999999999999,
+        "cost": 0.8,
+        "context": 0.8
+      },
+      "reasons": [
+        "Excellentes capacités fonctionnelles (4 capacités)",
+        "Support multi-devises",
+        "Conforme RGPD",
+        "Certifié PCI-DSS (sécurité paiement)"
+      ],
+      "mapping_coverage": 0.1111111111111111,
+      "missing_parameters": [
+        "from",
+        "to",
+        "outboundDate",
+        "inboundDate",
+        "children",
+        "infants",
+        "cabinClass",
+        "directFlightsOnly"
+      ]
+    },
+    {
+      "step_number": 2,
+      "category": "search",
+      "selected_service": "SkyscannerFlightService",
+      "service_score": {
+        "total": 0.805,
+        "functional": 0.85,
+        "quality": 0.7749999999999999,
+        "cost": 0.8,
+        "context": 0.8
+      },
+      "reasons": [
+        "Excellentes capacités fonctionnelles (4 capacités)",
+        "Support multi-devises",
+        "Conforme RGPD",
+        "Certifié PCI-DSS (sécurité paiement)"
+      ],
+      "mapping_coverage": 0.1111111111111111,
+      "missing_parameters": [
+        "from",
+        "to",
+        "outboundDate",
+        "inboundDate",
+        "children",
+        "infants",
+        "cabinClass",
+        "directFlightsOnly"
+      ]
+    },
+    {
+      "step_number": 3,
+      "category": "payment",
+      "selected_service": "StripePaymentService",
+      "service_score": {
+        "total": 0.88166,
+        "functional": 0.85,
+        "quality": 0.96665,
+        "cost": 0.8,
+        "context": 0.8
+      },
+      "reasons": [
+        "Excellentes capacités fonctionnelles (4 capacités)",
+        "Haute qualité de service (taux de succès: 93%)",
+        "Support multi-devises",
+        "Conforme RGPD",
+        "Certifié PCI-DSS (sécurité paiement)"
+      ],
+      "mapping_coverage": 0.1111111111111111,
+      "missing_parameters": [
+        "amount",
+        "cardNumber",
+        "expiryMonth",
+        "expiryYear",
+        "cvv",
+        "cardHolderName",
+        "billingAddress",
+        "merchantReference"
+      ]
+    }
+  ]
+}

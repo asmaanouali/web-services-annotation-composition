@@ -5,7 +5,7 @@
     "EU",
     "US"
   ],
-  "location_aware": true,
+  "location_aware": false,
   "temporal_constraints": [
     "24/7_available",
     "business_hours_only"
@@ -16,8 +16,7 @@
   "application_context": {},
   "constraints": [],
   "adaptation_capabilities": [
-    "auto_retry",
-    "fallback_available",
-    "caching_enabled"
+    "caching_enabled",
+    "fallback_available"
   ]
 }

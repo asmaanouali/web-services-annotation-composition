@@ -14,7 +14,7 @@
       ]
     },
     {
-      "data_field": "email_address",
+      "data_field": "credit_card_number",
       "privacy_level": "confidential",
       "retention_days": 90,
       "encryption_required": true,
@@ -26,7 +26,7 @@
       ]
     },
     {
-      "data_field": "credit_card_number",
+      "data_field": "email_address",
       "privacy_level": "confidential",
       "retention_days": 90,
       "encryption_required": true,

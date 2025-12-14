@@ -4,9 +4,9 @@
   "service_category": "payment",
   "operation_name": "",
   "capabilities": [
-    "processes online payments",
-    "supports buyer protection",
-    "includes transaction fees calculation"
+    "Credit card payment processing",
+    "Buyer protection",
+    "Order management"
   ],
   "input_parameters": [
     "totalAmount",
@@ -22,16 +22,17 @@
     "processingFee",
     "buyerProtection"
   ],
-  "semantic_description": "This service enables the charging of PayPal accounts with specified details and retrieves payment information.",
+  "semantic_description": "This service enables the charging of a PayPal account with specified details and retrieves the payment status, including buyer protection information.",
   "keywords": [
-    "online payment processing",
-    "buyer protection",
-    "transaction fee calculation"
+    "PayPal payment processing",
+    "Transaction management",
+    "Buyer protection services"
   ],
   "required_inputs": [],
   "optional_inputs": [],
   "special_features": {
     "supports_multi_currency": true,
-    "includes_buyer_protection": true
+    "loyalty_points": false,
+    "buyer_protection": true
   }
 }

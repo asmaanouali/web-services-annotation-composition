@@ -4,8 +4,9 @@
   "service_category": "information",
   "operation_name": "",
   "capabilities": [
-    "Retrieves weather forecast data",
-    "Validates input parameters for accuracy"
+    "Provides weather forecast data",
+    "Supports location-based queries",
+    "Handles date-based query parameters"
   ],
   "input_parameters": [
     "location",
@@ -16,18 +17,18 @@
     "forecasts",
     "location"
   ],
-  "semantic_description": "Provides accurate weather predictions based on location and date range",
+  "semantic_description": "Retrieves accurate weather forecasts for a specified location within a given date range.",
   "keywords": [
     "weather forecast",
     "location-based",
-    "date-range-based",
-    "weather prediction"
+    "date-based",
+    "weather data"
   ],
   "required_inputs": [],
   "optional_inputs": [],
   "special_features": {
     "supports_multi_currency": false,
-    "returns_location_info": true,
-    "uses_date_range_validation": true
+    "loyalty_points": false,
+    "supports_multiple_locations": true
   }
 }
