@@ -1,0 +1,10 @@
+ollama:
+  base_url: "http://localhost:11434"
+  model: "llama2"
+  timeout: 60
+
+scoring:
+  interaction_weight: 0.3
+  success_rate_weight: 0.3
+  response_time_weight: 0.2
+  context_weight: 0.2
