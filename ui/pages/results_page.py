@@ -5,7 +5,7 @@ import json
 def render():
     st.header("📊 Résultats de la composition")
 
-    if not st.session_state.composition_results:
+    if not st.session_state.get('composition_results'):
         st.info("ℹ️ Aucune composition exécutée pour le moment")
         return
 
@@ -132,29 +132,30 @@ def render():
         df_classic = pd.DataFrame(classic_results)
         df_intel = pd.DataFrame(intelligent_results)
 
-        # Tableau de comparaison
+        # Tableau de comparaison - Version simplifiée sans styling
         st.markdown("### 🔄 Services sélectionnés")
         
-        comparison_df = pd.DataFrame({
-            "Étape": df_classic["step"],
-            "Fonction": df_classic["needed_function"],
-            "Service (Classique)": df_classic["selected_service"],
-            "Opération (Classique)": df_classic["selected_operation"],
-            "Service (Intelligent)": df_intel["selected_service"],
-            "Opération (Intelligent)": df_intel["selected_operation"],
-            "Score LLM": df_intel["score"].round(2)
-        })
-
-        # Mettre en évidence les différences
-        def highlight_differences(row):
-            colors = [''] * len(row)
-            if row['Service (Classique)'] != row['Service (Intelligent)']:
-                colors[2] = 'background-color: #ffcccc'  # Classique en rouge clair
-                colors[4] = 'background-color: #ccffcc'  # Intelligent en vert clair
-            return colors
-
-        styled_df = comparison_df.style.apply(highlight_differences, axis=1)
-        st.dataframe(styled_df, use_container_width=True)
+        comparison_data = []
+        for i in range(len(df_classic)):
+            classic_row = df_classic.iloc[i]
+            intel_row = df_intel.iloc[i]
+            
+            is_different = classic_row['selected_service'] != intel_row['selected_service']
+            
+            comparison_data.append({
+                "Étape": classic_row["step"],
+                "Fonction": classic_row["needed_function"],
+                "Service (Classique)": classic_row["selected_service"] + (" 🔴" if is_different else ""),
+                "Opération (Classique)": classic_row["selected_operation"],
+                "Service (Intelligent)": intel_row["selected_service"] + (" 🟢" if is_different else ""),
+                "Opération (Intelligent)": intel_row["selected_operation"],
+                "Score LLM": round(intel_row["score"], 2)
+            })
+        
+        comparison_df = pd.DataFrame(comparison_data)
+        st.dataframe(comparison_df, use_container_width=True)
+        
+        st.caption("🔴 = Choix classique • 🟢 = Choix intelligent (quand différents)")
 
         # Métriques de performance
         st.markdown("### ⚡ Performance")
@@ -178,7 +179,7 @@ def render():
         )
         col3.metric(
             "Gain de performance", 
-            f"{int(gain)} ms ({gain_percent:+.1f}%)",
+            f"{int(gain)} ms",
             delta=f"{gain_percent:+.1f}%",
             help="Différence de temps d'exécution"
         )
@@ -254,7 +255,7 @@ def render():
             
             st.download_button(
                 label="💾 Télécharger JSON",
-                data=json.dumps(export_data, indent=2),
+                data=json.dumps(export_data, indent=2, ensure_ascii=False),
                 file_name="composition_results.json",
                 mime="application/json"
             )

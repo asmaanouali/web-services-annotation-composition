@@ -194,7 +194,6 @@ def annotate_all_services(services):
     progress.empty()
     
     st.success("✅ Tous les services ont été annotés!")
-    st.balloons()
     time.sleep(2)
     st.rerun()
 

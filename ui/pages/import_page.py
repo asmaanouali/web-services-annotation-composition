@@ -10,7 +10,7 @@ def render():
     📋 **Détection intelligente en 2 étapes avec LLM**
     
     1. 🔍 **Détection libre** : Le LLM identifie toutes les fonctionnalités du service
-    2. 🔄 **Normalisation** : Regroupement en catégories génériques (ex: stripe payment, paypal payment → payment)
+    2. 🔄 **Normalisation** : Regroupement en catégories génériques
     """)
     
     # Vérifier la disponibilité d'Ollama
@@ -22,7 +22,7 @@ def render():
     ollama_status = parser.is_ollama_available()
     
     if ollama_status:
-        st.success("🟢 Ollama connecté - Détection + Normalisation LLM activées")
+        st.success("🟢 Ollama connecté")
     else:
         st.warning("⚠️ Ollama non disponible - Détection et normalisation de fallback seront utilisées")
     
@@ -114,48 +114,3 @@ def render():
     else:
         st.info("👆 Uploadez des fichiers WSDL pour commencer")
     
-    # Explication technique
-    with st.expander("ℹ️ Comment fonctionne la détection en 2 étapes ?"):
-        st.markdown("""
-        ### Processus intelligent de catégorisation
-        
-        **ÉTAPE 1 : Détection libre 🔍**
-        - Le LLM analyse le nom du service et les opérations
-        - Identifie toutes les fonctionnalités de manière libre et détaillée
-        - Pas de limitation de domaine
-        
-        Exemple de détection :
-        ```
-        Service: PaymentGatewayService
-        Opérations: processStripePayment, processPayPalPayment, validateCreditCard
-        
-        Détections: ["stripe payment processing", "paypal payment", "credit card validation"]
-        ```
-        
-        **ÉTAPE 2 : Normalisation 🔄**
-        - Le LLM regroupe les fonctionnalités similaires
-        - Supprime les noms de vendors/plateformes
-        - Garde uniquement la fonction générique
-        
-        Exemple de normalisation :
-        ```
-        Avant: ["stripe payment processing", "paypal payment", "credit card validation"]
-        Après: ["payment"]
-        ```
-        
-        **Autres exemples :**
-        - `hotel booking`, `flight booking` → `booking`
-        - `email notification`, `SMS sending` → `notification`
-        - `oauth login`, `google authentication` → `authentication`
-        - `android app`, `ios app` → `mobile application`
-        
-        **Avantages :**
-        ✅ Évite les doublons (stripe payment vs paypal payment)
-        ✅ Facilite la recherche de services par fonction
-        ✅ Catégorisation cohérente et générique
-        ✅ Composition plus simple et intelligente
-        
-        **Fallback intelligent :**
-        Si Ollama n'est pas disponible, le système utilise des règles de normalisation
-        prédéfinies pour catégoriser les fonctionnalités.
-        """)

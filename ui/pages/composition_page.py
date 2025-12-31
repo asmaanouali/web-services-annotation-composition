@@ -122,14 +122,6 @@ def render():
     if st.session_state.composition_steps:
         st.divider()
         
-        st.markdown("""
-        ### 🎯 Méthodes de composition
-        
-        | Méthode | Critères de sélection | Utilise annotations |
-        |---------|----------------------|---------------------|
-        | **Classique** | Ordre alphabétique, disponibilité | ❌ Non |
-        | **Intelligente** | Score LLM, historique, contexte, QoS | ✅ Oui |
-        """)
         
         col_a, col_b, col_c = st.columns(3)
         
