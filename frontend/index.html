@@ -1090,34 +1090,59 @@
         }
 
         function displayServices(services) {
-            const list = document.getElementById('services-list');
-            
-            if (services.length === 0) {
-                list.innerHTML = '<p style="text-align: center; color: #666; padding: 60px; font-style: italic;">Aucun service disponible</p>';
-                return;
-            }
+    const list = document.getElementById('services-list');
+    
+    if (services.length === 0) {
+        list.innerHTML = '<p style="text-align: center; color: #666; padding: 60px; font-style: italic;">Aucun service disponible</p>';
+        return;
+    }
 
-            list.innerHTML = services.map(s => `
-                <div class="service-item">
-                    <div class="service-id">${s.id}</div>
-                    <div class="service-meta">
-                        <strong>Paramètres:</strong> ${s.inputs.length} entrées, ${s.outputs.length} sorties
-                    </div>
-                    <div class="service-meta" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e8e8e8;">
-                        <strong>QoS:</strong><br>
-                        ResponseTime: ${s.qos.ResponseTime.toFixed(1)} | 
-                        Availability: ${s.qos.Availability.toFixed(1)}% | 
-                        Throughput: ${s.qos.Throughput.toFixed(1)}<br>
-                        Successability: ${s.qos.Successability.toFixed(1)}% | 
-                        Reliability: ${s.qos.Reliability.toFixed(1)}% | 
-                        Compliance: ${s.qos.Compliance.toFixed(1)}%<br>
-                        BestPractices: ${s.qos.BestPractices.toFixed(1)}% | 
-                        Latency: ${s.qos.Latency.toFixed(1)} | 
-                        Documentation: ${s.qos.Documentation.toFixed(1)}%
-                    </div>
-                </div>
-            `).join('');
-        }
+    // Si plus de 1000 services, afficher seulement un résumé
+    if (services.length > 1000) {
+        list.innerHTML = `
+            <div style="text-align: center; padding: 40px;">
+                <h3 style="color: #1a3a52; margin-bottom: 20px;">
+                    ${services.length} services chargés avec succès
+                </h3>
+                <p style="color: #666; margin-bottom: 15px;">
+                    Trop de services pour afficher la liste complète.
+                </p>
+                <p style="color: #666;">
+                    Les services sont disponibles pour l'annotation et la composition.
+                </p>
+            </div>
+        `;
+        return;
+    }
+
+    // Afficher jusqu'à 500 services
+    const servicesToDisplay = services.slice(0, 500);
+    const remaining = services.length - servicesToDisplay.length;
+
+    list.innerHTML = servicesToDisplay.map(s => `
+        <div class="service-item">
+            <div class="service-id">${s.id}</div>
+            <div class="service-meta">
+                <strong>Paramètres:</strong> ${s.inputs.length} entrées, ${s.outputs.length} sorties
+            </div>
+            <div class="service-meta" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e8e8e8;">
+                <strong>QoS:</strong><br>
+                ResponseTime: ${s.qos.ResponseTime.toFixed(1)} | 
+                Availability: ${s.qos.Availability.toFixed(1)}% | 
+                Reliability: ${s.qos.Reliability.toFixed(1)}%
+            </div>
+        </div>
+    `).join('');
+
+    if (remaining > 0) {
+        list.innerHTML += `
+            <div style="text-align: center; padding: 30px; background: #f0f4f8; border: 1px solid #d0d0d0; margin-top: 10px;">
+                <strong style="color: #1a3a52;">+ ${remaining} autres services non affichés</strong><br>
+                <span style="color: #666; font-size: 12px;">Total: ${services.length} services disponibles</span>
+            </div>
+        `;
+    }
+}
 
         async function startAnnotation() {
             // Vérifier qu'il y a des services

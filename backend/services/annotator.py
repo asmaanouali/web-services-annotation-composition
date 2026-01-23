@@ -1,13 +1,22 @@
 """
 Module d'annotation automatique des services web
-Basé sur le modèle MOF-based Social Web Services
-Utilise un LLM pour générer des annotations intelligentes
+Basé sur le modèle MOF-based Social Web Services Description Metamodel
+Référence: Benna, A., Maamar, Z., & Nacer, M. A. (2016)
 """
 
 import random
 import json
 import requests
-from models.annotation import ServiceAnnotation, InteractionAnnotation, ContextAnnotation, PolicyAnnotation
+from datetime import datetime
+from models.annotation import (
+    ServiceAnnotation, 
+    SNAssociation, 
+    SNAssociationType,
+    SNAssociationWeight,
+    InteractionAnnotation, 
+    ContextAnnotation, 
+    PolicyAnnotation
+)
 
 
 class ServiceAnnotator:
@@ -19,17 +28,22 @@ class ServiceAnnotator:
     
     def annotate_service(self, service, use_llm=False, annotation_types=None):
         """
-        Annote un service avec les types d'annotations sélectionnés
+        Annote un service selon le modèle MOF-based Social Web Services
         
         Args:
             service: Service à annoter
-            use_llm: Utiliser le LLM pour les annotations
+            use_llm: Utiliser le LLM pour les annotations intelligentes
             annotation_types: Liste des types ('interaction', 'context', 'policy')
         """
         if annotation_types is None:
             annotation_types = ['interaction', 'context', 'policy']
         
-        annotation = ServiceAnnotation()
+        # Créer l'annotation basée sur le modèle S-WSDL
+        annotation = ServiceAnnotation(service.id)
+        
+        # Configurer le nœud social principal
+        annotation.social_node.node_type = "WebService"
+        annotation.social_node.state = "active"
         
         if use_llm:
             # Utiliser le LLM pour générer les annotations
@@ -45,18 +59,154 @@ class ServiceAnnotator:
             if 'policy' in annotation_types:
                 annotation.policy = self._generate_policy_annotations(service)
         
-        # Propriétés sociales (toujours calculées)
-        annotation.trust_degree = self._calculate_trust(service)
-        annotation.reputation = self._calculate_reputation(service)
-        annotation.collaboration_weight = self._find_collaborations(service)
-        annotation.robustness_score = self._calculate_robustness(service)
+        # Calculer les propriétés du nœud social (Node Degree)
+        self._calculate_social_properties(service, annotation)
+        
+        # Construire les associations sociales (SNAssociation)
+        self._build_social_associations(service, annotation)
         
         service.annotations = annotation
         return service
     
+    def _calculate_social_properties(self, service, annotation):
+        """Calcule les propriétés sociales du nœud (Node Degree)"""
+        # Trust Degree
+        trust = (
+            service.qos.reliability * 0.3 +
+            service.qos.successability * 0.3 +
+            service.qos.availability * 0.2 +
+            service.qos.compliance * 0.2
+        ) / 100.0
+        annotation.social_node.trust_degree.value = min(max(trust, 0.0), 1.0)
+        
+        # Reputation
+        reputation = (
+            service.qos.best_practices * 0.4 +
+            service.qos.documentation * 0.3 +
+            service.qos.compliance * 0.3
+        ) / 100.0
+        annotation.social_node.reputation.value = min(max(reputation, 0.0), 1.0)
+        
+        # Cooperativeness (basé sur la fiabilité et disponibilité)
+        cooperativeness = (
+            service.qos.reliability * 0.5 +
+            service.qos.availability * 0.5
+        ) / 100.0
+        annotation.social_node.cooperativeness.value = min(max(cooperativeness, 0.0), 1.0)
+        
+        # Ajouter des propriétés supplémentaires
+        annotation.social_node.add_property("robustness_score", 
+            (service.qos.reliability * 0.4 + service.qos.availability * 0.3 + 
+             service.qos.successability * 0.3) / 100.0
+        )
+    
+    def _build_social_associations(self, service, annotation):
+        """Construit les associations sociales (SNAssociation) selon le modèle MOF"""
+        
+        # 1. Associations de collaboration
+        for other in self.services:
+            if other.id == service.id:
+                continue
+            
+            # Vérifier la compatibilité des IO
+            io_match = len(set(service.outputs) & set(other.inputs))
+            if io_match > 0:
+                # Calculer le poids de collaboration
+                weight = self._calculate_collaboration_weight(service, other)
+                
+                if weight > 0.3:  # Seuil minimum
+                    # Créer l'association de collaboration
+                    assoc = SNAssociation()
+                    assoc.source_node = service.id
+                    assoc.target_node = other.id
+                    
+                    # Configurer le type d'association
+                    assoc.association_type.type_name = "collaboration"
+                    assoc.association_type.is_symmetric = False
+                    assoc.association_type.supports_transitivity = True
+                    assoc.association_type.temporal_aspect = "permanent"
+                    
+                    # Configurer le poids
+                    assoc.association_weight.prop_name = "collaboration_weight"
+                    assoc.association_weight.value = weight
+                    assoc.association_weight.calculation_method = "combined"
+                    
+                    # Ajouter l'association
+                    annotation.social_node.associations.append(assoc)
+                    annotation.interaction.collaboration_associations.append(other.id)
+                    annotation.interaction.can_call.append(other.id)
+        
+        # 2. Associations de substitution
+        for other in self.services:
+            if other.id == service.id:
+                continue
+            
+            # Vérifier la similarité des outputs (≥70%)
+            common_outputs = set(service.outputs) & set(other.outputs)
+            if len(common_outputs) >= len(service.outputs) * 0.7:
+                # Calculer le score de robustesse
+                robustness_weight = self._calculate_robustness_similarity(service, other)
+                
+                # Créer l'association de substitution
+                assoc = SNAssociation()
+                assoc.source_node = service.id
+                assoc.target_node = other.id
+                
+                assoc.association_type.type_name = "substitution"
+                assoc.association_type.is_symmetric = True
+                assoc.association_type.supports_transitivity = False
+                assoc.association_type.temporal_aspect = "upon_request"
+                
+                assoc.association_weight.prop_name = "robustness_weight"
+                assoc.association_weight.value = robustness_weight
+                
+                annotation.social_node.associations.append(assoc)
+                annotation.interaction.substitution_associations.append(other.id)
+                annotation.interaction.substitutes.append(other.id)
+        
+        # 3. Associations de dépendance
+        for other in self.services:
+            if other.id == service.id:
+                continue
+            
+            # Vérifier si nos inputs viennent de ses outputs
+            if any(inp in other.outputs for inp in service.inputs):
+                annotation.interaction.depends_on.append(other.id)
+    
+    def _calculate_collaboration_weight(self, service1, service2):
+        """Calcule le poids de collaboration selon le modèle MOF"""
+        # Compatibilité des inputs/outputs (0-1)
+        io_match = len(set(service1.outputs) & set(service2.inputs)) / max(len(service2.inputs), 1)
+        
+        # Similarité des QoS (0-1)
+        qos_similarity = 1 - abs(service1.qos.reliability - service2.qos.reliability) / 100
+        
+        # Trust degree (si annotations existent)
+        trust_factor = 1.0
+        if hasattr(service2, 'annotations') and service2.annotations:
+            trust_factor = service2.annotations.social_node.trust_degree.value
+        
+        # Poids final combiné
+        weight = (io_match * 0.5 + qos_similarity * 0.3 + trust_factor * 0.2)
+        
+        return min(max(weight, 0.0), 1.0)
+    
+    def _calculate_robustness_similarity(self, service1, service2):
+        """Calcule le score de robustesse pour la substitution"""
+        # Similarité de fiabilité
+        reliability_sim = 1 - abs(service1.qos.reliability - service2.qos.reliability) / 100
+        
+        # Similarité de disponibilité
+        availability_sim = 1 - abs(service1.qos.availability - service2.qos.availability) / 100
+        
+        # Score combiné
+        robustness = (reliability_sim * 0.5 + availability_sim * 0.5)
+        
+        return min(max(robustness, 0.0), 1.0)
+    
     def _annotate_with_llm(self, service, annotation_types):
         """Utilise le LLM pour générer des annotations intelligentes"""
-        annotation = ServiceAnnotation()
+        annotation = ServiceAnnotation(service.id)
         
         # Préparer le contexte du service
         service_context = {
@@ -67,8 +217,7 @@ class ServiceAnnotator:
                 'reliability': service.qos.reliability,
                 'availability': service.qos.availability,
                 'response_time': service.qos.response_time,
-                'compliance': service.qos.compliance,
-                'security': service.qos.best_practices
+                'compliance': service.qos.compliance
             }
         }
         
@@ -99,18 +248,18 @@ class ServiceAnnotator:
                         'match_score': io_match
                     })
         
-        prompt = f"""Analyze this web service and determine its interaction characteristics:
+        prompt = f"""Analyze this web service and determine its role in a service composition:
 
 Service ID: {service.id}
-Number of inputs: {len(service.inputs)}
-Number of outputs: {len(service.outputs)}
+Inputs: {len(service.inputs)}
+Outputs: {len(service.outputs)}
 QoS Reliability: {service.qos.reliability}%
-Compatible services found: {len(compatible_services)}
+Compatible services: {len(compatible_services)}
 
-Based on this information, respond ONLY with a JSON object (no markdown, no explanation):
+Respond ONLY with JSON (no markdown):
 {{
   "role": "orchestrator" or "worker" or "aggregator",
-  "can_call_count": number of services this can call (0-{len(compatible_services)}),
+  "can_call_count": number (0-{min(len(compatible_services), 5)}),
   "collaboration_level": "high" or "medium" or "low"
 }}
 """
@@ -132,12 +281,7 @@ Based on this information, respond ONLY with a JSON object (no markdown, no expl
                 can_call_count = min(data.get('can_call_count', 3), len(compatible_services))
                 top_compatible = sorted(compatible_services, key=lambda x: x['match_score'], reverse=True)
                 interaction.can_call = [s['id'] for s in top_compatible[:can_call_count]]
-                
-                # Trouver les dépendances
-                for other in self.services:
-                    if other.id != service.id:
-                        if any(inp in other.outputs for inp in service.inputs):
-                            interaction.depends_on.append(other.id)
+                interaction.collaboration_associations = interaction.can_call.copy()
                 
                 # Simuler l'historique
                 interaction.collaboration_history = {
@@ -145,7 +289,6 @@ Based on this information, respond ONLY with a JSON object (no markdown, no expl
                     for svc_id in interaction.can_call[:5]
                 }
             else:
-                # Fallback à la méthode classique
                 interaction = self._generate_interaction_annotations(service)
         
         except Exception as e:
@@ -161,12 +304,12 @@ Based on this information, respond ONLY with a JSON object (no markdown, no expl
         prompt = f"""Analyze this web service's contextual characteristics:
 
 Service: {service.id}
-QoS Metrics:
+QoS:
 - Availability: {service.qos.availability}%
 - Response Time: {service.qos.response_time}ms
 - Reliability: {service.qos.reliability}%
 
-Respond ONLY with JSON (no markdown):
+Respond ONLY with JSON:
 {{
   "context_aware": true or false,
   "location_sensitive": true or false,
@@ -184,7 +327,7 @@ Respond ONLY with JSON (no markdown):
                 ctx.location_sensitive = data.get('location_sensitive', False)
                 ctx.time_critical = data.get('time_critical', 'medium')
                 
-                # Déterminer le nombre d'interactions basé sur la fréquence
+                # Déterminer le nombre d'interactions
                 freq = data.get('usage_frequency', 'medium')
                 if freq == 'high':
                     ctx.interaction_count = random.randint(200, 500)
@@ -194,6 +337,7 @@ Respond ONLY with JSON (no markdown):
                     ctx.interaction_count = random.randint(10, 50)
                 
                 ctx.usage_patterns = ["peak_hours_morning", "business_days"]
+                ctx.last_used = datetime.now().isoformat()
                 
                 if service.qos.compliance > 80:
                     ctx.environmental_requirements = ["secure_network", "vpn"]
@@ -210,14 +354,14 @@ Respond ONLY with JSON (no markdown):
         """Génère les annotations de politiques avec le LLM"""
         policy = PolicyAnnotation()
         
-        prompt = f"""Analyze this web service's policy and compliance requirements:
+        prompt = f"""Analyze this web service's policy requirements:
 
 Service: {service.id}
-QoS Compliance Score: {service.qos.compliance}%
-QoS Best Practices: {service.qos.best_practices}%
+QoS Compliance: {service.qos.compliance}%
+Best Practices: {service.qos.best_practices}%
 Reliability: {service.qos.reliability}%
 
-Respond ONLY with JSON (no markdown):
+Respond ONLY with JSON:
 {{
   "gdpr_compliant": true or false,
   "security_level": "high" or "medium" or "low",
@@ -285,7 +429,6 @@ Respond ONLY with JSON (no markdown):
     def _extract_json(self, text):
         """Extrait du JSON d'une réponse texte"""
         try:
-            # Chercher du JSON dans la réponse
             start = text.find('{')
             end = text.rfind('}') + 1
             
@@ -300,15 +443,6 @@ Respond ONLY with JSON (no markdown):
     def annotate_all(self, service_ids=None, use_llm=False, annotation_types=None, progress_callback=None):
         """
         Annote les services sélectionnés
-        
-        Args:
-            service_ids: Liste des IDs de services à annoter (None = tous)
-            use_llm: Utiliser le LLM
-            annotation_types: Types d'annotations à générer
-            progress_callback: Callback pour la progression
-        
-        Returns:
-            Liste des services annotés
         """
         if annotation_types is None:
             annotation_types = ['interaction', 'context', 'policy']
@@ -332,11 +466,9 @@ Respond ONLY with JSON (no markdown):
         return annotated
     
     def _generate_interaction_annotations(self, service):
-        """Génère les annotations d'interaction"""
+        """Génère les annotations d'interaction (fallback classique)"""
         interaction = InteractionAnnotation()
         
-        # Trouver les services qui peuvent être appelés
-        # (ceux dont les inputs sont dans nos outputs)
         for other in self.services:
             if other.id == service.id:
                 continue
@@ -344,6 +476,7 @@ Respond ONLY with JSON (no markdown):
             # Peut appeler si nos outputs matchent ses inputs
             if any(out in other.inputs for out in service.outputs):
                 interaction.can_call.append(other.id)
+                interaction.collaboration_associations.append(other.id)
             
             # Dépend de si nos inputs viennent de ses outputs
             if any(inp in other.outputs for inp in service.inputs):
@@ -357,32 +490,21 @@ Respond ONLY with JSON (no markdown):
         else:
             interaction.role = "worker"
         
-        # Simuler un historique de collaboration
+        # Historique de collaboration
         interaction.collaboration_history = {
             svc_id: random.randint(1, 100)
             for svc_id in interaction.can_call[:5]
         }
         
-        # Trouver des substituts (services avec outputs similaires)
-        for other in self.services:
-            if other.id == service.id:
-                continue
-            
-            common_outputs = set(service.outputs) & set(other.outputs)
-            if len(common_outputs) >= len(service.outputs) * 0.7:  # 70% de similarité
-                interaction.substitutes.append(other.id)
-        
         return interaction
     
     def _generate_context_annotations(self, service):
-        """Génère les annotations de contexte"""
+        """Génère les annotations de contexte (fallback classique)"""
         context = ContextAnnotation()
         
-        # Déterminer le contexte basé sur les QoS et les paramètres
         context.context_aware = service.qos.availability > 95
         context.location_sensitive = random.choice([True, False])
         
-        # Criticité basée sur le temps de réponse
         if service.qos.response_time < 50:
             context.time_critical = "low"
         elif service.qos.response_time < 200:
@@ -390,33 +512,22 @@ Respond ONLY with JSON (no markdown):
         else:
             context.time_critical = "high"
         
-        # Simuler l'historique d'utilisation
         context.interaction_count = random.randint(10, 500)
+        context.last_used = datetime.now().isoformat()
+        context.usage_patterns = ["peak_hours_morning", "business_days"]
         
-        # Patterns d'utilisation
-        context.usage_patterns = [
-            "peak_hours_morning",
-            "business_days",
-            "batch_processing"
-        ]
-        
-        # Exigences environnementales
         if service.qos.compliance > 80:
             context.environmental_requirements = ["secure_network", "vpn"]
         
         return context
     
     def _generate_policy_annotations(self, service):
-        """Génère les annotations de politiques"""
+        """Génère les annotations de politiques (fallback classique)"""
         policy = PolicyAnnotation()
         
-        # Conformité GDPR basée sur le niveau de compliance
         policy.gdpr_compliant = service.qos.compliance > 70
-        
-        # Rétention des données
         policy.data_retention_days = random.choice([30, 60, 90, 180, 365])
         
-        # Niveau de sécurité basé sur les QoS
         if service.qos.reliability > 90:
             policy.security_level = "high"
         elif service.qos.reliability > 70:
@@ -424,20 +535,13 @@ Respond ONLY with JSON (no markdown):
         else:
             policy.security_level = "low"
         
-        # Politique de confidentialité
-        policy.privacy_policy = random.choice([
-            "encrypted",
-            "anonymized",
-            "encrypted_and_anonymized"
-        ])
+        policy.privacy_policy = random.choice(["encrypted", "anonymized", "encrypted_and_anonymized"])
         
-        # Standards de conformité
         if service.qos.compliance > 85:
             policy.compliance_standards = ["ISO27001", "SOC2"]
         elif service.qos.compliance > 70:
             policy.compliance_standards = ["ISO27001"]
         
-        # Classification des données
         if service.qos.compliance > 85:
             policy.data_classification = "confidential"
         elif service.qos.compliance > 70:
@@ -448,66 +552,3 @@ Respond ONLY with JSON (no markdown):
         policy.encryption_required = policy.security_level == "high"
         
         return policy
-    
-    def _calculate_trust(self, service):
-        """Calcule le degré de confiance basé sur les QoS"""
-        # Moyenne pondérée des QoS
-        trust = (
-            service.qos.reliability * 0.3 +
-            service.qos.successability * 0.3 +
-            service.qos.availability * 0.2 +
-            service.qos.compliance * 0.2
-        ) / 100.0
-        
-        return min(max(trust, 0.0), 1.0)
-    
-    def _calculate_reputation(self, service):
-        """Calcule la réputation basée sur les QoS et les best practices"""
-        reputation = (
-            service.qos.best_practices * 0.4 +
-            service.qos.documentation * 0.3 +
-            service.qos.compliance * 0.3
-        ) / 100.0
-        
-        return min(max(reputation, 0.0), 1.0)
-    
-    def _find_collaborations(self, service):
-        """Trouve les poids de collaboration avec d'autres services"""
-        collaborations = {}
-        
-        for other in self.services:
-            if other.id == service.id:
-                continue
-            
-            # Calculer un poids de collaboration basé sur la compatibilité
-            weight = self._calculate_collaboration_weight(service, other)
-            
-            if weight > 0.3:  # Seuil minimum
-                collaborations[other.id] = weight
-        
-        # Garder seulement les top 10
-        sorted_collab = sorted(collaborations.items(), key=lambda x: x[1], reverse=True)
-        return dict(sorted_collab[:10])
-    
-    def _calculate_collaboration_weight(self, service1, service2):
-        """Calcule le poids de collaboration entre deux services"""
-        # Compatibilité des inputs/outputs
-        io_match = len(set(service1.outputs) & set(service2.inputs)) / max(len(service2.inputs), 1)
-        
-        # Similarité des QoS
-        qos_similarity = 1 - abs(service1.qos.reliability - service2.qos.reliability) / 100
-        
-        # Poids final
-        weight = (io_match * 0.7 + qos_similarity * 0.3)
-        
-        return weight
-    
-    def _calculate_robustness(self, service):
-        """Calcule le score de robustesse"""
-        robustness = (
-            service.qos.reliability * 0.4 +
-            service.qos.availability * 0.3 +
-            service.qos.successability * 0.3
-        ) / 100.0
-        
-        return min(max(robustness, 0.0), 1.0)

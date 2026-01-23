@@ -6,6 +6,7 @@ from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 import os
 import json
+import tempfile
 from datetime import datetime
 
 from services.wsdl_parser import WSDLParser, parse_requests_xml, parse_best_solutions_xml
@@ -17,7 +18,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Augmenter la limite de taille pour les uploads massifs
-app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500 MB
+app.config['MAX_CONTENT_LENGTH'] = None
 
 # État global de l'application
 app_state = {
@@ -57,7 +58,10 @@ def upload_services():
         services = []
         errors = []
         
-        for file in files:
+        for idx, file in enumerate(files):
+            if idx % 100 == 0:  # Log tous les 100 fichiers
+                print(f"Progression: {idx}/{len(files)} fichiers traités")
+            
             if file.filename.endswith('.wsdl') or file.filename.endswith('.xml'):
                 try:
                     content = file.read().decode('utf-8')
@@ -69,6 +73,8 @@ def upload_services():
                         errors.append(f"{file.filename}: Parse failed")
                 except Exception as e:
                     errors.append(f"{file.filename}: {str(e)}")
+        
+        print(f"Traitement terminé: {len(services)} services chargés, {len(errors)} erreurs")
         
         if services:
             app_state['services'].extend(services)
@@ -91,7 +97,8 @@ def upload_services():
         else:
             return jsonify({
                 'error': 'No valid services found',
-                'errors': errors
+                'errors': errors[:10],  # Limiter les erreurs affichées
+                'total_errors': len(errors)
             }), 400
     
     except Exception as e:
@@ -120,7 +127,7 @@ def get_service(service_id):
 
 @app.route('/api/services/<service_id>/download', methods=['GET'])
 def download_annotated_service(service_id):
-    """Télécharge un service annoté en format XML"""
+    """Télécharge un service annoté en format S-WSDL (MOF-based)"""
     try:
         # Trouver le service
         service = next((s for s in app_state['services'] if s.id == service_id), None)
@@ -128,12 +135,12 @@ def download_annotated_service(service_id):
         if not service:
             return jsonify({'error': 'Service not found'}), 404
         
-        # Générer le XML annoté
-        xml_content = generate_annotated_xml(service)
+        # Générer le S-WSDL (Social WSDL selon le modèle MOF)
+        xml_content = generate_s_wsdl(service)
         
         # Créer la réponse avec le fichier
         response = Response(xml_content, mimetype='application/xml')
-        response.headers['Content-Disposition'] = f'attachment; filename={service_id}_annotated.xml'
+        response.headers['Content-Disposition'] = f'attachment; filename={service_id}_S-WSDL.xml'
         
         return response
     
@@ -141,94 +148,212 @@ def download_annotated_service(service_id):
         return jsonify({'error': str(e)}), 500
 
 
-def generate_annotated_xml(service):
-    """Génère le XML annoté pour un service"""
+def generate_s_wsdl(service):
+    """
+    Génère un S-WSDL (Social WSDL) selon le modèle MOF-based
+    Référence: Benna, A., Maamar, Z., & Nacer, M. A. (2016)
+    """
     xml_lines = ['<?xml version="1.0" encoding="UTF-8"?>']
-    xml_lines.append('<annotatedService>')
-    xml_lines.append(f'  <serviceId>{service.id}</serviceId>')
+    xml_lines.append('<!-- S-WSDL: Social Web Service Description Language -->')
+    xml_lines.append('<!-- Based on MOF-based Social Web Services Description Metamodel -->')
+    xml_lines.append('<!-- Reference: Benna et al., MODELSWARD 2016 -->')
+    xml_lines.append('')
     
-    # Informations de base
-    xml_lines.append('  <basicInfo>')
-    xml_lines.append(f'    <inputs>')
+    # Namespace déclaration
+    xml_lines.append('<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"')
+    xml_lines.append('             xmlns:social="http://cerist.dz/social-ws/2016"')
+    xml_lines.append('             xmlns:xsd="http://www.w3.org/2001/XMLSchema"')
+    xml_lines.append(f'             name="{service.id}"')
+    xml_lines.append(f'             targetNamespace="http://example.com/services/{service.id}">')
+    xml_lines.append('')
+    
+    # 1. WSDL classique (partie standard)
+    xml_lines.append('  <!-- ========== WSDL Standard Description ========== -->')
+    xml_lines.append('  <types>')
+    xml_lines.append('    <xsd:schema targetNamespace="http://example.com/services">')
+    
+    # Types pour inputs
     for inp in service.inputs:
-        xml_lines.append(f'      <input>{inp}</input>')
-    xml_lines.append(f'    </inputs>')
-    xml_lines.append(f'    <outputs>')
-    for out in service.outputs:
-        xml_lines.append(f'      <output>{out}</output>')
-    xml_lines.append(f'    </outputs>')
-    xml_lines.append('  </basicInfo>')
+        xml_lines.append(f'      <xsd:element name="{inp}" type="xsd:string"/>')
     
-    # QoS
-    xml_lines.append('  <qos>')
-    # Convertir l'objet QoS en dictionnaire
+    # Types pour outputs
+    for out in service.outputs:
+        xml_lines.append(f'      <xsd:element name="{out}" type="xsd:string"/>')
+    
+    xml_lines.append('    </xsd:schema>')
+    xml_lines.append('  </types>')
+    xml_lines.append('')
+    
+    # Messages
+    xml_lines.append('  <message name="InputMessage">')
+    for inp in service.inputs:
+        xml_lines.append(f'    <part name="{inp}" element="tns:{inp}"/>')
+    xml_lines.append('  </message>')
+    xml_lines.append('')
+    
+    xml_lines.append('  <message name="OutputMessage">')
+    for out in service.outputs:
+        xml_lines.append(f'    <part name="{out}" element="tns:{out}"/>')
+    xml_lines.append('  </message>')
+    xml_lines.append('')
+    
+    # PortType
+    xml_lines.append('  <portType name="ServicePortType">')
+    xml_lines.append(f'    <operation name="execute">')
+    xml_lines.append('      <input message="tns:InputMessage"/>')
+    xml_lines.append('      <output message="tns:OutputMessage"/>')
+    xml_lines.append('    </operation>')
+    xml_lines.append('  </portType>')
+    xml_lines.append('')
+    
+    # QoS (dans extensibility element)
+    xml_lines.append('  <!-- ========== QoS Properties ========== -->')
+    xml_lines.append('  <social:QoS>')
     qos_dict = service.qos if isinstance(service.qos, dict) else vars(service.qos)
     for key, value in qos_dict.items():
-        xml_lines.append(f'    <{key}>{value}</{key}>')
-    xml_lines.append('  </qos>')
+        xml_key = key.replace('_', '')
+        xml_key = xml_key[0].upper() + xml_key[1:]  # Capitalize
+        xml_lines.append(f'    <social:{xml_key}>{value:.2f}</social:{xml_key}>')
+    xml_lines.append('  </social:QoS>')
+    xml_lines.append('')
     
-    # Annotations si elles existent
+    # 2. Extension sociale (S-WSDL selon MOF)
     if hasattr(service, 'annotations') and service.annotations:
-        # Convertir l'objet annotations en dictionnaire
-        annotations_dict = service.annotations if isinstance(service.annotations, dict) else vars(service.annotations)
+        xml_lines.append('  <!-- ========== Social Dimension (S-WSDL Extension) ========== -->')
+        xml_lines.append('  <!-- Based on MOF-based Social Web Services Metamodel -->')
+        xml_lines.append('')
         
-        xml_lines.append('  <annotations>')
+        annotations = service.annotations
+        social_node = annotations.social_node
         
-        # Annotations d'interaction
-        if 'interaction' in annotations_dict:
-            xml_lines.append('    <interaction>')
-            inter = annotations_dict['interaction']
-            # Convertir inter en dict si nécessaire
-            inter_dict = inter if isinstance(inter, dict) else vars(inter)
-            xml_lines.append(f'      <role>{inter_dict.get("role", "")}</role>')
-            xml_lines.append('      <canCall>')
-            for s in inter_dict.get('can_call', []):
-                xml_lines.append(f'        <service>{s}</service>')
-            xml_lines.append('      </canCall>')
-            xml_lines.append('      <dependsOn>')
-            for s in inter_dict.get('depends_on', []):
-                xml_lines.append(f'        <service>{s}</service>')
-            xml_lines.append('      </dependsOn>')
-            xml_lines.append('      <substitutes>')
-            for s in inter_dict.get('substitutes', []):
-                xml_lines.append(f'        <service>{s}</service>')
-            xml_lines.append('      </substitutes>')
-            xml_lines.append('    </interaction>')
+        # SNNode (Nœud Social)
+        xml_lines.append('  <social:SocialNode>')
+        xml_lines.append(f'    <social:nodeId>{social_node.node_id}</social:nodeId>')
+        xml_lines.append(f'    <social:nodeType>{social_node.node_type}</social:nodeType>')
+        xml_lines.append(f'    <social:state>{social_node.state}</social:state>')
+        xml_lines.append('')
         
-        # Annotations de contexte
-        if 'context' in annotations_dict:
-            xml_lines.append('    <context>')
-            ctx = annotations_dict['context']
-            # Convertir ctx en dict si nécessaire
-            ctx_dict = ctx if isinstance(ctx, dict) else vars(ctx)
-            xml_lines.append(f'      <contextAware>{str(ctx_dict.get("context_aware", False)).lower()}</contextAware>')
-            xml_lines.append(f'      <locationSensitive>{str(ctx_dict.get("location_sensitive", False)).lower()}</locationSensitive>')
-            xml_lines.append(f'      <timeCritical>{ctx_dict.get("time_critical", "low")}</timeCritical>')
-            xml_lines.append(f'      <interactionCount>{ctx_dict.get("interaction_count", 0)}</interactionCount>')
-            xml_lines.append('    </context>')
+        # Node Degree (Propriétés sociales)
+        xml_lines.append('    <!-- Node Degree Properties -->')
+        xml_lines.append('    <social:NodeDegree>')
+        xml_lines.append(f'      <social:trustDegree value="{social_node.trust_degree.value:.3f}"/>')
+        xml_lines.append(f'      <social:reputation value="{social_node.reputation.value:.3f}"/>')
+        xml_lines.append(f'      <social:cooperativeness value="{social_node.cooperativeness.value:.3f}"/>')
         
-        # Annotations de politiques
-        if 'policy' in annotations_dict:
-            xml_lines.append('    <policy>')
-            pol = annotations_dict['policy']
-            # Convertir pol en dict si nécessaire
-            pol_dict = pol if isinstance(pol, dict) else vars(pol)
-            xml_lines.append(f'      <gdprCompliant>{str(pol_dict.get("gdpr_compliant", False)).lower()}</gdprCompliant>')
-            xml_lines.append(f'      <securityLevel>{pol_dict.get("security_level", "standard")}</securityLevel>')
-            xml_lines.append(f'      <dataRetentionDays>{pol_dict.get("data_retention_days", 30)}</dataRetentionDays>')
-            xml_lines.append(f'      <dataClassification>{pol_dict.get("data_classification", "public")}</dataClassification>')
-            xml_lines.append('    </policy>')
+        # Propriétés supplémentaires
+        for prop in social_node.properties:
+            xml_lines.append(f'      <social:property name="{prop.prop_name}" value="{prop.value:.3f}"/>')
         
-        # Propriétés sociales
-        xml_lines.append('    <socialProperties>')
-        xml_lines.append(f'      <trustDegree>{annotations_dict.get("trust_degree", 0.5)}</trustDegree>')
-        xml_lines.append(f'      <reputation>{annotations_dict.get("reputation", 0.5)}</reputation>')
-        xml_lines.append(f'      <robustnessScore>{annotations_dict.get("robustness_score", 0.5)}</robustnessScore>')
-        xml_lines.append('    </socialProperties>')
+        xml_lines.append('    </social:NodeDegree>')
+        xml_lines.append('')
         
-        xml_lines.append('  </annotations>')
+        # SNAssociations (Relations sociales)
+        if social_node.associations:
+            xml_lines.append('    <!-- Social Associations -->')
+            xml_lines.append('    <social:Associations>')
+            
+            for assoc in social_node.associations:
+                xml_lines.append('      <social:Association>')
+                xml_lines.append(f'        <social:sourceNode>{assoc.source_node}</social:sourceNode>')
+                xml_lines.append(f'        <social:targetNode>{assoc.target_node}</social:targetNode>')
+                
+                # Association Type
+                xml_lines.append('        <social:AssociationType>')
+                xml_lines.append(f'          <social:typeName>{assoc.association_type.type_name}</social:typeName>')
+                xml_lines.append(f'          <social:isSymmetric>{str(assoc.association_type.is_symmetric).lower()}</social:isSymmetric>')
+                xml_lines.append(f'          <social:supportsTransitivity>{str(assoc.association_type.supports_transitivity).lower()}</social:supportsTransitivity>')
+                xml_lines.append(f'          <social:isDependant>{str(assoc.association_type.is_dependent).lower()}</social:isDependant>')
+                xml_lines.append(f'          <social:temporalAspect>{assoc.association_type.temporal_aspect}</social:temporalAspect>')
+                xml_lines.append('        </social:AssociationType>')
+                
+                # Association Weight
+                xml_lines.append('        <social:AssociationWeight>')
+                xml_lines.append(f'          <social:propName>{assoc.association_weight.prop_name}</social:propName>')
+                xml_lines.append(f'          <social:value>{assoc.association_weight.value:.3f}</social:value>')
+                xml_lines.append(f'          <social:calculationMethod>{assoc.association_weight.calculation_method}</social:calculationMethod>')
+                xml_lines.append('        </social:AssociationWeight>')
+                
+                xml_lines.append('      </social:Association>')
+            
+            xml_lines.append('    </social:Associations>')
+        
+        xml_lines.append('  </social:SocialNode>')
+        xml_lines.append('')
+        
+        # Extensions supplémentaires (Interaction, Context, Policy)
+        xml_lines.append('  <!-- ========== Extended Annotations ========== -->')
+        xml_lines.append('  <social:ExtendedAnnotations>')
+        
+        # Interaction
+        xml_lines.append('    <social:Interaction>')
+        inter = annotations.interaction
+        inter_dict = inter if isinstance(inter, dict) else vars(inter)
+        xml_lines.append(f'      <social:role>{inter_dict.get("role", "worker")}</social:role>')
+        
+        if inter_dict.get('collaboration_associations'):
+            xml_lines.append('      <social:collaborationAssociations>')
+            for svc_id in inter_dict['collaboration_associations']:
+                xml_lines.append(f'        <social:serviceId>{svc_id}</social:serviceId>')
+            xml_lines.append('      </social:collaborationAssociations>')
+        
+        if inter_dict.get('substitution_associations'):
+            xml_lines.append('      <social:substitutionAssociations>')
+            for svc_id in inter_dict['substitution_associations']:
+                xml_lines.append(f'        <social:serviceId>{svc_id}</social:serviceId>')
+            xml_lines.append('      </social:substitutionAssociations>')
+        
+        if inter_dict.get('depends_on'):
+            xml_lines.append('      <social:dependencies>')
+            for svc_id in inter_dict['depends_on']:
+                xml_lines.append(f'        <social:serviceId>{svc_id}</social:serviceId>')
+            xml_lines.append('      </social:dependencies>')
+        
+        xml_lines.append('    </social:Interaction>')
+        xml_lines.append('')
+        
+        # Context
+        xml_lines.append('    <social:Context>')
+        ctx = annotations.context
+        ctx_dict = ctx if isinstance(ctx, dict) else vars(ctx)
+        xml_lines.append(f'      <social:contextAware>{str(ctx_dict.get("context_aware", False)).lower()}</social:contextAware>')
+        xml_lines.append(f'      <social:locationSensitive>{str(ctx_dict.get("location_sensitive", False)).lower()}</social:locationSensitive>')
+        xml_lines.append(f'      <social:timeCritical>{ctx_dict.get("time_critical", "low")}</social:timeCritical>')
+        xml_lines.append(f'      <social:interactionCount>{ctx_dict.get("interaction_count", 0)}</social:interactionCount>')
+        
+        if ctx_dict.get('last_used'):
+            xml_lines.append(f'      <social:lastUsed>{ctx_dict["last_used"]}</social:lastUsed>')
+        
+        if ctx_dict.get('usage_patterns'):
+            xml_lines.append('      <social:usagePatterns>')
+            for pattern in ctx_dict['usage_patterns']:
+                xml_lines.append(f'        <social:pattern>{pattern}</social:pattern>')
+            xml_lines.append('      </social:usagePatterns>')
+        
+        xml_lines.append('    </social:Context>')
+        xml_lines.append('')
+        
+        # Policy
+        xml_lines.append('    <social:Policy>')
+        pol = annotations.policy
+        pol_dict = pol if isinstance(pol, dict) else vars(pol)
+        xml_lines.append(f'      <social:gdprCompliant>{str(pol_dict.get("gdpr_compliant", True)).lower()}</social:gdprCompliant>')
+        xml_lines.append(f'      <social:securityLevel>{pol_dict.get("security_level", "medium")}</social:securityLevel>')
+        xml_lines.append(f'      <social:dataRetentionDays>{pol_dict.get("data_retention_days", 30)}</social:dataRetentionDays>')
+        xml_lines.append(f'      <social:dataClassification>{pol_dict.get("data_classification", "internal")}</social:dataClassification>')
+        xml_lines.append(f'      <social:encryptionRequired>{str(pol_dict.get("encryption_required", False)).lower()}</social:encryptionRequired>')
+        
+        if pol_dict.get('compliance_standards'):
+            xml_lines.append('      <social:complianceStandards>')
+            for standard in pol_dict['compliance_standards']:
+                xml_lines.append(f'        <social:standard>{standard}</social:standard>')
+            xml_lines.append('      </social:complianceStandards>')
+        
+        xml_lines.append('    </social:Policy>')
+        
+        xml_lines.append('  </social:ExtendedAnnotations>')
     
-    xml_lines.append('</annotatedService>')
+    xml_lines.append('')
+    xml_lines.append('</definitions>')
     
     return '\n'.join(xml_lines)
 
@@ -239,7 +364,7 @@ def start_annotation():
     try:
         data = request.json or {}
         use_llm = data.get('use_llm', False)
-        service_ids = data.get('service_ids', None)  # None = tous les services
+        service_ids = data.get('service_ids', None)
         annotation_types = data.get('annotation_types', ['interaction', 'context', 'policy'])
         
         if not app_state['services']:
@@ -257,7 +382,6 @@ def start_annotation():
         
         # Mettre à jour la liste des services annotés
         for service in annotated:
-            # Remplacer dans la liste principale
             idx = next((i for i, s in enumerate(app_state['services']) if s.id == service.id), None)
             if idx is not None:
                 app_state['services'][idx] = service
@@ -271,7 +395,7 @@ def start_annotation():
         return jsonify({
             'message': 'Annotation completed',
             'total_annotated': len(annotated),
-            'services': [s.to_dict() for s in annotated],  # Retourner tous les services annotés
+            'services': [s.to_dict() for s in annotated],
             'annotation_types': annotation_types,
             'used_llm': use_llm
         })
@@ -302,18 +426,23 @@ def upload_requests():
         if not file:
             return jsonify({'error': 'No file provided'}), 400
         
-        # Sauvegarder temporairement
-        temp_path = '/tmp/requests.xml'
-        file.save(temp_path)
+        # Utiliser un fichier temporaire compatible multiplateforme
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.xml', delete=False) as tmp:
+            file.save(tmp.name)
+            tmp_path = tmp.name
         
-        # Parser
-        requests_list = parse_requests_xml(temp_path)
-        app_state['requests'] = requests_list
-        
-        return jsonify({
-            'message': f'{len(requests_list)} requests loaded',
-            'requests': [r.to_dict() for r in requests_list]
-        })
+        try:
+            requests_list = parse_requests_xml(tmp_path)
+            app_state['requests'] = requests_list
+            
+            return jsonify({
+                'message': f'{len(requests_list)} requests loaded',
+                'requests': [r.to_dict() for r in requests_list]
+            })
+        finally:
+            # Nettoyer le fichier temporaire
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -336,7 +465,6 @@ def compose_classic():
         request_id = data.get('request_id')
         algorithm = data.get('algorithm', 'dijkstra')
         
-        # Trouver la requête
         comp_request = next((r for r in app_state['requests'] if r.id == request_id), None)
         
         if not comp_request:
@@ -346,10 +474,7 @@ def compose_classic():
             services = app_state['annotated_services'] or app_state['services']
             app_state['classic_composer'] = ClassicComposer(services)
         
-        # Composer
         result = app_state['classic_composer'].compose(comp_request, algorithm)
-        
-        # Sauvegarder
         app_state['results_classic'][request_id] = result
         
         return jsonify(result.to_dict())
@@ -367,7 +492,6 @@ def compose_llm():
         enable_reasoning = data.get('enable_reasoning', True)
         enable_adaptation = data.get('enable_adaptation', True)
         
-        # Trouver la requête
         comp_request = next((r for r in app_state['requests'] if r.id == request_id), None)
         
         if not comp_request:
@@ -377,14 +501,12 @@ def compose_llm():
             services = app_state['annotated_services'] or app_state['services']
             app_state['llm_composer'] = LLMComposer(services)
         
-        # Composer
         result = app_state['llm_composer'].compose(
             comp_request,
             enable_reasoning=enable_reasoning,
             enable_adaptation=enable_adaptation
         )
         
-        # Sauvegarder
         app_state['results_llm'][request_id] = result
         
         return jsonify(result.to_dict())
@@ -421,18 +543,23 @@ def upload_best_solutions():
         if not file:
             return jsonify({'error': 'No file provided'}), 400
         
-        # Sauvegarder temporairement
-        temp_path = '/tmp/best_solutions.xml'
-        file.save(temp_path)
+        # Utiliser un fichier temporaire compatible multiplateforme
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.xml', delete=False) as tmp:
+            file.save(tmp.name)
+            tmp_path = tmp.name
         
-        # Parser
-        solutions = parse_best_solutions_xml(temp_path)
-        app_state['best_solutions'] = solutions
-        
-        return jsonify({
-            'message': f'{len(solutions)} best solutions loaded',
-            'solutions': solutions
-        })
+        try:
+            solutions = parse_best_solutions_xml(tmp_path)
+            app_state['best_solutions'] = solutions
+            
+            return jsonify({
+                'message': f'{len(solutions)} best solutions loaded',
+                'solutions': solutions
+            })
+        finally:
+            # Nettoyer le fichier temporaire
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -454,7 +581,6 @@ def get_comparison():
                 'llm': app_state['results_llm'].get(req_id)
             }
             
-            # Convertir en dict
             if comparison['classic']:
                 comparison['classic'] = comparison['classic'].to_dict()
             if comparison['llm']:
@@ -462,7 +588,6 @@ def get_comparison():
             
             comparisons.append(comparison)
         
-        # Statistiques globales
         stats = calculate_statistics(comparisons)
         
         return jsonify({

@@ -199,7 +199,12 @@ class WSDLParser:
 
 
 def parse_requests_xml(filepath):
-    """Parse le fichier Requests.xml"""
+    """
+    Parse le fichier Requests.xml
+    Support 2 formats:
+    1. Format standard: <Requests><Request id="...">...</Request></Requests>
+    2. Format WSChallenge: <WSChallenge><DiscoveryRoutine name="...">...</DiscoveryRoutine></WSChallenge>
+    """
     from models.service import CompositionRequest
     
     requests = []
@@ -208,35 +213,80 @@ def parse_requests_xml(filepath):
         tree = ET.parse(filepath)
         root = tree.getroot()
         
-        for req in root.findall('.//Request'):
-            request_id = req.get('id') or req.get('name', 'unknown')
-            comp_req = CompositionRequest(request_id)
-            
-            # Provided parameters
-            provided = req.find('Provided')
-            if provided is not None:
-                comp_req.provided = [p.strip() for p in provided.text.split(';') if p.strip()]
-            
-            # Resultant parameter
-            resultant = req.find('Resultant')
-            if resultant is not None:
-                comp_req.resultant = resultant.text.strip()
-            
-            # QoS Constraints
-            qos_elem = req.find('QoS')
-            if qos_elem is not None:
-                qos_data = {}
-                for qos_child in qos_elem:
-                    try:
-                        qos_data[qos_child.tag] = float(qos_child.text)
-                    except:
-                        qos_data[qos_child.tag] = 0
-                comp_req.qos_constraints = QoS(qos_data)
-            
-            requests.append(comp_req)
+        # Détecter le format du fichier
+        if root.tag == 'WSChallenge':
+            # Format WSChallenge
+            for routine in root.findall('.//DiscoveryRoutine'):
+                request_name = routine.get('name', 'unknown')
+                comp_req = CompositionRequest(request_name)
+                
+                # Provided parameters
+                provided = routine.find('Provided')
+                if provided is not None and provided.text:
+                    comp_req.provided = [p.strip() for p in provided.text.split(',') if p.strip()]
+                
+                # Resultant parameter
+                resultant = routine.find('Resultant')
+                if resultant is not None and resultant.text:
+                    comp_req.resultant = resultant.text.strip()
+                
+                # QoS Constraints (format: valeur1,valeur2,valeur3,...)
+                qos_elem = routine.find('QoS')
+                if qos_elem is not None and qos_elem.text:
+                    qos_values = [float(v.strip()) for v in qos_elem.text.split(',') if v.strip()]
+                    
+                    # Mapper les valeurs QoS selon l'ordre standard
+                    # Format attendu: ResponseTime, Availability, Throughput, Successability, 
+                    #                 Reliability, Compliance, BestPractices, Latency, Documentation
+                    qos_keys = [
+                        'ResponseTime', 'Availability', 'Throughput', 'Successability',
+                        'Reliability', 'Compliance', 'BestPractices', 'Latency', 'Documentation'
+                    ]
+                    
+                    qos_data = {}
+                    for i, key in enumerate(qos_keys):
+                        if i < len(qos_values):
+                            qos_data[key] = qos_values[i]
+                        else:
+                            qos_data[key] = 0
+                    
+                    comp_req.qos_constraints = QoS(qos_data)
+                
+                requests.append(comp_req)
+        
+        else:
+            # Format standard (ancien format)
+            for req in root.findall('.//Request'):
+                request_id = req.get('id') or req.get('name', 'unknown')
+                comp_req = CompositionRequest(request_id)
+                
+                # Provided parameters
+                provided = req.find('Provided')
+                if provided is not None:
+                    comp_req.provided = [p.strip() for p in provided.text.split(';') if p.strip()]
+                
+                # Resultant parameter
+                resultant = req.find('Resultant')
+                if resultant is not None:
+                    comp_req.resultant = resultant.text.strip()
+                
+                # QoS Constraints
+                qos_elem = req.find('QoS')
+                if qos_elem is not None:
+                    qos_data = {}
+                    for qos_child in qos_elem:
+                        try:
+                            qos_data[qos_child.tag] = float(qos_child.text)
+                        except:
+                            qos_data[qos_child.tag] = 0
+                    comp_req.qos_constraints = QoS(qos_data)
+                
+                requests.append(comp_req)
     
     except Exception as e:
         print(f"Erreur lors du parsing des requêtes: {e}")
+        import traceback
+        traceback.print_exc()
     
     return requests
 
