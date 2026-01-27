@@ -144,6 +144,11 @@
             border-color: #0d1f2d;
         }
 
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .service-list {
             max-height: 450px;
             overflow-y: auto;
@@ -623,6 +628,38 @@
             color: #1a3a52;
             font-family: 'Courier New', monospace;
         }
+
+        /* Nouveau style pour la progression d'upload */
+        .upload-progress-box {
+            background: #f0f4f8;
+            border: 1px solid #1a3a52;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .batch-log {
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #d0d0d0;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .batch-log-item {
+            padding: 5px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .batch-log-item.success {
+            color: #2d5016;
+        }
+
+        .batch-log-item.error {
+            color: #8b0000;
+        }
     </style>
 </head>
 <body>
@@ -644,17 +681,36 @@
             <div class="section">
                 <div class="section-title">Chargement du Repository de Services</div>
                 
+                <div class="info-box" style="margin-bottom: 20px;">
+                    ℹ️ <strong>Import cumulatif:</strong> Les fichiers importés s'ajoutent au repository existant. 
+                    Vous pouvez importer en plusieurs fois. Utilisez le bouton "Effacer le repository" pour recommencer à zéro.
+                </div>
+                
                 <div class="file-upload-area" onclick="document.getElementById('wsdl-files').click()">
                     <input type="file" id="wsdl-files" multiple accept=".wsdl,.xml" onchange="uploadServices()">
                     <div class="file-upload-icon">📄</div>
                     <div class="file-upload-text">Sélectionner les fichiers WSDL (Ctrl+A pour tout sélectionner)</div>
-                    <div class="file-upload-hint">Formats acceptés: .wsdl, .xml | Aucune limite de nombre de fichiers</div>
+                    <div class="file-upload-hint">Formats acceptés: .wsdl, .xml | Upload par lots de 100 fichiers</div>
+                </div>
+
+                <div id="upload-progress-section" style="display: none;" class="upload-progress-box">
+                    <div class="section-title" style="border: none; margin-bottom: 10px; padding-bottom: 0;">
+                        Progression de l'Upload
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="upload-progress" style="width: 0%;">0%</div>
+                    </div>
+                    <p id="upload-status" style="margin-top: 10px; font-size: 13px; color: #1a3a52;"></p>
+                    <div class="batch-log" id="batch-log"></div>
                 </div>
 
                 <div style="margin-top: 25px;">
                     <p id="service-count" style="font-size: 14px; font-weight: 600; color: #1a3a52;">
                         Nombre de services chargés: <span style="font-size: 18px;">0</span>
                     </p>
+                    <button class="btn" onclick="clearRepository()" style="margin-top: 15px; font-size: 12px; padding: 8px 16px;">
+                        🗑️ Effacer le repository
+                    </button>
                 </div>
             </div>
 
@@ -941,6 +997,7 @@
         let classicResults = {};
         let llmResults = {};
         let selectedServiceIds = new Set();
+        let isUploading = false;
 
         function showTab(index) {
             const tabs = document.querySelectorAll('.tab');
@@ -1020,6 +1077,11 @@
         }
 
         async function uploadServices() {
+            if (isUploading) {
+                alert('⚠️ Un upload est déjà en cours. Veuillez patienter...');
+                return;
+            }
+
             const fileInput = document.getElementById('wsdl-files');
             const files = Array.from(fileInput.files);
             
@@ -1034,109 +1096,227 @@
                 alert('Aucun fichier WSDL ou XML trouvé');
                 return;
             }
+
+            isUploading = true;
             
-            // Afficher une progression
+            // Afficher la section de progression
+            document.getElementById('upload-progress-section').style.display = 'block';
+            const progressBar = document.getElementById('upload-progress');
+            const statusText = document.getElementById('upload-status');
+            const batchLog = document.getElementById('batch-log');
             const serviceCount = document.getElementById('service-count');
-            serviceCount.innerHTML = `⏳ Chargement de ${validFiles.length} fichiers en cours...`;
             
-            const formData = new FormData();
-            validFiles.forEach(file => {
-                formData.append('files', file);
-            });
-
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+            batchLog.innerHTML = '';
+            
+            // UPLOAD PAR LOTS DE 100 FICHIERS
+            const BATCH_SIZE = 100;
+            let totalUploaded = 0;
+            let allServices = [];
+            let errorCount = 0;
+            
+            const totalBatches = Math.ceil(validFiles.length / BATCH_SIZE);
+            
+            batchLog.innerHTML += `<div class="batch-log-item">📦 ${validFiles.length} fichiers à traiter en ${totalBatches} lot(s)</div>`;
+            
             try {
-                const response = await fetch(`${API_URL}/services/upload`, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-                
-                if (response.ok) {
-                    currentServices = data.services;
-                    serviceCount.innerHTML = 
-                        `Nombre de services chargés: <span style="font-size: 18px;">${data.total_services}</span>`;
+                for (let i = 0; i < validFiles.length; i += BATCH_SIZE) {
+                    const batch = validFiles.slice(i, i + BATCH_SIZE);
+                    const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
                     
-                    displayServices(data.services);
+                    statusText.textContent = `Upload du lot ${batchNumber}/${totalBatches} (${batch.length} fichiers)...`;
+                    batchLog.innerHTML += `<div class="batch-log-item">⏳ Lot ${batchNumber}/${totalBatches}: ${batch.length} fichiers...</div>`;
+                    batchLog.scrollTop = batchLog.scrollHeight;
+                    
+                    const formData = new FormData();
+                    batch.forEach(file => {
+                        formData.append('files', file);
+                    });
+
+                    try {
+                        const response = await fetch(`${API_URL}/services/upload`, {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            totalUploaded += data.services.length;
+                            allServices = allServices.concat(data.services);
+                            
+                            // Mise à jour de la progression
+                            const progress = Math.round((i + batch.length) / validFiles.length * 100);
+                            progressBar.style.width = `${progress}%`;
+                            progressBar.textContent = `${progress}%`;
+                            
+                            const logMsg = `✅ Lot ${batchNumber}/${totalBatches}: ${data.services.length} services chargés`;
+                            batchLog.innerHTML += `<div class="batch-log-item success">${logMsg}</div>`;
+                            batchLog.scrollTop = batchLog.scrollHeight;
+                            
+                            statusText.textContent = `✓ ${totalUploaded} services chargés sur ${validFiles.length} fichiers traités`;
+                            
+                            if (data.errors && data.errors.length > 0) {
+                                errorCount += data.errors.length;
+                            }
+                        } else {
+                            const errorMsg = `❌ Lot ${batchNumber}/${totalBatches}: Erreur - ${data.error}`;
+                            batchLog.innerHTML += `<div class="batch-log-item error">${errorMsg}</div>`;
+                            batchLog.scrollTop = batchLog.scrollHeight;
+                            alert(`Erreur au lot ${batchNumber}: ${data.error}\n\nVoulez-vous continuer avec les lots restants?`);
+                            break;
+                        }
+                        
+                        // Petit délai entre les lots pour ne pas surcharger le serveur
+                        if (i + BATCH_SIZE < validFiles.length) {
+                            await new Promise(resolve => setTimeout(resolve, 300));
+                        }
+                        
+                    } catch (error) {
+                        const errorMsg = `❌ Lot ${batchNumber}/${totalBatches}: Erreur réseau - ${error.message}`;
+                        batchLog.innerHTML += `<div class="batch-log-item error">${errorMsg}</div>`;
+                        batchLog.scrollTop = batchLog.scrollHeight;
+                        
+                        if (!confirm(`Erreur réseau au lot ${batchNumber}:\n${error.message}\n\nContinuer avec les lots restants?`)) {
+                            break;
+                        }
+                    }
+                }
+                
+                // Mise à jour finale
+                if (totalUploaded > 0) {
+                    // IMPORTANT: Ajouter les nouveaux services au lieu d'écraser
+                    currentServices = currentServices.concat(allServices);
+                    
+                    progressBar.style.width = '100%';
+                    progressBar.textContent = '100%';
+                    progressBar.style.background = '#2d5016';
+                    
+                    const totalServicesCount = currentServices.length;
+                    serviceCount.innerHTML = 
+                        `Nombre de services chargés: <span style="font-size: 18px; color: #2d5016;">${totalServicesCount}</span>`;
+                    
+                    statusText.textContent = `✅ Import terminé: ${totalUploaded} nouveaux services chargés (Total: ${totalServicesCount})`;
+                    
+                    batchLog.innerHTML += `<div class="batch-log-item success" style="font-weight: 600; margin-top: 10px;">✅ TERMINÉ: ${totalUploaded} nouveaux services chargés avec succès!</div>`;
+                    batchLog.innerHTML += `<div class="batch-log-item" style="color: #1a3a52; font-weight: 600;">📊 TOTAL: ${totalServicesCount} services dans le repository</div>`;
+                    batchLog.scrollTop = batchLog.scrollHeight;
+                    
+                    displayServices(currentServices);
                     
                     // Sélectionner automatiquement tous les nouveaux services
-                    data.services.forEach(s => selectedServiceIds.add(s.id));
+                    allServices.forEach(s => selectedServiceIds.add(s.id));
                     
-                    let message = `✓ ${data.message}\n\n${validFiles.length} fichiers traités\n${data.total_services} services au total`;
+                    let message = `✅ Import terminé avec succès!\n\n`;
+                    message += `📊 Résumé:\n`;
+                    message += `  • ${totalUploaded} nouveaux services chargés\n`;
+                    message += `  • ${currentServices.length} services au TOTAL\n`;
+                    message += `  • ${validFiles.length} fichiers traités\n`;
+                    message += `  • ${totalBatches} lot(s) uploadés\n`;
                     
-                    if (data.errors && data.errors.length > 0) {
-                        message += `\n\n⚠️ Erreurs (${data.errors.length}):\n`;
-                        message += data.errors.slice(0, 5).join('\n');
-                        if (data.errors.length > 5) {
-                            message += `\n... et ${data.errors.length - 5} autres erreurs`;
-                        }
+                    if (errorCount > 0) {
+                        message += `\n⚠️ ${errorCount} erreur(s) rencontrée(s)`;
                     }
                     
                     alert(message);
                 } else {
-                    serviceCount.innerHTML = 'Nombre de services chargés: <span style="font-size: 18px;">0</span>';
-                    alert(`✗ Erreur: ${data.error}`);
+                    progressBar.style.background = '#8b0000';
+                    statusText.textContent = '❌ Aucun service n\'a pu être chargé';
+                    alert('❌ Erreur: Aucun service n\'a pu être chargé. Vérifiez les logs pour plus de détails.');
                 }
+                
             } catch (error) {
-                serviceCount.innerHTML = 'Nombre de services chargés: <span style="font-size: 18px;">0</span>';
-                alert(`✗ Erreur de connexion: ${error.message}`);
+                progressBar.style.background = '#8b0000';
+                statusText.textContent = `❌ Erreur: ${error.message}`;
+                batchLog.innerHTML += `<div class="batch-log-item error">❌ Erreur fatale: ${error.message}</div>`;
+                alert(`❌ Erreur fatale: ${error.message}`);
+            } finally {
+                isUploading = false;
+                // Réinitialiser l'input file
+                fileInput.value = '';
             }
         }
 
+        function clearRepository() {
+            if (!confirm('⚠️ Êtes-vous sûr de vouloir effacer tous les services du repository?\n\nCette action est irréversible.')) {
+                return;
+            }
+
+            // Réinitialiser les variables
+            currentServices = [];
+            selectedServiceIds.clear();
+            
+            // Réinitialiser l'affichage
+            document.getElementById('service-count').innerHTML = 
+                'Nombre de services chargés: <span style="font-size: 18px;">0</span>';
+            
+            document.getElementById('services-list').innerHTML = 
+                '<p style="text-align: center; color: #666; padding: 60px; font-style: italic;">Aucun service disponible. Veuillez charger les fichiers WSDL pour commencer.</p>';
+            
+            // Masquer la section de progression si elle est visible
+            document.getElementById('upload-progress-section').style.display = 'none';
+            
+            // Mettre à jour la liste de sélection si on est sur l'onglet 2
+            updateServicesSelectionList();
+            
+            alert('✅ Repository effacé avec succès!\n\nVous pouvez maintenant importer de nouveaux fichiers.');
+        }
+
         function displayServices(services) {
-    const list = document.getElementById('services-list');
-    
-    if (services.length === 0) {
-        list.innerHTML = '<p style="text-align: center; color: #666; padding: 60px; font-style: italic;">Aucun service disponible</p>';
-        return;
-    }
+            const list = document.getElementById('services-list');
+            
+            if (services.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #666; padding: 60px; font-style: italic;">Aucun service disponible</p>';
+                return;
+            }
 
-    // Si plus de 1000 services, afficher seulement un résumé
-    if (services.length > 1000) {
-        list.innerHTML = `
-            <div style="text-align: center; padding: 40px;">
-                <h3 style="color: #1a3a52; margin-bottom: 20px;">
-                    ${services.length} services chargés avec succès
-                </h3>
-                <p style="color: #666; margin-bottom: 15px;">
-                    Trop de services pour afficher la liste complète.
-                </p>
-                <p style="color: #666;">
-                    Les services sont disponibles pour l'annotation et la composition.
-                </p>
-            </div>
-        `;
-        return;
-    }
+            // Si plus de 1000 services, afficher seulement un résumé
+            if (services.length > 1000) {
+                list.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <h3 style="color: #1a3a52; margin-bottom: 20px;">
+                            ${services.length} services chargés avec succès
+                        </h3>
+                        <p style="color: #666; margin-bottom: 15px;">
+                            Trop de services pour afficher la liste complète.
+                        </p>
+                        <p style="color: #666;">
+                            Les services sont disponibles pour l'annotation et la composition.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
 
-    // Afficher jusqu'à 500 services
-    const servicesToDisplay = services.slice(0, 500);
-    const remaining = services.length - servicesToDisplay.length;
+            // Afficher jusqu'à 500 services
+            const servicesToDisplay = services.slice(0, 500);
+            const remaining = services.length - servicesToDisplay.length;
 
-    list.innerHTML = servicesToDisplay.map(s => `
-        <div class="service-item">
-            <div class="service-id">${s.id}</div>
-            <div class="service-meta">
-                <strong>Paramètres:</strong> ${s.inputs.length} entrées, ${s.outputs.length} sorties
-            </div>
-            <div class="service-meta" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e8e8e8;">
-                <strong>QoS:</strong><br>
-                ResponseTime: ${s.qos.ResponseTime.toFixed(1)} | 
-                Availability: ${s.qos.Availability.toFixed(1)}% | 
-                Reliability: ${s.qos.Reliability.toFixed(1)}%
-            </div>
-        </div>
-    `).join('');
+            list.innerHTML = servicesToDisplay.map(s => `
+                <div class="service-item">
+                    <div class="service-id">${s.id}</div>
+                    <div class="service-meta">
+                        <strong>Paramètres:</strong> ${s.inputs.length} entrées, ${s.outputs.length} sorties
+                    </div>
+                    <div class="service-meta" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e8e8e8;">
+                        <strong>QoS:</strong><br>
+                        ResponseTime: ${s.qos.ResponseTime.toFixed(1)} | 
+                        Availability: ${s.qos.Availability.toFixed(1)}% | 
+                        Reliability: ${s.qos.Reliability.toFixed(1)}%
+                    </div>
+                </div>
+            `).join('');
 
-    if (remaining > 0) {
-        list.innerHTML += `
-            <div style="text-align: center; padding: 30px; background: #f0f4f8; border: 1px solid #d0d0d0; margin-top: 10px;">
-                <strong style="color: #1a3a52;">+ ${remaining} autres services non affichés</strong><br>
-                <span style="color: #666; font-size: 12px;">Total: ${services.length} services disponibles</span>
-            </div>
-        `;
-    }
-}
+            if (remaining > 0) {
+                list.innerHTML += `
+                    <div style="text-align: center; padding: 30px; background: #f0f4f8; border: 1px solid #d0d0d0; margin-top: 10px;">
+                        <strong style="color: #1a3a52;">+ ${remaining} autres services non affichés</strong><br>
+                        <span style="color: #666; font-size: 12px;">Total: ${services.length} services disponibles</span>
+                    </div>
+                `;
+            }
+        }
 
         async function startAnnotation() {
             // Vérifier qu'il y a des services
