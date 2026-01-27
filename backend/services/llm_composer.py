@@ -15,7 +15,7 @@ class LLMComposer:
         self.services = services
         self.service_dict = {s.id: s for s in services}
         self.ollama_url = ollama_url
-        self.model = "llama2"  # ou "mistral", "codellama", etc.
+        self.model = "llama3.2:3b"  # ou "mistral", "codellama", etc.
         self.conversation_history = []
     
     def compose(self, request, enable_reasoning=True, enable_adaptation=True):

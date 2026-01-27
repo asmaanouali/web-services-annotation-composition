@@ -24,7 +24,7 @@ class ServiceAnnotator:
         self.services = services or []
         self.service_dict = {s.id: s for s in self.services}
         self.ollama_url = ollama_url
-        self.model = "llama2"
+        self.model = "llama3.2:3b"
     
     def annotate_service(self, service, use_llm=False, annotation_types=None):
         """
