@@ -1,5 +1,6 @@
 """
 API Flask pour le système de composition de services intelligents
+Version améliorée avec estimation de temps et progression en temps réel
 """
 
 from flask import Flask, request, jsonify, Response
@@ -31,7 +32,14 @@ app_state = {
     'parser': WSDLParser(),
     'annotator': None,
     'classic_composer': None,
-    'llm_composer': None
+    'llm_composer': None,
+    'annotation_progress': {
+        'current': 0,
+        'total': 0,
+        'current_service': '',
+        'completed': False,
+        'error': None
+    }
 }
 
 
@@ -358,9 +366,46 @@ def generate_s_wsdl(service):
     return '\n'.join(xml_lines)
 
 
+@app.route('/api/annotate/estimate', methods=['POST'])
+def estimate_annotation_time():
+    """Estime le temps nécessaire pour l'annotation"""
+    try:
+        data = request.json or {}
+        use_llm = data.get('use_llm', False)
+        service_ids = data.get('service_ids', None)
+        annotation_types = data.get('annotation_types', ['interaction', 'context', 'policy'])
+        
+        # Calculer le nombre de services
+        if service_ids:
+            num_services = len(service_ids)
+        else:
+            num_services = len(app_state['services'])
+        
+        # Estimation du temps par service (en secondes)
+        if use_llm:
+            # Avec LLM : environ 2-4 secondes par service par type d'annotation
+            time_per_service = len(annotation_types) * 3  # 3 secondes par type
+        else:
+            # Sans LLM : très rapide, environ 0.1 seconde par service
+            time_per_service = 0.1
+        
+        total_time = num_services * time_per_service
+        
+        return jsonify({
+            'estimated_time_seconds': total_time,
+            'num_services': num_services,
+            'time_per_service': time_per_service,
+            'use_llm': use_llm,
+            'annotation_types': annotation_types
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/annotate/start', methods=['POST'])
 def start_annotation():
-    """Lance l'annotation automatique des services"""
+    """Lance l'annotation automatique des services avec mises à jour en temps réel"""
     try:
         data = request.json or {}
         use_llm = data.get('use_llm', False)
@@ -373,11 +418,31 @@ def start_annotation():
         if not app_state['annotator']:
             app_state['annotator'] = ServiceAnnotator(app_state['services'])
         
-        # Annoter les services sélectionnés
+        # Réinitialiser l'état de progression
+        app_state['annotation_progress'] = {
+            'current': 0,
+            'total': 0,
+            'current_service': '',
+            'completed': False,
+            'error': None
+        }
+        
+        # Annoter les services sélectionnés avec callback de progression
+        def progress_callback(current, total, service_id):
+            app_state['annotation_progress'] = {
+                'current': current,
+                'total': total,
+                'current_service': service_id,
+                'completed': False,
+                'error': None
+            }
+            print(f"Progression annotation: {current}/{total} - Service: {service_id}")
+        
         annotated = app_state['annotator'].annotate_all(
             service_ids=service_ids,
             use_llm=use_llm,
-            annotation_types=annotation_types
+            annotation_types=annotation_types,
+            progress_callback=progress_callback
         )
         
         # Mettre à jour la liste des services annotés
@@ -392,6 +457,9 @@ def start_annotation():
         app_state['classic_composer'] = ClassicComposer(app_state['services'])
         app_state['llm_composer'] = LLMComposer(app_state['services'])
         
+        # Marquer comme terminé
+        app_state['annotation_progress']['completed'] = True
+        
         return jsonify({
             'message': 'Annotation completed',
             'total_annotated': len(annotated),
@@ -401,20 +469,23 @@ def start_annotation():
         })
     
     except Exception as e:
+        app_state['annotation_progress']['error'] = str(e)
+        app_state['annotation_progress']['completed'] = True
         return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/annotate/progress', methods=['GET'])
 def get_annotation_progress():
-    """Récupère la progression de l'annotation"""
-    total = len(app_state['services'])
-    annotated = len(app_state['annotated_services'])
-    
-    return jsonify({
-        'total': total,
-        'annotated': annotated,
-        'progress': (annotated / total * 100) if total > 0 else 0
+    """Récupère la progression de l'annotation en temps réel"""
+    progress = app_state.get('annotation_progress', {
+        'current': 0,
+        'total': 0,
+        'current_service': '',
+        'completed': False,
+        'error': None
     })
+    
+    return jsonify(progress)
 
 
 @app.route('/api/requests/upload', methods=['POST'])

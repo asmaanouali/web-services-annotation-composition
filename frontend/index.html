@@ -998,8 +998,10 @@
         let llmResults = {};
         let selectedServiceIds = new Set();
         let isUploading = false;
+        let progressInterval = null;
 
         function showTab(index) {
+            cleanupAnnotationPolling(); 
             const tabs = document.querySelectorAll('.tab');
             const contents = document.querySelectorAll('.tab-content');
             
@@ -1319,126 +1321,205 @@
         }
 
         async function startAnnotation() {
-            // Vérifier qu'il y a des services
-            if (currentServices.length === 0) {
-                alert('Erreur: Aucun service chargé. Veuillez d\'abord charger des services dans l\'onglet 1.');
+    // Vérifier qu'il y a des services
+    if (currentServices.length === 0) {
+        alert('Erreur: Aucun service chargé. Veuillez d\'abord charger des services dans l\'onglet 1.');
+        return;
+    }
+
+    // Vérifier qu'au moins un service est sélectionné
+    if (selectedServiceIds.size === 0) {
+        alert('Erreur: Veuillez sélectionner au moins un service à annoter.');
+        return;
+    }
+
+    // Récupérer les types d'annotations sélectionnés
+    const annotationTypes = [];
+    if (document.getElementById('annotation-interaction').checked) {
+        annotationTypes.push('interaction');
+    }
+    if (document.getElementById('annotation-context').checked) {
+        annotationTypes.push('context');
+    }
+    if (document.getElementById('annotation-policy').checked) {
+        annotationTypes.push('policy');
+    }
+
+    if (annotationTypes.length === 0) {
+        alert('Erreur: Veuillez sélectionner au moins un type d\'annotation.');
+        return;
+    }
+
+    // Vérifier si on utilise le LLM
+    const useLLM = document.getElementById('use-llm-annotation').checked;
+    const serviceIds = Array.from(selectedServiceIds);
+
+    // ÉTAPE 1: OBTENIR L'ESTIMATION
+    try {
+        const estimateResponse = await fetch(`${API_URL}/annotate/estimate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                use_llm: useLLM,
+                service_ids: serviceIds,
+                annotation_types: annotationTypes
+            })
+        });
+
+        const estimateData = await estimateResponse.json();
+
+        if (estimateResponse.ok) {
+            const estimatedTime = estimateData.estimated_time_seconds;
+            const formattedTime = formatTime(estimatedTime);
+            const numServices = estimateData.num_services;
+
+            // Afficher une confirmation avec l'estimation
+            const confirmMessage = `📊 Estimation de l'annotation:\n\n` +
+                `• Nombre de services: ${numServices}\n` +
+                `• Types d'annotations: ${annotationTypes.length}\n` +
+                `• Méthode: ${useLLM ? 'LLM (Intelligent)' : 'Classique'}\n` +
+                `• Temps estimé: ${formattedTime}\n\n` +
+                `Voulez-vous continuer?`;
+
+            if (!confirm(confirmMessage)) {
                 return;
-            }
-
-            // Vérifier qu'au moins un service est sélectionné
-            if (selectedServiceIds.size === 0) {
-                alert('Erreur: Veuillez sélectionner au moins un service à annoter.');
-                return;
-            }
-
-            // Récupérer les types d'annotations sélectionnés
-            const annotationTypes = [];
-            if (document.getElementById('annotation-interaction').checked) {
-                annotationTypes.push('interaction');
-            }
-            if (document.getElementById('annotation-context').checked) {
-                annotationTypes.push('context');
-            }
-            if (document.getElementById('annotation-policy').checked) {
-                annotationTypes.push('policy');
-            }
-
-            if (annotationTypes.length === 0) {
-                alert('Erreur: Veuillez sélectionner au moins un type d\'annotation.');
-                return;
-            }
-
-            // Vérifier si on utilise le LLM
-            const useLLM = document.getElementById('use-llm-annotation').checked;
-
-            // Afficher la section de progression
-            document.getElementById('annotation-progress-section').style.display = 'block';
-            document.getElementById('annotation-results-section').style.display = 'none';
-
-            const progressBar = document.getElementById('annotation-progress');
-            const statusText = document.getElementById('annotation-status');
-            const logDiv = document.getElementById('annotation-log');
-
-            progressBar.style.width = '0%';
-            progressBar.textContent = '0%';
-            statusText.textContent = 'Initialisation...';
-            logDiv.innerHTML = '';
-
-            try {
-                // Simuler la progression
-                let progress = 0;
-                const totalServices = selectedServiceIds.size;
-                const serviceIds = Array.from(selectedServiceIds);
-                
-                logDiv.innerHTML += `<div style="color: #1a3a52; font-weight: 600;">▸ Démarrage de l'annotation</div>`;
-                logDiv.innerHTML += `<div>  • Services sélectionnés: ${totalServices}</div>`;
-                logDiv.innerHTML += `<div>  • Types: ${annotationTypes.join(', ')}</div>`;
-                logDiv.innerHTML += `<div>  • Méthode: ${useLLM ? 'LLM (Intelligent)' : 'Classique'}</div>`;
-                logDiv.innerHTML += `<div style="margin-top: 10px;"></div>`;
-
-                // Simuler la progression pendant l'annotation
-                const progressInterval = setInterval(() => {
-                    if (progress < 90) {
-                        progress += 5;
-                        progressBar.style.width = `${progress}%`;
-                        progressBar.textContent = `${progress}%`;
-                        
-                        const currentService = Math.floor(progress * totalServices / 100);
-                        statusText.textContent = `Annotation en cours: ${currentService}/${totalServices} services traités`;
-                        
-                        if (progress % 20 === 0 && currentService > 0) {
-                            const serviceId = serviceIds[currentService - 1];
-                            logDiv.innerHTML += `<div style="color: #2d5016;">✓ Service ${serviceId} annoté</div>`;
-                            logDiv.scrollTop = logDiv.scrollHeight;
-                        }
-                    }
-                }, useLLM ? 400 : 200);  // Plus lent si LLM
-
-                // Appel API
-                const response = await fetch(`${API_URL}/annotate/start`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        use_llm: useLLM,
-                        service_ids: serviceIds,
-                        annotation_types: annotationTypes
-                    })
-                });
-
-                const data = await response.json();
-                
-                clearInterval(progressInterval);
-                
-                if (response.ok) {
-                    // Animation finale
-                    progressBar.style.width = '100%';
-                    progressBar.textContent = '100%';
-                    statusText.textContent = `✓ Annotation terminée: ${data.total_annotated} services annotés`;
-                    
-                    logDiv.innerHTML += `<div style="margin-top: 10px; color: #2d5016; font-weight: 600;">✓ Annotation terminée avec succès!</div>`;
-                    logDiv.scrollTop = logDiv.scrollHeight;
-                    
-                    // Afficher les résultats après un court délai
-                    setTimeout(() => {
-                        showAnnotationResults(data);
-                    }, 1000);
-                } else {
-                    progressBar.style.width = '100%';
-                    progressBar.style.background = '#8b0000';
-                    progressBar.textContent = 'Erreur';
-                    statusText.textContent = 'Erreur lors de l\'annotation';
-                    logDiv.innerHTML += `<div style="color: #8b0000; font-weight: 600;">✗ Erreur: ${data.error}</div>`;
-                    alert(`Erreur: ${data.error}`);
-                }
-            } catch (error) {
-                progressBar.style.width = '100%';
-                progressBar.style.background = '#8b0000';
-                progressBar.textContent = 'Erreur';
-                statusText.textContent = 'Erreur de connexion';
-                logDiv.innerHTML += `<div style="color: #8b0000; font-weight: 600;">✗ Erreur: ${error.message}</div>`;
-                alert(`Erreur: ${error.message}`);
             }
         }
+    } catch (error) {
+        console.error('Erreur lors de l\'estimation:', error);
+        // Continuer quand même si l'estimation échoue
+    }
+
+    // ÉTAPE 2: AFFICHER LA SECTION DE PROGRESSION
+    document.getElementById('annotation-progress-section').style.display = 'block';
+    document.getElementById('annotation-results-section').style.display = 'none';
+
+    const progressBar = document.getElementById('annotation-progress');
+    const statusText = document.getElementById('annotation-status');
+    const logDiv = document.getElementById('annotation-log');
+
+    progressBar.style.width = '0%';
+    progressBar.textContent = '0%';
+    progressBar.style.background = '#1a3a52';
+    statusText.textContent = 'Initialisation...';
+    logDiv.innerHTML = '';
+
+    logDiv.innerHTML += `<div style="color: #1a3a52; font-weight: 600;">▸ Démarrage de l'annotation</div>`;
+    logDiv.innerHTML += `<div>  • Services sélectionnés: ${serviceIds.length}</div>`;
+    logDiv.innerHTML += `<div>  • Types: ${annotationTypes.join(', ')}</div>`;
+    logDiv.innerHTML += `<div>  • Méthode: ${useLLM ? 'LLM (Intelligent)' : 'Classique'}</div>`;
+    logDiv.innerHTML += `<div style="margin-top: 10px;"></div>`;
+
+    // ÉTAPE 3: DÉMARRER LE POLLING DE PROGRESSION
+    let lastProgress = 0;
+    progressInterval = setInterval(async () => {
+        try {
+            const progressResponse = await fetch(`${API_URL}/annotate/progress`);
+            const progressData = await progressResponse.json();
+
+            if (progressResponse.ok) {
+                const { current, total, current_service, completed, error } = progressData;
+
+                if (total > 0) {
+                    const progress = Math.round((current / total) * 100);
+                    progressBar.style.width = `${progress}%`;
+                    progressBar.textContent = `${progress}%`;
+                    
+                    statusText.textContent = `Annotation en cours: ${current}/${total} services traités`;
+                    
+                    // Ajouter au log si un nouveau service est annoté
+                    if (current > lastProgress) {
+                        logDiv.innerHTML += `<div style="color: #2d5016;">✓ Service ${current_service} annoté (${current}/${total})</div>`;
+                        logDiv.scrollTop = logDiv.scrollHeight;
+                        lastProgress = current;
+                    }
+                }
+
+                // Si terminé ou erreur
+                if (completed) {
+                    clearInterval(progressInterval);
+                    progressInterval = null;
+
+                    if (error) {
+                        progressBar.style.width = '100%';
+                        progressBar.style.background = '#8b0000';
+                        progressBar.textContent = 'Erreur';
+                        statusText.textContent = 'Erreur lors de l\'annotation';
+                        logDiv.innerHTML += `<div style="color: #8b0000; font-weight: 600;">✗ Erreur: ${error}</div>`;
+                        alert(`Erreur: ${error}`);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Erreur lors de la récupération de la progression:', error);
+        }
+    }, 500);  // Polling toutes les 500ms
+
+    // ÉTAPE 4: LANCER L'ANNOTATION
+    try {
+        const response = await fetch(`${API_URL}/annotate/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                use_llm: useLLM,
+                service_ids: serviceIds,
+                annotation_types: annotationTypes
+            })
+        });
+
+        const data = await response.json();
+        
+        // Arrêter le polling
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+        
+        if (response.ok) {
+            // Animation finale
+            progressBar.style.width = '100%';
+            progressBar.textContent = '100%';
+            progressBar.style.background = '#2d5016';
+            statusText.textContent = `✓ Annotation terminée: ${data.total_annotated} services annotés`;
+            
+            logDiv.innerHTML += `<div style="margin-top: 10px; color: #2d5016; font-weight: 600;">✅ Annotation terminée avec succès!</div>`;
+            logDiv.innerHTML += `<div style="color: #1a3a52; font-weight: 600;">📊 Total: ${data.total_annotated} services annotés</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            // Afficher les résultats après un court délai
+            setTimeout(() => {
+                showAnnotationResults(data);
+            }, 1000);
+        } else {
+            progressBar.style.width = '100%';
+            progressBar.style.background = '#8b0000';
+            progressBar.textContent = 'Erreur';
+            statusText.textContent = 'Erreur lors de l\'annotation';
+            logDiv.innerHTML += `<div style="color: #8b0000; font-weight: 600;">✗ Erreur: ${data.error}</div>`;
+            alert(`Erreur: ${data.error}`);
+        }
+    } catch (error) {
+        // Arrêter le polling en cas d'erreur
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+        
+        progressBar.style.width = '100%';
+        progressBar.style.background = '#8b0000';
+        progressBar.textContent = 'Erreur';
+        statusText.textContent = 'Erreur de connexion';
+        logDiv.innerHTML += `<div style="color: #8b0000; font-weight: 600;">✗ Erreur: ${error.message}</div>`;
+        alert(`Erreur: ${error.message}`);
+    }
+}
+
+function cleanupAnnotationPolling() {
+    if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+    }
+}
 
         function showAnnotationResults(data) {
             document.getElementById('annotation-results-section').style.display = 'block';
