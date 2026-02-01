@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -679,7 +679,6 @@
             font-family: 'Courier New', monospace;
         }
 
-        /* Nouveau style pour la progression d'upload */
         .upload-progress-box {
             background: #f0f4f8;
             border: 1px solid #1a3a52;
@@ -710,12 +709,93 @@
         .batch-log-item.error {
             color: #8b0000;
         }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 0;
+            padding: 0;
+            border: 1px solid #888;
+            width: 600px;
+            max-width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            background: #1a3a52;
+            color: white;
+            padding: 20px;
+            border-bottom: 3px solid #0d1f2d;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            text-align: right;
+            border-top: 1px solid #e8e8e8;
+        }
+
+        .modal-footer .btn {
+            margin-left: 10px;
+        }
+
+        .annotation-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .annotation-info-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #e8e8e8;
+        }
+
+        .annotation-info-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .annotation-info-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a3a52;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>Intelligent Web Service Composition System</h1>
+            <div class="subtitle">MOF-based Social Web Services with AI-Enhanced Composition</div>
         </div>
 
         <div class="tabs">
@@ -726,7 +806,7 @@
             <button class="tab" onclick="showTab(4)">5. Comparative Analysis</button>
         </div>
 
-        <!-- ONGLET 1: GESTION DES SERVICES -->
+        <!-- TAB 1: SERVICE MANAGEMENT -->
         <div class="tab-content active">
             <div class="section">
                 <div class="section-title">Loading the Service Repository</div>
@@ -740,7 +820,7 @@
 
                 <div id="upload-progress-section" style="display: none;" class="upload-progress-box">
                     <div class="section-title" style="border: none; margin-bottom: 10px; padding-bottom: 0;">
-                        Progression de l'Upload
+                        Upload Progress
                     </div>
                     <div class="progress-bar">
                         <div class="progress-fill" id="upload-progress" style="width: 0%;">0%</div>
@@ -766,7 +846,7 @@
             </div>
         </div>
 
-        <!-- ONGLET 2: ANNOTATION AUTOMATIQUE -->
+        <!-- TAB 2: AUTOMATIC ANNOTATION -->
         <div class="tab-content">
             <div class="section">
                 <div class="section-title">Service Selection for Annotation</div>
@@ -785,7 +865,7 @@
 
                 <div class="service-list" id="services-selection-list" style="max-height: 300px;">
                     <p style="text-align: center; color: #666; padding: 40px; font-style: italic;">
-                        Please load services first in Tab 1 ( Service Management )
+                        Please load services first in Tab 1 (Service Management)
                     </p>
                 </div>
             </div>
@@ -829,13 +909,13 @@
                     </label>
                 </div>
 
-                <button class="btn btn-primary" onclick="startAnnotation()" style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="showAnnotationConfirmation()" style="margin-top: 20px;">
                     Start Annotation
                 </button>
             </div>
 
             <div class="section" id="annotation-progress-section" style="display: none;">
-                <div class="section-title">Progression de l'Annotation</div>
+                <div class="section-title">Annotation Progress</div>
                 <div class="progress-bar">
                     <div class="progress-fill" id="annotation-progress" style="width: 0%;">0%</div>
                 </div>
@@ -845,176 +925,176 @@
             </div>
 
             <div class="section" id="annotation-results-section" style="display: none;">
-                <div class="section-title">Fichiers Annotés</div>
+                <div class="section-title">Annotated Files</div>
                 <div id="annotation-results"></div>
             </div>
         </div>
 
-        <!-- ONGLET 3: COMPOSITION CLASSIQUE -->
+        <!-- TAB 3: CLASSIC COMPOSITION -->
         <div class="tab-content">
             <div class="section">
-                <div class="section-title">Chargement des Requêtes de Composition</div>
+                <div class="section-title">Loading Composition Requests</div>
                 
                 <div class="file-upload-area" onclick="document.getElementById('requests-file').click()">
                     <input type="file" id="requests-file" accept=".xml" onchange="uploadRequests()">
                     <div class="file-upload-icon">📋</div>
-                    <div class="file-upload-text">Charger le fichier Requests.xml</div>
-                    <div class="file-upload-hint">Fichier contenant les requêtes de composition</div>
+                    <div class="file-upload-text">Load Requests.xml file</div>
+                    <div class="file-upload-hint">File containing composition requests</div>
                 </div>
 
                 <div style="margin-top: 25px;">
                     <p id="requests-count" style="font-size: 14px; font-weight: 600; color: #1a3a52;">
-                        Requêtes disponibles: <span style="font-size: 18px;">0</span>
+                        Available requests: <span style="font-size: 18px;">0</span>
                     </p>
                 </div>
             </div>
 
             <div class="section">
-                <div class="section-title">Sélection de la Requête</div>
+                <div class="section-title">Request Selection</div>
                 
                 <select id="request-select-classic" onchange="showRequestDetails('classic')">
-                    <option value="">-- Sélectionner une requête --</option>
+                    <option value="">-- Select a request --</option>
                 </select>
 
                 <div id="request-details-classic" style="display: none;">
                     <h4 style="margin: 20px 0 15px 0; font-size: 13px; font-weight: 600; text-transform: uppercase; color: #1a3a52;">
-                        Spécification de la Requête
+                        Request Specification
                     </h4>
                     <div id="request-info-classic"></div>
                 </div>
             </div>
 
             <div class="section">
-                <div class="section-title">Configuration de l'Algorithme</div>
+                <div class="section-title">Algorithm Configuration</div>
                 
                 <label style="display: block; margin-bottom: 10px; font-size: 13px; font-weight: 600;">
-                    Méthode de composition:
+                    Composition method:
                 </label>
                 <select id="algorithm-select">
-                    <option value="dijkstra">Algorithme de Dijkstra (recherche optimale)</option>
-                    <option value="astar">Algorithme A* (heuristique guidée)</option>
-                    <option value="greedy">Algorithme glouton (rapide)</option>
+                    <option value="dijkstra">Dijkstra Algorithm (optimal search)</option>
+                    <option value="astar">A* Algorithm (guided heuristic)</option>
+                    <option value="greedy">Greedy Algorithm (fast)</option>
                 </select>
 
                 <button class="btn btn-primary" onclick="composeClassic()">
-                    Exécuter la Composition
+                    Execute Composition
                 </button>
             </div>
 
             <div class="section" id="classic-result-section" style="display: none;">
-                <div class="section-title">Résultats de la Composition Classique</div>
+                <div class="section-title">Classic Composition Results</div>
                 <div id="classic-result"></div>
             </div>
         </div>
 
-        <!-- ONGLET 4: COMPOSITION LLM -->
+        <!-- TAB 4: LLM COMPOSITION -->
         <div class="tab-content">
             <div class="section">
-                <div class="section-title">Sélection de la Requête</div>
+                <div class="section-title">Request Selection</div>
                 
                 <select id="request-select-llm" onchange="showRequestDetails('llm')">
-                    <option value="">-- Sélectionner une requête --</option>
+                    <option value="">-- Select a request --</option>
                 </select>
 
                 <div id="request-details-llm" style="display: none;">
                     <h4 style="margin: 20px 0 15px 0; font-size: 13px; font-weight: 600; text-transform: uppercase; color: #1a3a52;">
-                        Spécification de la Requête
+                        Request Specification
                     </h4>
                     <div id="request-info-llm"></div>
                 </div>
             </div>
 
             <div class="section">
-                <div class="section-title">Configuration du Système Intelligent</div>
+                <div class="section-title">Intelligent System Configuration</div>
                 
                 <div class="info-box">
-                    <strong>Modèle LLM:</strong> Ollama (local)<br>
-                    <strong>Capacités:</strong> Raisonnement contextuel, adaptation dynamique, explainability
+                    <strong>LLM Model:</strong> Ollama (local)<br>
+                    <strong>Capabilities:</strong> Contextual reasoning, dynamic adaptation, explainability
                 </div>
 
                 <div class="checkbox-group">
                     <label>
                         <input type="checkbox" id="enable-reasoning" checked>
-                        <strong>Context Understanding & Reasoning</strong> - Analyse intelligente du contexte
+                        <strong>Context Understanding & Reasoning</strong> - Intelligent context analysis
                     </label>
                     <label>
                         <input type="checkbox" id="enable-adaptation" checked>
-                        <strong>Dynamic Adaptation</strong> - Adaptation automatique aux contraintes
+                        <strong>Dynamic Adaptation</strong> - Automatic adaptation to constraints
                     </label>
                 </div>
 
                 <button class="btn btn-primary" onclick="composeLLM()">
-                    Exécuter la Composition Intelligente
+                    Execute Intelligent Composition
                 </button>
             </div>
 
             <div class="section" id="llm-reasoning-section" style="display: none;">
-                <div class="section-title">Processus de Raisonnement du LLM</div>
+                <div class="section-title">LLM Reasoning Process</div>
                 <div class="reasoning-log" id="llm-reasoning"></div>
             </div>
 
             <div class="section" id="llm-result-section" style="display: none;">
-                <div class="section-title">Résultats de la Composition Intelligente</div>
+                <div class="section-title">Intelligent Composition Results</div>
                 <div id="llm-result"></div>
             </div>
 
             <div class="section">
-                <div class="section-title">Interface de Dialogue avec le LLM</div>
+                <div class="section-title">Dialogue Interface with LLM</div>
                 <div class="chat-container" id="chat-box">
                     <p style="text-align: center; color: #666; padding: 60px; font-style: italic;">
-                        Posez des questions au système pour clarifier les décisions de composition...
+                        Ask questions to the system to clarify composition decisions...
                     </p>
                 </div>
                 <div class="input-group">
-                    <input type="text" id="chat-input" placeholder="Entrez votre question..." 
+                    <input type="text" id="chat-input" placeholder="Enter your question..." 
                            onkeypress="if(event.key === 'Enter') sendChatMessage()">
                     <button class="btn btn-primary" onclick="sendChatMessage()">
-                        Envoyer
+                        Send
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- ONGLET 5: COMPARAISON -->
+        <!-- TAB 5: COMPARISON -->
         <div class="tab-content">
             <div class="section">
-                <div class="section-title">Chargement des Solutions de Référence</div>
+                <div class="section-title">Loading Reference Solutions</div>
                 
                 <div class="file-upload-area" onclick="document.getElementById('best-solutions-file').click()">
                     <input type="file" id="best-solutions-file" accept=".xml" onchange="uploadBestSolutions()">
                     <div class="file-upload-icon">🏆</div>
-                    <div class="file-upload-text">Charger le fichier BestSolutions.xml</div>
-                    <div class="file-upload-hint">Solutions optimales de référence pour la comparaison</div>
+                    <div class="file-upload-text">Load BestSolutions.xml file</div>
+                    <div class="file-upload-hint">Optimal reference solutions for comparison</div>
                 </div>
             </div>
 
             <div class="section">
                 <button class="btn btn-primary" onclick="loadComparison()">
-                    Générer l'Analyse Comparative
+                    Generate Comparative Analysis
                 </button>
             </div>
 
             <div class="comparison-grid" id="stats-grid" style="display: none;">
                 <div class="stat-panel">
                     <div class="stat-value" id="stat-classic-success">0%</div>
-                    <div class="stat-label">Taux de Réussite<br>Solution A (Classique)</div>
+                    <div class="stat-label">Success Rate<br>Solution A (Classic)</div>
                 </div>
                 <div class="stat-panel">
                     <div class="stat-value" id="stat-llm-success">0%</div>
-                    <div class="stat-label">Taux de Réussite<br>Solution B (LLM)</div>
+                    <div class="stat-label">Success Rate<br>Solution B (LLM)</div>
                 </div>
                 <div class="stat-panel">
                     <div class="stat-value" id="stat-improvement">0%</div>
-                    <div class="stat-label">Amélioration<br>Solution B vs A</div>
+                    <div class="stat-label">Improvement<br>Solution B vs A</div>
                 </div>
             </div>
 
             <div class="section" id="comparison-table-section" style="display: none;">
-                <div class="section-title">Tableau Comparatif Détaillé</div>
+                <div class="section-title">Detailed Comparison Table</div>
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Requête ID</th>
+                            <th>Request ID</th>
                             <th>Best Known</th>
                             <th>Solution A</th>
                             <th>Solution B (LLM)</th>
@@ -1026,8 +1106,55 @@
             </div>
 
             <div class="section" id="detailed-stats-section" style="display: none;">
-                <div class="section-title">Statistiques Détaillées</div>
+                <div class="section-title">Detailed Statistics</div>
                 <div id="detailed-stats"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ANNOTATION CONFIRMATION MODAL -->
+    <div id="annotation-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Annotation Confirmation</h2>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
+                    You are about to start the annotation process for the selected services.
+                </p>
+
+                <div class="annotation-info-grid">
+                    <div class="annotation-info-item">
+                        <div class="annotation-info-label">Services Selected</div>
+                        <div class="annotation-info-value" id="modal-service-count">0</div>
+                    </div>
+                    <div class="annotation-info-item">
+                        <div class="annotation-info-label">Annotation Method</div>
+                        <div class="annotation-info-value" id="modal-method" style="font-size: 16px;">Classic</div>
+                    </div>
+                    <div class="annotation-info-item">
+                        <div class="annotation-info-label">Annotation Types</div>
+                        <div class="annotation-info-value" id="modal-types" style="font-size: 16px;">3</div>
+                    </div>
+                    <div class="annotation-info-item">
+                        <div class="annotation-info-label">Estimated Time</div>
+                        <div class="annotation-info-value" id="modal-time">~0s</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #e8e8e8;">
+                    <strong style="display: block; margin-bottom: 10px;">Selected Annotation Types:</strong>
+                    <ul id="modal-annotation-list" style="margin-left: 20px; font-size: 13px;">
+                    </ul>
+                </div>
+
+                <div style="margin-top: 15px; padding: 12px; background: #fff9e6; border-left: 3px solid #f0ad4e; font-size: 12px; color: #856404;">
+                    <strong>Note:</strong> The estimated time is approximate. LLM-based annotation may take longer depending on model performance and system load.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeAnnotationModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmAnnotation()">Start Annotation</button>
             </div>
         </div>
     </div>
@@ -1040,6 +1167,7 @@
         let llmResults = {};
         let selectedServiceIds = new Set();
         let isUploading = false;
+        let annotationProgressInterval = null;
 
         function showTab(index) {
             const tabs = document.querySelectorAll('.tab');
@@ -1050,7 +1178,6 @@
                     tab.classList.add('active');
                     contents[i].classList.add('active');
                     
-                    // Si on passe à l'onglet 2, mettre à jour la liste de sélection
                     if (index === 1) {
                         updateServicesSelectionList();
                     }
@@ -1065,7 +1192,7 @@
             const list = document.getElementById('services-selection-list');
             
             if (currentServices.length === 0) {
-                list.innerHTML = '<p style="text-align: center; color: #666; padding: 40px; font-style: italic;"> Please load services first in Tab 1 ( Service Management )</p>';
+                list.innerHTML = '<p style="text-align: center; color: #666; padding: 40px; font-style: italic;">Please load services first in Tab 1 (Service Management)</p>';
                 return;
             }
 
@@ -1077,7 +1204,7 @@
                     <label for="service-${s.id}" style="cursor: pointer; flex: 1;" onclick="event.stopPropagation(); toggleServiceSelection('${s.id}')">
                         <strong>${s.id}</strong>
                         <span style="margin-left: 15px; color: #666; font-size: 12px;">
-                            ${s.inputs.length} entrées • ${s.outputs.length} sorties
+                            ${s.inputs.length} inputs • ${s.outputs.length} outputs
                         </span>
                     </label>
                 </div>
@@ -1120,7 +1247,7 @@
 
         async function uploadServices() {
             if (isUploading) {
-                alert('⚠️ Un upload est déjà en cours. Veuillez patienter...');
+                alert('⚠️ An upload is already in progress. Please wait...');
                 return;
             }
 
@@ -1129,19 +1256,17 @@
             
             if (files.length === 0) return;
             
-            // Filtrer seulement les fichiers WSDL/XML
             const validFiles = files.filter(f => 
                 f.name.endsWith('.wsdl') || f.name.endsWith('.xml')
             );
             
             if (validFiles.length === 0) {
-                alert('Aucun fichier WSDL ou XML trouvé');
+                alert('No WSDL or XML files found');
                 return;
             }
 
             isUploading = true;
             
-            // Afficher la section de progression
             document.getElementById('upload-progress-section').style.display = 'block';
             const progressBar = document.getElementById('upload-progress');
             const statusText = document.getElementById('upload-status');
@@ -1152,7 +1277,6 @@
             progressBar.textContent = '0%';
             batchLog.innerHTML = '';
             
-            // UPLOAD PAR LOTS DE 100 FICHIERS
             const BATCH_SIZE = 500;
             let totalUploaded = 0;
             let allServices = [];
@@ -1160,15 +1284,15 @@
             
             const totalBatches = Math.ceil(validFiles.length / BATCH_SIZE);
             
-            batchLog.innerHTML += `<div class="batch-log-item">📦 ${validFiles.length} fichiers à traiter en ${totalBatches} lot(s)</div>`;
+            batchLog.innerHTML += `<div class="batch-log-item">📦 ${validFiles.length} files to process in ${totalBatches} batch(es)</div>`;
             
             try {
                 for (let i = 0; i < validFiles.length; i += BATCH_SIZE) {
                     const batch = validFiles.slice(i, i + BATCH_SIZE);
                     const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
                     
-                    statusText.textContent = `Upload du lot ${batchNumber}/${totalBatches} (${batch.length} fichiers)...`;
-                    batchLog.innerHTML += `<div class="batch-log-item">⏳ Lot ${batchNumber}/${totalBatches}: ${batch.length} fichiers...</div>`;
+                    statusText.textContent = `Uploading batch ${batchNumber}/${totalBatches} (${batch.length} files)...`;
+                    batchLog.innerHTML += `<div class="batch-log-item">⏳ Batch ${batchNumber}/${totalBatches}: ${batch.length} files...</div>`;
                     batchLog.scrollTop = batchLog.scrollHeight;
                     
                     const formData = new FormData();
@@ -1188,45 +1312,42 @@
                             totalUploaded += data.services.length;
                             allServices = allServices.concat(data.services);
                             
-                            // Mise à jour de la progression
                             const progress = Math.round((i + batch.length) / validFiles.length * 100);
                             progressBar.style.width = `${progress}%`;
                             progressBar.textContent = `${progress}%`;
                             
-                            const logMsg = `✅ Lot ${batchNumber}/${totalBatches}: ${data.services.length} services chargés`;
+                            const logMsg = `✅ Batch ${batchNumber}/${totalBatches}: ${data.services.length} services loaded`;
                             batchLog.innerHTML += `<div class="batch-log-item success">${logMsg}</div>`;
                             batchLog.scrollTop = batchLog.scrollHeight;
                             
-                            statusText.textContent = `✓ ${totalUploaded} services chargés sur ${validFiles.length} fichiers traités`;
+                            statusText.textContent = `✓ ${totalUploaded} services loaded from ${validFiles.length} files processed`;
                             
                             if (data.errors && data.errors.length > 0) {
                                 errorCount += data.errors.length;
                             }
                         } else {
-                            const errorMsg = `❌ Lot ${batchNumber}/${totalBatches}: Erreur - ${data.error}`;
+                            const errorMsg = `❌ Batch ${batchNumber}/${totalBatches}: Error - ${data.error}`;
                             batchLog.innerHTML += `<div class="batch-log-item error">${errorMsg}</div>`;
                             batchLog.scrollTop = batchLog.scrollHeight;
-                            alert(`Erreur au lot ${batchNumber}: ${data.error}\n\nVoulez-vous continuer avec les lots restants?`);
+                            alert(`Error in batch ${batchNumber}: ${data.error}\n\nContinue with remaining batches?`);
                             break;
                         }
                         
-                        // Petit délai entre les lots pour ne pas surcharger le serveur
                         if (i + BATCH_SIZE < validFiles.length) {
                             await new Promise(resolve => setTimeout(resolve, 300));
                         }
                         
                     } catch (error) {
-                        const errorMsg = `❌ Lot ${batchNumber}/${totalBatches}: Erreur réseau - ${error.message}`;
+                        const errorMsg = `❌ Batch ${batchNumber}/${totalBatches}: Network error - ${error.message}`;
                         batchLog.innerHTML += `<div class="batch-log-item error">${errorMsg}</div>`;
                         batchLog.scrollTop = batchLog.scrollHeight;
                         
-                        if (!confirm(`Erreur réseau au lot ${batchNumber}:\n${error.message}\n\nContinuer avec les lots restants?`)) {
+                        if (!confirm(`Network error in batch ${batchNumber}:\n${error.message}\n\nContinue with remaining batches?`)) {
                             break;
                         }
                     }
                 }
                 
-                // Mise à jour finale
                 if (totalUploaded > 0) {
                     currentServices = allServices;
                     
@@ -1235,7 +1356,7 @@
                     progressBar.style.background = '#2d5016';
                     
                     serviceCount.innerHTML = 
-                        `Nombre de services chargés: <span style="font-size: 18px; color: #2d5016;">${totalUploaded}</span>`;
+                        `Number of services loaded: <span style="font-size: 18px; color: #2d5016;">${totalUploaded}</span>`;
                     
                     statusText.textContent = `✅ Import completed: ${totalUploaded} services loaded`;
                     
@@ -1244,7 +1365,6 @@
                     
                     displayServices(allServices);
                     
-                    // Sélectionner automatiquement tous les nouveaux services
                     allServices.forEach(s => selectedServiceIds.add(s.id));
                     
                     let message = `✅ Import completed successfully!\n\n`;
@@ -1260,18 +1380,17 @@
                     alert(message);
                 } else {
                     progressBar.style.background = '#8b0000';
-                    statusText.textContent = '❌ Aucun service n\'a pu être chargé';
-                    alert('❌ Erreur: Aucun service n\'a pu être chargé. Vérifiez les logs pour plus de détails.');
+                    statusText.textContent = '❌ No services could be loaded';
+                    alert('❌ Error: No services could be loaded. Check logs for details.');
                 }
                 
             } catch (error) {
                 progressBar.style.background = '#8b0000';
-                statusText.textContent = `❌ Erreur: ${error.message}`;
-                batchLog.innerHTML += `<div class="batch-log-item error">❌ Erreur fatale: ${error.message}</div>`;
-                alert(`❌ Erreur fatale: ${error.message}`);
+                statusText.textContent = `❌ Error: ${error.message}`;
+                batchLog.innerHTML += `<div class="batch-log-item error">❌ Fatal error: ${error.message}</div>`;
+                alert(`❌ Fatal error: ${error.message}`);
             } finally {
                 isUploading = false;
-                // Réinitialiser l'input file
                 fileInput.value = '';
             }
         }
@@ -1280,29 +1399,27 @@
             const list = document.getElementById('services-list');
             
             if (services.length === 0) {
-                list.innerHTML = '<p style="text-align: center; color: #666; padding: 60px; font-style: italic;">Aucun service disponible</p>';
+                list.innerHTML = '<p style="text-align: center; color: #666; padding: 60px; font-style: italic;">No services available</p>';
                 return;
             }
 
-            // Si plus de 1000 services, afficher seulement un résumé
             if (services.length > 1000) {
                 list.innerHTML = `
                     <div style="text-align: center; padding: 40px;">
                         <h3 style="color: #1a3a52; margin-bottom: 20px;">
-                            ${services.length} services chargés avec succès
+                            ${services.length} services loaded successfully
                         </h3>
                         <p style="color: #666; margin-bottom: 15px;">
-                            Trop de services pour afficher la liste complète.
+                            Too many services to display complete list.
                         </p>
                         <p style="color: #666;">
-                            Les services sont disponibles pour l'annotation et la composition.
+                            Services are available for annotation and composition.
                         </p>
                     </div>
                 `;
                 return;
             }
 
-            // Afficher jusqu'à 500 services
             const servicesToDisplay = services.slice(0, 500);
             const remaining = services.length - servicesToDisplay.length;
 
@@ -1311,10 +1428,10 @@
                     <div class="service-id" style="margin-bottom: 12px;">${s.id}</div>
                     
                     <div class="meta-row">
-                        <div class="meta-label">Paramètres:</div>
+                        <div class="meta-label">Parameters:</div>
                         <div class="meta-values">
-                            <span class="tag input-tag">${s.inputs.length} entrées</span>
-                            <span class="tag output-tag">${s.outputs.length} sorties</span>
+                            <span class="tag input-tag">${s.inputs.length} inputs</span>
+                            <span class="tag output-tag">${s.outputs.length} outputs</span>
                         </div>
                     </div>
                     
@@ -1332,27 +1449,24 @@
             if (remaining > 0) {
                 list.innerHTML += `
                     <div style="text-align: center; padding: 30px; background: #f0f4f8; border: 1px solid #d0d0d0; margin-top: 10px;">
-                        <strong style="color: #1a3a52;">+ ${remaining} autres services non affichés</strong><br>
-                        <span style="color: #666; font-size: 12px;">Total: ${services.length} services disponibles</span>
+                        <strong style="color: #1a3a52;">+ ${remaining} more services not displayed</strong><br>
+                        <span style="color: #666; font-size: 12px;">Total: ${services.length} services available</span>
                     </div>
                 `;
             }
         }
 
-        async function startAnnotation() {
-            // Vérifier qu'il y a des services
+        async function showAnnotationConfirmation() {
             if (currentServices.length === 0) {
-                alert('Erreur: Aucun service chargé. Veuillez d\'abord charger des services dans l\'onglet 1.');
+                alert('Error: No services loaded. Please load services first in Tab 1.');
                 return;
             }
 
-            // Vérifier qu'au moins un service est sélectionné
             if (selectedServiceIds.size === 0) {
-                alert('Erreur: Veuillez sélectionner au moins un service à annoter.');
+                alert('Error: Please select at least one service to annotate.');
                 return;
             }
 
-            // Récupérer les types d'annotations sélectionnés
             const annotationTypes = [];
             if (document.getElementById('annotation-interaction').checked) {
                 annotationTypes.push('interaction');
@@ -1365,14 +1479,73 @@
             }
 
             if (annotationTypes.length === 0) {
-                alert('Erreur: Veuillez sélectionner au moins un type d\'annotation.');
+                alert('Error: Please select at least one annotation type.');
                 return;
             }
 
-            // Vérifier si on utilise le LLM
             const useLLM = document.getElementById('use-llm-annotation').checked;
 
-            // Afficher la section de progression
+            // Update modal with info
+            document.getElementById('modal-service-count').textContent = selectedServiceIds.size;
+            document.getElementById('modal-method').textContent = useLLM ? 'LLM' : 'Classic';
+            document.getElementById('modal-types').textContent = annotationTypes.length;
+
+            // Estimate time
+            try {
+                const response = await fetch(`${API_URL}/annotate/estimate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        use_llm: useLLM,
+                        service_ids: Array.from(selectedServiceIds),
+                        annotation_types: annotationTypes
+                    })
+                });
+
+                const data = await response.json();
+                const minutes = Math.floor(data.estimated_time_seconds / 60);
+                const seconds = Math.round(data.estimated_time_seconds % 60);
+                
+                if (minutes > 0) {
+                    document.getElementById('modal-time').textContent = `~${minutes}m ${seconds}s`;
+                } else {
+                    document.getElementById('modal-time').textContent = `~${seconds}s`;
+                }
+            } catch (error) {
+                document.getElementById('modal-time').textContent = '~unknown';
+            }
+
+            // Update annotation types list
+            const typesList = document.getElementById('modal-annotation-list');
+            typesList.innerHTML = annotationTypes.map(t => `<li>${t.charAt(0).toUpperCase() + t.slice(1)} Annotations</li>`).join('');
+
+            // Show modal
+            document.getElementById('annotation-modal').style.display = 'flex';
+        }
+
+        function closeAnnotationModal() {
+            document.getElementById('annotation-modal').style.display = 'none';
+        }
+
+        async function confirmAnnotation() {
+            closeAnnotationModal();
+            startAnnotation();
+        }
+
+        async function startAnnotation() {
+            const annotationTypes = [];
+            if (document.getElementById('annotation-interaction').checked) {
+                annotationTypes.push('interaction');
+            }
+            if (document.getElementById('annotation-context').checked) {
+                annotationTypes.push('context');
+            }
+            if (document.getElementById('annotation-policy').checked) {
+                annotationTypes.push('policy');
+            }
+
+            const useLLM = document.getElementById('use-llm-annotation').checked;
+
             document.getElementById('annotation-progress-section').style.display = 'block';
             document.getElementById('annotation-results-section').style.display = 'none';
 
@@ -1382,41 +1555,22 @@
 
             progressBar.style.width = '0%';
             progressBar.textContent = '0%';
-            statusText.textContent = 'Initialisation...';
+            progressBar.style.background = '#1a3a52';
+            statusText.textContent = 'Initializing annotation...';
             logDiv.innerHTML = '';
 
+            const totalServices = selectedServiceIds.size;
+            const serviceIds = Array.from(selectedServiceIds);
+            
+            logDiv.innerHTML += `<div style="color: #1a3a52; font-weight: 600;">▸ Starting annotation process</div>`;
+            logDiv.innerHTML += `<div>  • Services selected: ${totalServices}</div>`;
+            logDiv.innerHTML += `<div>  • Types: ${annotationTypes.join(', ')}</div>`;
+            logDiv.innerHTML += `<div>  • Method: ${useLLM ? 'LLM (Intelligent)' : 'Classic'}</div>`;
+            logDiv.innerHTML += `<div style="margin-top: 10px;"></div>`;
+
             try {
-                // Simuler la progression
-                let progress = 0;
-                const totalServices = selectedServiceIds.size;
-                const serviceIds = Array.from(selectedServiceIds);
-                
-                logDiv.innerHTML += `<div style="color: #1a3a52; font-weight: 600;">▸ Démarrage de l'annotation</div>`;
-                logDiv.innerHTML += `<div>  • Services sélectionnés: ${totalServices}</div>`;
-                logDiv.innerHTML += `<div>  • Types: ${annotationTypes.join(', ')}</div>`;
-                logDiv.innerHTML += `<div>  • Méthode: ${useLLM ? 'LLM (Intelligent)' : 'Classique'}</div>`;
-                logDiv.innerHTML += `<div style="margin-top: 10px;"></div>`;
-
-                // Simuler la progression pendant l'annotation
-                const progressInterval = setInterval(() => {
-                    if (progress < 90) {
-                        progress += 5;
-                        progressBar.style.width = `${progress}%`;
-                        progressBar.textContent = `${progress}%`;
-                        
-                        const currentService = Math.floor(progress * totalServices / 100);
-                        statusText.textContent = `Annotation en cours: ${currentService}/${totalServices} services traités`;
-                        
-                        if (progress % 20 === 0 && currentService > 0) {
-                            const serviceId = serviceIds[currentService - 1];
-                            logDiv.innerHTML += `<div style="color: #2d5016;">✓ Service ${serviceId} annoté</div>`;
-                            logDiv.scrollTop = logDiv.scrollHeight;
-                        }
-                    }
-                }, useLLM ? 400 : 200);  // Plus lent si LLM
-
-                // Appel API
-                const response = await fetch(`${API_URL}/annotate/start`, {
+                // Start the annotation process
+                const annotationPromise = fetch(`${API_URL}/annotate/start`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
@@ -1426,38 +1580,79 @@
                     })
                 });
 
+                // Start polling for progress
+                annotationProgressInterval = setInterval(async () => {
+                    try {
+                        const progressResponse = await fetch(`${API_URL}/annotate/progress`);
+                        const progressData = await progressResponse.json();
+
+                        if (progressData.total > 0) {
+                            const percentage = Math.round((progressData.current / progressData.total) * 100);
+                            progressBar.style.width = `${percentage}%`;
+                            progressBar.textContent = `${percentage}%`;
+                            
+                            statusText.textContent = `Processing: ${progressData.current}/${progressData.total} services`;
+                            
+                            if (progressData.current_service && progressData.current_service !== '') {
+                                const lastLog = logDiv.lastElementChild;
+                                const newLogEntry = `<div style="color: #2d5016;">✓ Service ${progressData.current_service} annotated (${progressData.current}/${progressData.total})</div>`;
+                                
+                                // Only add if it's different from last entry
+                                if (!lastLog || !lastLog.textContent.includes(progressData.current_service)) {
+                                    logDiv.innerHTML += newLogEntry;
+                                    logDiv.scrollTop = logDiv.scrollHeight;
+                                }
+                            }
+                        }
+
+                        if (progressData.completed) {
+                            clearInterval(annotationProgressInterval);
+                            
+                            if (progressData.error) {
+                                progressBar.style.background = '#8b0000';
+                                statusText.textContent = 'Annotation failed';
+                                logDiv.innerHTML += `<div style="color: #8b0000; font-weight: 600;">✗ Error: ${progressData.error}</div>`;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Progress polling error:', error);
+                    }
+                }, 500); // Poll every 500ms
+
+                // Wait for annotation to complete
+                const response = await annotationPromise;
                 const data = await response.json();
                 
-                clearInterval(progressInterval);
+                clearInterval(annotationProgressInterval);
                 
                 if (response.ok) {
-                    // Animation finale
                     progressBar.style.width = '100%';
                     progressBar.textContent = '100%';
-                    statusText.textContent = `✓ Annotation terminée: ${data.total_annotated} services annotés`;
+                    progressBar.style.background = '#2d5016';
+                    statusText.textContent = `✓ Annotation completed: ${data.total_annotated} services annotated`;
                     
-                    logDiv.innerHTML += `<div style="margin-top: 10px; color: #2d5016; font-weight: 600;">✓ Annotation terminée avec succès!</div>`;
+                    logDiv.innerHTML += `<div style="margin-top: 10px; color: #2d5016; font-weight: 600;">✓ Annotation completed successfully!</div>`;
                     logDiv.scrollTop = logDiv.scrollHeight;
                     
-                    // Afficher les résultats après un court délai
                     setTimeout(() => {
                         showAnnotationResults(data);
                     }, 1000);
                 } else {
                     progressBar.style.width = '100%';
                     progressBar.style.background = '#8b0000';
-                    progressBar.textContent = 'Erreur';
-                    statusText.textContent = 'Erreur lors de l\'annotation';
-                    logDiv.innerHTML += `<div style="color: #8b0000; font-weight: 600;">✗ Erreur: ${data.error}</div>`;
-                    alert(`Erreur: ${data.error}`);
+                    progressBar.textContent = 'Error';
+                    statusText.textContent = 'Annotation error';
+                    logDiv.innerHTML += `<div style="color: #8b0000; font-weight: 600;">✗ Error: ${data.error}</div>`;
+                    alert(`Error: ${data.error}`);
                 }
             } catch (error) {
+                clearInterval(annotationProgressInterval);
                 progressBar.style.width = '100%';
                 progressBar.style.background = '#8b0000';
-                progressBar.textContent = 'Erreur';
-                statusText.textContent = 'Erreur de connexion';
-                logDiv.innerHTML += `<div style="color: #8b0000; font-weight: 600;">✗ Erreur: ${error.message}</div>`;
-                alert(`Erreur: ${error.message}`);
+                progressBar.textContent = 'Error';
+                statusText.textContent = 'Connection error';
+                logDiv.innerHTML += `<div style="color: #8b0000; font-weight: 600;">✗ Error: ${error.message}</div>`;
+                alert(`Error: ${error.message}`);
             }
         }
 
@@ -1467,14 +1662,14 @@
             
             resultsDiv.innerHTML = `
                 <div class="result-box result-success">
-                    <strong>Annotation terminée avec succès</strong><br>
-                    ${data.total_annotated} services ont été annotés selon le modèle MOF-based Social Web Services
+                    <strong>Annotation completed successfully</strong><br>
+                    ${data.total_annotated} services have been annotated according to the MOF-based Social Web Services model
                 </div>
 
                 ${data.services && data.services.length > 0 ? `
                     <div style="margin-top: 25px;">
                         <h4 style="margin-bottom: 15px; font-size: 14px; font-weight: 600; color: #1a3a52;">
-                            Liste des fichiers annotés (${data.services.length})
+                            List of annotated files (${data.services.length})
                         </h4>
                         <div style="max-height: 400px; overflow-y: auto; border: 1px solid #d0d0d0; background: #fafafa;">
                             ${data.services.map(service => `
@@ -1484,13 +1679,13 @@
                                             ${service.id}
                                         </div>
                                         <div style="font-size: 12px; color: #666; margin-top: 4px;">
-                                            ${service.inputs.length} entrées • ${service.outputs.length} sorties
-                                            ${service.annotations ? ' • Annoté' : ''}
+                                            ${service.inputs.length} inputs • ${service.outputs.length} outputs
+                                            ${service.annotations ? ' • Annotated' : ''}
                                         </div>
                                     </div>
                                     <button class="btn btn-primary" onclick="downloadAnnotatedService('${service.id}')" 
                                             style="padding: 8px 16px; font-size: 12px;">
-                                        📥 Télécharger
+                                        📥 Download
                                     </button>
                                 </div>
                             `).join('')}
@@ -1511,17 +1706,17 @@
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `${serviceId}_annotated.xml`;
+                    a.download = `${serviceId}_enriched.xml`;
                     document.body.appendChild(a);
                     a.click();
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
                 } else {
                     const data = await response.json();
-                    alert(`Erreur: ${data.error}`);
+                    alert(`Error: ${data.error}`);
                 }
             } catch (error) {
-                alert(`Erreur de téléchargement: ${error.message}`);
+                alert(`Download error: ${error.message}`);
             }
         }
 
@@ -1541,15 +1736,15 @@
                 if (response.ok) {
                     currentRequests = data.requests;
                     document.getElementById('requests-count').innerHTML = 
-                        `Requêtes disponibles: <span style="font-size: 18px;">${data.requests.length}</span>`;
+                        `Available requests: <span style="font-size: 18px;">${data.requests.length}</span>`;
                     
                     populateRequestSelects(data.requests);
                     alert(`✓ ${data.message}`);
                 } else {
-                    alert(`✗ Erreur: ${data.error}`);
+                    alert(`✗ Error: ${data.error}`);
                 }
             } catch (error) {
-                alert(`✗ Erreur: ${error.message}`);
+                alert(`✗ Error: ${error.message}`);
             }
         }
 
@@ -1558,7 +1753,7 @@
             
             selects.forEach(selectId => {
                 const select = document.getElementById(selectId);
-                select.innerHTML = '<option value="">-- Sélectionner une requête --</option>' +
+                select.innerHTML = '<option value="">-- Select a request --</option>' +
                     requests.map(r => `<option value="${r.id}">${r.id}</option>`).join('');
             });
         }
@@ -1582,11 +1777,11 @@
                 document.getElementById(infoId).innerHTML = `
                     <div class="metric-grid">
                         <div class="metric-box">
-                            <div class="metric-label">Paramètres fournis</div>
+                            <div class="metric-label">Provided Parameters</div>
                             <div class="metric-value">${request.provided.length}</div>
                         </div>
                         <div class="metric-box">
-                            <div class="metric-label">Paramètre résultant</div>
+                            <div class="metric-label">Resultant Parameter</div>
                             <div class="metric-value" style="font-size: 16px; font-family: 'Courier New', monospace;">
                                 ${request.resultant}
                             </div>
@@ -1594,7 +1789,7 @@
                     </div>
                     
                     <h4 style="margin: 25px 0 15px 0; font-size: 13px; font-weight: 600; text-transform: uppercase; color: #1a3a52;">
-                        Contraintes de Qualité de Service (QoS)
+                        Quality of Service (QoS) Constraints
                     </h4>
                     <div class="qos-comparison">
                         <div class="qos-metric">
@@ -1631,13 +1826,13 @@
             const algorithm = document.getElementById('algorithm-select').value;
 
             if (!requestId) {
-                alert('Erreur: Veuillez sélectionner une requête');
+                alert('Error: Please select a request');
                 return;
             }
 
             document.getElementById('classic-result-section').style.display = 'block';
             document.getElementById('classic-result').innerHTML = 
-                '<div class="loading-spinner"></div> Exécution de l\'algorithme de composition...';
+                '<div class="loading-spinner"></div> Executing composition algorithm...';
 
             try {
                 const response = await fetch(`${API_URL}/compose/classic`, {
@@ -1654,14 +1849,14 @@
                 } else {
                     document.getElementById('classic-result').innerHTML = `
                         <div class="result-box result-error">
-                            <strong>Erreur de composition</strong><br>${data.error}
+                            <strong>Composition error</strong><br>${data.error}
                         </div>
                     `;
                 }
             } catch (error) {
                 document.getElementById('classic-result').innerHTML = `
                     <div class="result-box result-error">
-                        <strong>Erreur système</strong><br>${error.message}
+                        <strong>System error</strong><br>${error.message}
                     </div>
                 `;
             }
@@ -1670,41 +1865,41 @@
         function displayClassicResult(result) {
             document.getElementById('classic-result').innerHTML = `
                 <div class="result-box ${result.success ? 'result-success' : 'result-error'}">
-                    <strong>${result.success ? 'Composition réussie' : 'Échec de la composition'}</strong><br>
+                    <strong>${result.success ? 'Composition successful' : 'Composition failed'}</strong><br>
                     ${result.explanation}
                 </div>
 
                 ${result.success ? `
                     <div class="metric-grid" style="margin-top: 25px;">
                         <div class="metric-box">
-                            <div class="metric-label">Service sélectionné</div>
+                            <div class="metric-label">Selected Service</div>
                             <div class="metric-value" style="font-size: 16px; font-family: 'Courier New', monospace;">
                                 ${result.services[0]}
                             </div>
                         </div>
                         <div class="metric-box">
-                            <div class="metric-label">Valeur d'utilité</div>
+                            <div class="metric-label">Utility Value</div>
                             <div class="metric-value">${result.utility_value.toFixed(2)}</div>
                         </div>
                         <div class="metric-box">
-                            <div class="metric-label">Temps de calcul</div>
+                            <div class="metric-label">Computation Time</div>
                             <div class="metric-value">${(result.computation_time * 1000).toFixed(0)} ms</div>
                         </div>
                     </div>
 
                     <h4 style="margin: 25px 0 15px 0; font-size: 13px; font-weight: 600; text-transform: uppercase; color: #1a3a52;">
-                        Workflow de Composition
+                        Composition Workflow
                     </h4>
                     <div class="workflow-diagram">
-                        <div class="workflow-node">DÉBUT</div>
+                        <div class="workflow-node">START</div>
                         <div class="workflow-arrow">→</div>
                         <div class="workflow-node">${result.services[0]}</div>
                         <div class="workflow-arrow">→</div>
-                        <div class="workflow-node">FIN</div>
+                        <div class="workflow-node">END</div>
                     </div>
 
                     <h4 style="margin: 25px 0 15px 0; font-size: 13px; font-weight: 600; text-transform: uppercase; color: #1a3a52;">
-                        Qualité de Service Obtenue
+                        Achieved Quality of Service
                     </h4>
                     <div class="qos-comparison">
                         <div class="qos-metric">
@@ -1734,7 +1929,7 @@
             const enableAdaptation = document.getElementById('enable-adaptation').checked;
 
             if (!requestId) {
-                alert('Erreur: Veuillez sélectionner une requête');
+                alert('Error: Please select a request');
                 return;
             }
 
@@ -1742,14 +1937,14 @@
             document.getElementById('llm-result-section').style.display = 'block';
             
             const reasoningDiv = document.getElementById('llm-reasoning');
-            reasoningDiv.innerHTML = '<div class="reasoning-step">Initialisation du processus de raisonnement...</div>';
+            reasoningDiv.innerHTML = '<div class="reasoning-step">Initializing reasoning process...</div>';
 
             const steps = [
-                'Analyse du contexte de la requête et des contraintes QoS',
-                'Identification des priorités et des exigences critiques',
-                'Recherche des services candidats dans le repository',
-                'Évaluation des annotations et des propriétés sociales',
-                'Sélection optimale basée sur le raisonnement contextuel'
+                'Analyzing request context and QoS constraints',
+                'Identifying priorities and critical requirements',
+                'Searching candidate services in repository',
+                'Evaluating annotations and social properties',
+                'Optimal selection based on contextual reasoning'
             ];
 
             let i = 0;
@@ -1783,45 +1978,45 @@
                 if (response.ok) {
                     llmResults[requestId] = data;
                     setTimeout(() => {
-                        reasoningDiv.innerHTML += '<div class="reasoning-step complete" style="background: #f0f7ed; border-left-color: #2d5016; font-weight: 600;">✓ Composition terminée avec succès</div>';
+                        reasoningDiv.innerHTML += '<div class="reasoning-step complete" style="background: #f0f7ed; border-left-color: #2d5016; font-weight: 600;">✓ Composition completed successfully</div>';
                         displayLLMResult(data);
                     }, steps.length * 900);
                 } else {
                     clearInterval(interval);
-                    reasoningDiv.innerHTML = `<div class="result-box result-error">Erreur: ${data.error}</div>`;
+                    reasoningDiv.innerHTML = `<div class="result-box result-error">Error: ${data.error}</div>`;
                 }
             } catch (error) {
                 clearInterval(interval);
-                reasoningDiv.innerHTML = `<div class="result-box result-error">Erreur système: ${error.message}</div>`;
+                reasoningDiv.innerHTML = `<div class="result-box result-error">System error: ${error.message}</div>`;
             }
         }
 
         function displayLLMResult(result) {
             document.getElementById('llm-result').innerHTML = `
                 <div class="result-box ${result.success ? 'result-success' : 'result-error'}">
-                    <strong>${result.success ? 'Composition intelligente réussie' : 'Échec de la composition'}</strong>
+                    <strong>${result.success ? 'Intelligent composition successful' : 'Composition failed'}</strong>
                 </div>
 
                 ${result.success ? `
                     <div class="metric-grid" style="margin-top: 25px;">
                         <div class="metric-box">
-                            <div class="metric-label">Service sélectionné</div>
+                            <div class="metric-label">Selected Service</div>
                             <div class="metric-value" style="font-size: 16px; font-family: 'Courier New', monospace;">
                                 ${result.services[0]}
                             </div>
                         </div>
                         <div class="metric-box">
-                            <div class="metric-label">Valeur d'utilité</div>
+                            <div class="metric-label">Utility Value</div>
                             <div class="metric-value">${result.utility_value.toFixed(2)}</div>
                         </div>
                         <div class="metric-box">
-                            <div class="metric-label">Temps de calcul</div>
+                            <div class="metric-label">Computation Time</div>
                             <div class="metric-value">${(result.computation_time * 1000).toFixed(0)} ms</div>
                         </div>
                     </div>
 
                     <div class="explanation-box">
-                        <div class="explanation-title">Justification de la Sélection (Explainability)</div>
+                        <div class="explanation-title">Selection Justification (Explainability)</div>
                         <div class="explanation-text">${result.explanation}</div>
                     </div>
                 ` : ''}
@@ -1854,12 +2049,12 @@
                 
                 if (response.ok) {
                     chatBox.innerHTML += `
-                        <div class="chat-message chat-assistant"><strong>Réponse:</strong> ${data.response}</div>
+                        <div class="chat-message chat-assistant"><strong>Response:</strong> ${data.response}</div>
                     `;
                 } else {
                     chatBox.innerHTML += `
                         <div class="chat-message chat-assistant" style="color: #8b0000;">
-                            <strong>Erreur:</strong> ${data.error}
+                            <strong>Error:</strong> ${data.error}
                         </div>
                     `;
                 }
@@ -1868,7 +2063,7 @@
             } catch (error) {
                 chatBox.innerHTML += `
                     <div class="chat-message chat-assistant" style="color: #8b0000;">
-                        <strong>Erreur de connexion:</strong> ${error.message}
+                        <strong>Connection error:</strong> ${error.message}
                     </div>
                 `;
                 chatBox.scrollTop = chatBox.scrollHeight;
@@ -1891,10 +2086,10 @@
                 if (response.ok) {
                     alert(`✓ ${data.message}`);
                 } else {
-                    alert(`✗ Erreur: ${data.error}`);
+                    alert(`✗ Error: ${data.error}`);
                 }
             } catch (error) {
-                alert(`✗ Erreur: ${error.message}`);
+                alert(`✗ Error: ${error.message}`);
             }
         }
 
@@ -1906,10 +2101,10 @@
                 if (response.ok) {
                     displayComparison(data);
                 } else {
-                    alert(`✗ Erreur: ${data.error}`);
+                    alert(`✗ Error: ${data.error}`);
                 }
             } catch (error) {
-                alert(`✗ Erreur: ${error.message}`);
+                alert(`✗ Error: ${error.message}`);
             }
         }
 
@@ -1939,7 +2134,7 @@
                 } else if (classicUtility > llmUtility && classicUtility >= bestUtility) {
                     winner = '<span class="badge badge-warning">Solution A</span>';
                 } else {
-                    winner = '<span class="badge badge-info">Référence</span>';
+                    winner = '<span class="badge badge-info">Reference</span>';
                 }
 
                 return `
@@ -1957,19 +2152,19 @@
             detailedStats.innerHTML = `
                 <div class="metric-grid">
                     <div class="metric-box">
-                        <div class="metric-label">Utilité moyenne - Solution A</div>
+                        <div class="metric-label">Average Utility - Solution A</div>
                         <div class="metric-value">${stats.classic.avg_utility.toFixed(2)}</div>
                     </div>
                     <div class="metric-box">
-                        <div class="metric-label">Utilité moyenne - Solution B</div>
+                        <div class="metric-label">Average Utility - Solution B</div>
                         <div class="metric-value">${stats.llm.avg_utility.toFixed(2)}</div>
                     </div>
                     <div class="metric-box">
-                        <div class="metric-label">Temps moyen - Solution A</div>
+                        <div class="metric-label">Average Time - Solution A</div>
                         <div class="metric-value">${(stats.classic.avg_time * 1000).toFixed(0)} ms</div>
                     </div>
                     <div class="metric-box">
-                        <div class="metric-label">Temps moyen - Solution B</div>
+                        <div class="metric-label">Average Time - Solution B</div>
                         <div class="metric-value">${(stats.llm.avg_time * 1000).toFixed(0)} ms</div>
                     </div>
                 </div>
