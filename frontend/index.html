@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Système de Composition de Services Web Intelligents</title>
+    <title>Intelligent Web Service Composition System</title>
     <style>
         * {
             margin: 0;
@@ -190,6 +190,56 @@
             color: #666;
             padding-top: 10px;
             border-top: 1px solid #e8e8e8;
+        }
+        .meta-row {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .meta-label {
+            font-weight: 600;
+            color: #1a3a52;
+            min-width: 90px;
+            flex-shrink: 0;
+        }
+
+        .meta-values {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #e8f4f8;
+            color: #1a3a52;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 500;
+            border: 1px solid #b8d4e0;
+            white-space: nowrap;
+        }
+
+        .tag.input-tag {
+            background: #e8f8e8;
+            border-color: #b8d8b8;
+            color: #2d5016;
+        }
+
+        .tag.output-tag {
+            background: #f8e8e8;
+            border-color: #d8b8b8;
+            color: #6b2d16;
+        }
+
+        .tag.import-tag {
+            background: #f0f0f8;
+            border-color: #c8c8d8;
+            color: #2d2d5c;
         }
 
         .progress-bar {
@@ -665,32 +715,27 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Système de Composition de Services Web Intelligents</h1>
+            <h1>Intelligent Web Service Composition System</h1>
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="showTab(0)">1. Gestion des Services</button>
-            <button class="tab" onclick="showTab(1)">2. Annotation Automatique</button>
-            <button class="tab" onclick="showTab(2)">3. Solution A (Classique)</button>
+            <button class="tab active" onclick="showTab(0)">1. Service Management</button>
+            <button class="tab" onclick="showTab(1)">2. Automatic Annotation</button>
+            <button class="tab" onclick="showTab(2)">3. Solution A (Classic)</button>
             <button class="tab" onclick="showTab(3)">4. Solution B (LLM)</button>
-            <button class="tab" onclick="showTab(4)">5. Analyse Comparative</button>
+            <button class="tab" onclick="showTab(4)">5. Comparative Analysis</button>
         </div>
 
         <!-- ONGLET 1: GESTION DES SERVICES -->
         <div class="tab-content active">
             <div class="section">
-                <div class="section-title">Chargement du Repository de Services</div>
-                
-                <div class="info-box" style="margin-bottom: 20px;">
-                    ℹ️ <strong>Import cumulatif:</strong> Les fichiers importés s'ajoutent au repository existant. 
-                    Vous pouvez importer en plusieurs fois. Utilisez le bouton "Effacer le repository" pour recommencer à zéro.
-                </div>
+                <div class="section-title">Loading the Service Repository</div>
                 
                 <div class="file-upload-area" onclick="document.getElementById('wsdl-files').click()">
                     <input type="file" id="wsdl-files" multiple accept=".wsdl,.xml" onchange="uploadServices()">
                     <div class="file-upload-icon">📄</div>
-                    <div class="file-upload-text">Sélectionner les fichiers WSDL (Ctrl+A pour tout sélectionner)</div>
-                    <div class="file-upload-hint">Formats acceptés: .wsdl, .xml | Upload par lots de 100 fichiers</div>
+                    <div class="file-upload-text">Select WSDL files</div>
+                    <div class="file-upload-hint">Accepted formats: .wsdl, .xml | Batch upload limited to 500 files</div>
                 </div>
 
                 <div id="upload-progress-section" style="display: none;" class="upload-progress-box">
@@ -706,19 +751,16 @@
 
                 <div style="margin-top: 25px;">
                     <p id="service-count" style="font-size: 14px; font-weight: 600; color: #1a3a52;">
-                        Nombre de services chargés: <span style="font-size: 18px;">0</span>
+                        Number of services loaded: <span style="font-size: 18px;">0</span>
                     </p>
-                    <button class="btn" onclick="clearRepository()" style="margin-top: 15px; font-size: 12px; padding: 8px 16px;">
-                        🗑️ Effacer le repository
-                    </button>
                 </div>
             </div>
 
             <div class="section">
-                <div class="section-title">Repository de Services Web</div>
+                <div class="section-title">Web Services Repository</div>
                 <div class="service-list" id="services-list">
                     <p style="text-align: center; color: #666; padding: 60px; font-style: italic;">
-                        Aucun service disponible. Veuillez charger les fichiers WSDL pour commencer.
+                        No services available. Please upload WSDL files to get started.
                     </p>
                 </div>
             </div>
@@ -727,68 +769,68 @@
         <!-- ONGLET 2: ANNOTATION AUTOMATIQUE -->
         <div class="tab-content">
             <div class="section">
-                <div class="section-title">Sélection des Services à Annoter</div>
+                <div class="section-title">Service Selection for Annotation</div>
                 
                 <div style="margin-bottom: 20px;">
                     <button class="btn btn-primary" onclick="selectAllServices()" style="margin-right: 10px;">
-                        Sélectionner Tout
+                        Select All
                     </button>
                     <button class="btn" onclick="deselectAllServices()" style="margin-right: 10px;">
-                        Désélectionner Tout
+                        Deselect All
                     </button>
                     <span id="selected-count" style="font-weight: 600; color: #1a3a52;">
-                        0 service(s) sélectionné(s)
+                        0 selected service(s)
                     </span>
                 </div>
 
                 <div class="service-list" id="services-selection-list" style="max-height: 300px;">
                     <p style="text-align: center; color: #666; padding: 40px; font-style: italic;">
-                        Chargez d'abord des services dans l'onglet 1
+                        Please load services first in Tab 1 ( Service Management )
                     </p>
                 </div>
             </div>
 
             <div class="section">
-                <div class="section-title">Configuration de l'Annotation</div>
+                <div class="section-title">Annotation Configuration</div>
                 
                 <div class="info-box">
-                    <strong>Modèle d'annotation:</strong> MOF-based Social Web Services Description Metamodel<br>
-                    <strong>Méthode:</strong> Annotation intelligente avec LLM (Ollama)
+                    <strong>Annotation Model:</strong> MOF-based Social Web Services Description Metamodel<br>
+                    <strong>Method:</strong> Intelligent Annotation with LLM (Ollama)
                 </div>
 
                 <div class="checkbox-group">
                     <label style="font-size: 14px; color: #1a3a52; margin-bottom: 15px;">
                         <input type="checkbox" id="use-llm-annotation" checked>
-                        <strong>Utiliser le LLM pour l'annotation intelligente</strong>
+                        <strong>Use LLM for intelligent annotation</strong>
                         <span style="font-size: 12px; color: #666; display: block; margin-left: 25px; margin-top: 5px;">
-                            Le LLM analyse le contexte et génère des annotations plus précises
+                            The LLM analyzes context and generates more precise annotations
                         </span>
                     </label>
                 </div>
 
                 <div style="margin-top: 20px; margin-bottom: 20px;">
                     <strong style="display: block; margin-bottom: 10px; font-size: 14px; color: #1a3a52;">
-                        Types d'annotations à générer:
+                        Types of Annotations to Generate:
                     </strong>
                 </div>
 
                 <div class="checkbox-group">
                     <label>
                         <input type="checkbox" id="annotation-interaction" checked>
-                        <strong>Annotations d'interaction</strong> - Identification des dépendances et relations entre services
+                        <strong>Interaction Annotations</strong> - Identify dependencies and relationships between services
                     </label>
                     <label>
                         <input type="checkbox" id="annotation-context" checked>
-                        <strong>Annotations de contexte</strong> - Caractéristiques environnementales et d'utilisation
+                        <strong>Context Annotations</strong> - Environmental and usage characteristics
                     </label>
                     <label>
                         <input type="checkbox" id="annotation-policy" checked>
-                        <strong>Annotations de politiques</strong> - Conformité GDPR, sécurité et privacy
+                        <strong>Policy Annotations</strong> - GDPR compliance, security, and privacy
                     </label>
                 </div>
 
                 <button class="btn btn-primary" onclick="startAnnotation()" style="margin-top: 20px;">
-                    Lancer l'Annotation
+                    Start Annotation
                 </button>
             </div>
 
@@ -998,10 +1040,8 @@
         let llmResults = {};
         let selectedServiceIds = new Set();
         let isUploading = false;
-        let progressInterval = null;
 
         function showTab(index) {
-            cleanupAnnotationPolling(); 
             const tabs = document.querySelectorAll('.tab');
             const contents = document.querySelectorAll('.tab-content');
             
@@ -1025,7 +1065,7 @@
             const list = document.getElementById('services-selection-list');
             
             if (currentServices.length === 0) {
-                list.innerHTML = '<p style="text-align: center; color: #666; padding: 40px; font-style: italic;">Chargez d\'abord des services dans l\'onglet 1</p>';
+                list.innerHTML = '<p style="text-align: center; color: #666; padding: 40px; font-style: italic;"> Please load services first in Tab 1 ( Service Management )</p>';
                 return;
             }
 
@@ -1074,7 +1114,7 @@
         function updateSelectedCount() {
             const countSpan = document.getElementById('selected-count');
             const count = selectedServiceIds.size;
-            countSpan.textContent = `${count} service(s) sélectionné(s)`;
+            countSpan.textContent = `${count} selected service(s)`;
             countSpan.style.color = count > 0 ? '#2d5016' : '#1a3a52';
         }
 
@@ -1113,7 +1153,7 @@
             batchLog.innerHTML = '';
             
             // UPLOAD PAR LOTS DE 100 FICHIERS
-            const BATCH_SIZE = 100;
+            const BATCH_SIZE = 500;
             let totalUploaded = 0;
             let allServices = [];
             let errorCount = 0;
@@ -1188,37 +1228,33 @@
                 
                 // Mise à jour finale
                 if (totalUploaded > 0) {
-                    // IMPORTANT: Ajouter les nouveaux services au lieu d'écraser
-                    currentServices = currentServices.concat(allServices);
+                    currentServices = allServices;
                     
                     progressBar.style.width = '100%';
                     progressBar.textContent = '100%';
                     progressBar.style.background = '#2d5016';
                     
-                    const totalServicesCount = currentServices.length;
                     serviceCount.innerHTML = 
-                        `Nombre de services chargés: <span style="font-size: 18px; color: #2d5016;">${totalServicesCount}</span>`;
+                        `Nombre de services chargés: <span style="font-size: 18px; color: #2d5016;">${totalUploaded}</span>`;
                     
-                    statusText.textContent = `✅ Import terminé: ${totalUploaded} nouveaux services chargés (Total: ${totalServicesCount})`;
+                    statusText.textContent = `✅ Import completed: ${totalUploaded} services loaded`;
                     
-                    batchLog.innerHTML += `<div class="batch-log-item success" style="font-weight: 600; margin-top: 10px;">✅ TERMINÉ: ${totalUploaded} nouveaux services chargés avec succès!</div>`;
-                    batchLog.innerHTML += `<div class="batch-log-item" style="color: #1a3a52; font-weight: 600;">📊 TOTAL: ${totalServicesCount} services dans le repository</div>`;
+                    batchLog.innerHTML += `<div class="batch-log-item success" style="font-weight: 600; margin-top: 10px;">✅ COMPLETED: ${totalUploaded} services loaded successfully!</div>`;
                     batchLog.scrollTop = batchLog.scrollHeight;
                     
-                    displayServices(currentServices);
+                    displayServices(allServices);
                     
                     // Sélectionner automatiquement tous les nouveaux services
                     allServices.forEach(s => selectedServiceIds.add(s.id));
                     
-                    let message = `✅ Import terminé avec succès!\n\n`;
-                    message += `📊 Résumé:\n`;
-                    message += `  • ${totalUploaded} nouveaux services chargés\n`;
-                    message += `  • ${currentServices.length} services au TOTAL\n`;
-                    message += `  • ${validFiles.length} fichiers traités\n`;
-                    message += `  • ${totalBatches} lot(s) uploadés\n`;
+                    let message = `✅ Import completed successfully!\n\n`;
+                    message += `📊 Summary:\n`;
+                    message += `  • ${totalUploaded} services loaded\n`;
+                    message += `  • ${validFiles.length} files processed\n`;
+                    message += `  • ${totalBatches} batch(es) uploaded\n`;
                     
                     if (errorCount > 0) {
-                        message += `\n⚠️ ${errorCount} erreur(s) rencontrée(s)`;
+                        message += `\n⚠️ ${errorCount} error(s) encountered`;
                     }
                     
                     alert(message);
@@ -1238,31 +1274,6 @@
                 // Réinitialiser l'input file
                 fileInput.value = '';
             }
-        }
-
-        function clearRepository() {
-            if (!confirm('⚠️ Êtes-vous sûr de vouloir effacer tous les services du repository?\n\nCette action est irréversible.')) {
-                return;
-            }
-
-            // Réinitialiser les variables
-            currentServices = [];
-            selectedServiceIds.clear();
-            
-            // Réinitialiser l'affichage
-            document.getElementById('service-count').innerHTML = 
-                'Nombre de services chargés: <span style="font-size: 18px;">0</span>';
-            
-            document.getElementById('services-list').innerHTML = 
-                '<p style="text-align: center; color: #666; padding: 60px; font-style: italic;">Aucun service disponible. Veuillez charger les fichiers WSDL pour commencer.</p>';
-            
-            // Masquer la section de progression si elle est visible
-            document.getElementById('upload-progress-section').style.display = 'none';
-            
-            // Mettre à jour la liste de sélection si on est sur l'onglet 2
-            updateServicesSelectionList();
-            
-            alert('✅ Repository effacé avec succès!\n\nVous pouvez maintenant importer de nouveaux fichiers.');
         }
 
         function displayServices(services) {
@@ -1297,15 +1308,23 @@
 
             list.innerHTML = servicesToDisplay.map(s => `
                 <div class="service-item">
-                    <div class="service-id">${s.id}</div>
-                    <div class="service-meta">
-                        <strong>Paramètres:</strong> ${s.inputs.length} entrées, ${s.outputs.length} sorties
+                    <div class="service-id" style="margin-bottom: 12px;">${s.id}</div>
+                    
+                    <div class="meta-row">
+                        <div class="meta-label">Paramètres:</div>
+                        <div class="meta-values">
+                            <span class="tag input-tag">${s.inputs.length} entrées</span>
+                            <span class="tag output-tag">${s.outputs.length} sorties</span>
+                        </div>
                     </div>
-                    <div class="service-meta" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e8e8e8;">
-                        <strong>QoS:</strong><br>
-                        ResponseTime: ${s.qos.ResponseTime.toFixed(1)} | 
-                        Availability: ${s.qos.Availability.toFixed(1)}% | 
-                        Reliability: ${s.qos.Reliability.toFixed(1)}%
+                    
+                    <div class="meta-row">
+                        <div class="meta-label">QoS:</div>
+                        <div class="meta-values">
+                            <span class="tag">RT: ${s.qos.ResponseTime.toFixed(1)}</span>
+                            <span class="tag">Avail: ${s.qos.Availability.toFixed(1)}%</span>
+                            <span class="tag">Reli: ${s.qos.Reliability.toFixed(1)}%</span>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -1321,205 +1340,126 @@
         }
 
         async function startAnnotation() {
-    // Vérifier qu'il y a des services
-    if (currentServices.length === 0) {
-        alert('Erreur: Aucun service chargé. Veuillez d\'abord charger des services dans l\'onglet 1.');
-        return;
-    }
-
-    // Vérifier qu'au moins un service est sélectionné
-    if (selectedServiceIds.size === 0) {
-        alert('Erreur: Veuillez sélectionner au moins un service à annoter.');
-        return;
-    }
-
-    // Récupérer les types d'annotations sélectionnés
-    const annotationTypes = [];
-    if (document.getElementById('annotation-interaction').checked) {
-        annotationTypes.push('interaction');
-    }
-    if (document.getElementById('annotation-context').checked) {
-        annotationTypes.push('context');
-    }
-    if (document.getElementById('annotation-policy').checked) {
-        annotationTypes.push('policy');
-    }
-
-    if (annotationTypes.length === 0) {
-        alert('Erreur: Veuillez sélectionner au moins un type d\'annotation.');
-        return;
-    }
-
-    // Vérifier si on utilise le LLM
-    const useLLM = document.getElementById('use-llm-annotation').checked;
-    const serviceIds = Array.from(selectedServiceIds);
-
-    // ÉTAPE 1: OBTENIR L'ESTIMATION
-    try {
-        const estimateResponse = await fetch(`${API_URL}/annotate/estimate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                use_llm: useLLM,
-                service_ids: serviceIds,
-                annotation_types: annotationTypes
-            })
-        });
-
-        const estimateData = await estimateResponse.json();
-
-        if (estimateResponse.ok) {
-            const estimatedTime = estimateData.estimated_time_seconds;
-            const formattedTime = formatTime(estimatedTime);
-            const numServices = estimateData.num_services;
-
-            // Afficher une confirmation avec l'estimation
-            const confirmMessage = `📊 Estimation de l'annotation:\n\n` +
-                `• Nombre de services: ${numServices}\n` +
-                `• Types d'annotations: ${annotationTypes.length}\n` +
-                `• Méthode: ${useLLM ? 'LLM (Intelligent)' : 'Classique'}\n` +
-                `• Temps estimé: ${formattedTime}\n\n` +
-                `Voulez-vous continuer?`;
-
-            if (!confirm(confirmMessage)) {
+            // Vérifier qu'il y a des services
+            if (currentServices.length === 0) {
+                alert('Erreur: Aucun service chargé. Veuillez d\'abord charger des services dans l\'onglet 1.');
                 return;
             }
-        }
-    } catch (error) {
-        console.error('Erreur lors de l\'estimation:', error);
-        // Continuer quand même si l'estimation échoue
-    }
 
-    // ÉTAPE 2: AFFICHER LA SECTION DE PROGRESSION
-    document.getElementById('annotation-progress-section').style.display = 'block';
-    document.getElementById('annotation-results-section').style.display = 'none';
-
-    const progressBar = document.getElementById('annotation-progress');
-    const statusText = document.getElementById('annotation-status');
-    const logDiv = document.getElementById('annotation-log');
-
-    progressBar.style.width = '0%';
-    progressBar.textContent = '0%';
-    progressBar.style.background = '#1a3a52';
-    statusText.textContent = 'Initialisation...';
-    logDiv.innerHTML = '';
-
-    logDiv.innerHTML += `<div style="color: #1a3a52; font-weight: 600;">▸ Démarrage de l'annotation</div>`;
-    logDiv.innerHTML += `<div>  • Services sélectionnés: ${serviceIds.length}</div>`;
-    logDiv.innerHTML += `<div>  • Types: ${annotationTypes.join(', ')}</div>`;
-    logDiv.innerHTML += `<div>  • Méthode: ${useLLM ? 'LLM (Intelligent)' : 'Classique'}</div>`;
-    logDiv.innerHTML += `<div style="margin-top: 10px;"></div>`;
-
-    // ÉTAPE 3: DÉMARRER LE POLLING DE PROGRESSION
-    let lastProgress = 0;
-    progressInterval = setInterval(async () => {
-        try {
-            const progressResponse = await fetch(`${API_URL}/annotate/progress`);
-            const progressData = await progressResponse.json();
-
-            if (progressResponse.ok) {
-                const { current, total, current_service, completed, error } = progressData;
-
-                if (total > 0) {
-                    const progress = Math.round((current / total) * 100);
-                    progressBar.style.width = `${progress}%`;
-                    progressBar.textContent = `${progress}%`;
-                    
-                    statusText.textContent = `Annotation en cours: ${current}/${total} services traités`;
-                    
-                    // Ajouter au log si un nouveau service est annoté
-                    if (current > lastProgress) {
-                        logDiv.innerHTML += `<div style="color: #2d5016;">✓ Service ${current_service} annoté (${current}/${total})</div>`;
-                        logDiv.scrollTop = logDiv.scrollHeight;
-                        lastProgress = current;
-                    }
-                }
-
-                // Si terminé ou erreur
-                if (completed) {
-                    clearInterval(progressInterval);
-                    progressInterval = null;
-
-                    if (error) {
-                        progressBar.style.width = '100%';
-                        progressBar.style.background = '#8b0000';
-                        progressBar.textContent = 'Erreur';
-                        statusText.textContent = 'Erreur lors de l\'annotation';
-                        logDiv.innerHTML += `<div style="color: #8b0000; font-weight: 600;">✗ Erreur: ${error}</div>`;
-                        alert(`Erreur: ${error}`);
-                    }
-                }
+            // Vérifier qu'au moins un service est sélectionné
+            if (selectedServiceIds.size === 0) {
+                alert('Erreur: Veuillez sélectionner au moins un service à annoter.');
+                return;
             }
-        } catch (error) {
-            console.error('Erreur lors de la récupération de la progression:', error);
-        }
-    }, 500);  // Polling toutes les 500ms
 
-    // ÉTAPE 4: LANCER L'ANNOTATION
-    try {
-        const response = await fetch(`${API_URL}/annotate/start`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                use_llm: useLLM,
-                service_ids: serviceIds,
-                annotation_types: annotationTypes
-            })
-        });
+            // Récupérer les types d'annotations sélectionnés
+            const annotationTypes = [];
+            if (document.getElementById('annotation-interaction').checked) {
+                annotationTypes.push('interaction');
+            }
+            if (document.getElementById('annotation-context').checked) {
+                annotationTypes.push('context');
+            }
+            if (document.getElementById('annotation-policy').checked) {
+                annotationTypes.push('policy');
+            }
 
-        const data = await response.json();
-        
-        // Arrêter le polling
-        if (progressInterval) {
-            clearInterval(progressInterval);
-            progressInterval = null;
-        }
-        
-        if (response.ok) {
-            // Animation finale
-            progressBar.style.width = '100%';
-            progressBar.textContent = '100%';
-            progressBar.style.background = '#2d5016';
-            statusText.textContent = `✓ Annotation terminée: ${data.total_annotated} services annotés`;
-            
-            logDiv.innerHTML += `<div style="margin-top: 10px; color: #2d5016; font-weight: 600;">✅ Annotation terminée avec succès!</div>`;
-            logDiv.innerHTML += `<div style="color: #1a3a52; font-weight: 600;">📊 Total: ${data.total_annotated} services annotés</div>`;
-            logDiv.scrollTop = logDiv.scrollHeight;
-            
-            // Afficher les résultats après un court délai
-            setTimeout(() => {
-                showAnnotationResults(data);
-            }, 1000);
-        } else {
-            progressBar.style.width = '100%';
-            progressBar.style.background = '#8b0000';
-            progressBar.textContent = 'Erreur';
-            statusText.textContent = 'Erreur lors de l\'annotation';
-            logDiv.innerHTML += `<div style="color: #8b0000; font-weight: 600;">✗ Erreur: ${data.error}</div>`;
-            alert(`Erreur: ${data.error}`);
-        }
-    } catch (error) {
-        // Arrêter le polling en cas d'erreur
-        if (progressInterval) {
-            clearInterval(progressInterval);
-            progressInterval = null;
-        }
-        
-        progressBar.style.width = '100%';
-        progressBar.style.background = '#8b0000';
-        progressBar.textContent = 'Erreur';
-        statusText.textContent = 'Erreur de connexion';
-        logDiv.innerHTML += `<div style="color: #8b0000; font-weight: 600;">✗ Erreur: ${error.message}</div>`;
-        alert(`Erreur: ${error.message}`);
-    }
-}
+            if (annotationTypes.length === 0) {
+                alert('Erreur: Veuillez sélectionner au moins un type d\'annotation.');
+                return;
+            }
 
-function cleanupAnnotationPolling() {
-    if (progressInterval) {
-        clearInterval(progressInterval);
-        progressInterval = null;
-    }
-}
+            // Vérifier si on utilise le LLM
+            const useLLM = document.getElementById('use-llm-annotation').checked;
+
+            // Afficher la section de progression
+            document.getElementById('annotation-progress-section').style.display = 'block';
+            document.getElementById('annotation-results-section').style.display = 'none';
+
+            const progressBar = document.getElementById('annotation-progress');
+            const statusText = document.getElementById('annotation-status');
+            const logDiv = document.getElementById('annotation-log');
+
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+            statusText.textContent = 'Initialisation...';
+            logDiv.innerHTML = '';
+
+            try {
+                // Simuler la progression
+                let progress = 0;
+                const totalServices = selectedServiceIds.size;
+                const serviceIds = Array.from(selectedServiceIds);
+                
+                logDiv.innerHTML += `<div style="color: #1a3a52; font-weight: 600;">▸ Démarrage de l'annotation</div>`;
+                logDiv.innerHTML += `<div>  • Services sélectionnés: ${totalServices}</div>`;
+                logDiv.innerHTML += `<div>  • Types: ${annotationTypes.join(', ')}</div>`;
+                logDiv.innerHTML += `<div>  • Méthode: ${useLLM ? 'LLM (Intelligent)' : 'Classique'}</div>`;
+                logDiv.innerHTML += `<div style="margin-top: 10px;"></div>`;
+
+                // Simuler la progression pendant l'annotation
+                const progressInterval = setInterval(() => {
+                    if (progress < 90) {
+                        progress += 5;
+                        progressBar.style.width = `${progress}%`;
+                        progressBar.textContent = `${progress}%`;
+                        
+                        const currentService = Math.floor(progress * totalServices / 100);
+                        statusText.textContent = `Annotation en cours: ${currentService}/${totalServices} services traités`;
+                        
+                        if (progress % 20 === 0 && currentService > 0) {
+                            const serviceId = serviceIds[currentService - 1];
+                            logDiv.innerHTML += `<div style="color: #2d5016;">✓ Service ${serviceId} annoté</div>`;
+                            logDiv.scrollTop = logDiv.scrollHeight;
+                        }
+                    }
+                }, useLLM ? 400 : 200);  // Plus lent si LLM
+
+                // Appel API
+                const response = await fetch(`${API_URL}/annotate/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        use_llm: useLLM,
+                        service_ids: serviceIds,
+                        annotation_types: annotationTypes
+                    })
+                });
+
+                const data = await response.json();
+                
+                clearInterval(progressInterval);
+                
+                if (response.ok) {
+                    // Animation finale
+                    progressBar.style.width = '100%';
+                    progressBar.textContent = '100%';
+                    statusText.textContent = `✓ Annotation terminée: ${data.total_annotated} services annotés`;
+                    
+                    logDiv.innerHTML += `<div style="margin-top: 10px; color: #2d5016; font-weight: 600;">✓ Annotation terminée avec succès!</div>`;
+                    logDiv.scrollTop = logDiv.scrollHeight;
+                    
+                    // Afficher les résultats après un court délai
+                    setTimeout(() => {
+                        showAnnotationResults(data);
+                    }, 1000);
+                } else {
+                    progressBar.style.width = '100%';
+                    progressBar.style.background = '#8b0000';
+                    progressBar.textContent = 'Erreur';
+                    statusText.textContent = 'Erreur lors de l\'annotation';
+                    logDiv.innerHTML += `<div style="color: #8b0000; font-weight: 600;">✗ Erreur: ${data.error}</div>`;
+                    alert(`Erreur: ${data.error}`);
+                }
+            } catch (error) {
+                progressBar.style.width = '100%';
+                progressBar.style.background = '#8b0000';
+                progressBar.textContent = 'Erreur';
+                statusText.textContent = 'Erreur de connexion';
+                logDiv.innerHTML += `<div style="color: #8b0000; font-weight: 600;">✗ Erreur: ${error.message}</div>`;
+                alert(`Erreur: ${error.message}`);
+            }
+        }
 
         function showAnnotationResults(data) {
             document.getElementById('annotation-results-section').style.display = 'block';
