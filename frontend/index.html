@@ -1,9 +1,12 @@
+Index · HTML
+Copier
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Intelligent Web Service Composition System</title>
+    <title>Intelligent Web Service Composition System - With LLM Training</title>
     <style>
         * {
             margin: 0;
@@ -795,7 +798,7 @@
     <div class="container">
         <div class="header">
             <h1>Intelligent Web Service Composition System</h1>
-            <div class="subtitle">MOF-based Social Web Services with AI-Enhanced Composition</div>
+            <div class="subtitle">MOF-based Social Web Services with AI-Enhanced Composition & Continuous Learning</div>
         </div>
 
         <div class="tabs">
@@ -808,13 +811,121 @@
 
         <!-- TAB 1: SERVICE MANAGEMENT -->
         <div class="tab-content active">
+            <!-- TRAINING DATA SECTION - NEW -->
             <div class="section">
-                <div class="section-title">Loading the Service Repository</div>
+                <div class="section-title">LLM Training (Optional)</div>
+                
+                <div class="info-box" style="background: #fff9e6; border-left-color: #f0ad4e;">
+                    <strong>Train the LLM for Better Decisions</strong><br>
+                    Upload training data to teach the LLM about successful composition patterns.
+                    This will improve accuracy and decision-making quality for test data compositions.
+                </div>
+
+                <!-- Training Status Badge -->
+                <div id="training-status-badge" style="margin: 20px 0; padding: 15px; background: #f0f0f0; border: 1px solid #d0d0d0; text-align: center;">
+                    <span id="training-status-text" style="font-size: 14px; font-weight: 600; color: #666;">
+                        ⚠️ LLM Not Trained - Upload training data below
+                    </span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <!-- Training WSDL Files -->
+                    <div>
+                        <label style="display: block; margin-bottom: 10px; font-size: 13px; font-weight: 600;">
+                            Training WSDL Files:
+                        </label>
+                        <div class="file-upload-area" style="padding: 20px;" onclick="document.getElementById('training-wsdl-files').click()">
+                            <input type="file" id="training-wsdl-files" multiple accept=".wsdl,.xml">
+                            <div class="file-upload-icon" style="font-size: 32px;">📚</div>
+                            <div class="file-upload-text" style="font-size: 13px;">Training Services</div>
+                        </div>
+                        <p id="training-wsdl-count" style="margin-top: 8px; font-size: 12px; color: #666;">0 files selected</p>
+                    </div>
+
+                    <!-- Training Requests -->
+                    <div>
+                        <label style="display: block; margin-bottom: 10px; font-size: 13px; font-weight: 600;">
+                            Training Requests:
+                        </label>
+                        <div class="file-upload-area" style="padding: 20px;" onclick="document.getElementById('training-requests-file').click()">
+                            <input type="file" id="training-requests-file" accept=".xml">
+                            <div class="file-upload-icon" style="font-size: 32px;">📋</div>
+                            <div class="file-upload-text" style="font-size: 13px;">Requests.xml</div>
+                        </div>
+                        <p id="training-requests-name" style="margin-top: 8px; font-size: 12px; color: #666;">No file selected</p>
+                    </div>
+
+                    <!-- Training Solutions -->
+                    <div>
+                        <label style="display: block; margin-bottom: 10px; font-size: 13px; font-weight: 600;">
+                            Training Solutions:
+                        </label>
+                        <div class="file-upload-area" style="padding: 20px;" onclick="document.getElementById('training-solutions-file').click()">
+                            <input type="file" id="training-solutions-file" accept=".xml">
+                            <div class="file-upload-icon" style="font-size: 32px;">✅</div>
+                            <div class="file-upload-text" style="font-size: 13px;">Solutions.xml</div>
+                        </div>
+                        <p id="training-solutions-name" style="margin-top: 8px; font-size: 12px; color: #666;">No file selected</p>
+                    </div>
+
+                    <!-- Training Best Solutions -->
+                    <div>
+                        <label style="display: block; margin-bottom: 10px; font-size: 13px; font-weight: 600;">
+                            Best Solutions:
+                        </label>
+                        <div class="file-upload-area" style="padding: 20px;" onclick="document.getElementById('training-best-solutions-file').click()">
+                            <input type="file" id="training-best-solutions-file" accept=".xml">
+                            <div class="file-upload-icon" style="font-size: 32px;">🏆</div>
+                            <div class="file-upload-text" style="font-size: 13px;">BestSolutions.xml</div>
+                        </div>
+                        <p id="training-best-name" style="margin-top: 8px; font-size: 12px; color: #666;">No file selected</p>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="uploadAndTrainLLM()" style="margin-top: 15px;">
+                    Upload Training Data & Train LLM
+                </button>
+
+                <div id="training-progress-section" style="display: none; margin-top: 20px;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="training-progress" style="width: 0%;">0%</div>
+                    </div>
+                    <p id="training-progress-text" style="margin-top: 10px; font-size: 13px;"></p>
+                </div>
+
+                <!-- Learning Metrics -->
+                <div id="learning-metrics-section" style="display: none; margin-top: 25px;">
+                    <h4 style="font-size: 13px; font-weight: 600; color: #1a3a52; margin-bottom: 15px;">
+                        📊 Learning Metrics
+                    </h4>
+                    <div class="metric-grid">
+                        <div class="metric-box">
+                            <div class="metric-label">Total Compositions</div>
+                            <div class="metric-value" id="metric-total-comps">0</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">Success Rate</div>
+                            <div class="metric-value" id="metric-success-rate">0%</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">Average Utility</div>
+                            <div class="metric-value" id="metric-avg-utility">0</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-label">Learning Rate</div>
+                            <div class="metric-value" id="metric-learning-rate">0%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Loading the Service Repository (Test Data)</div>
                 
                 <div class="file-upload-area" onclick="document.getElementById('wsdl-files').click()">
                     <input type="file" id="wsdl-files" multiple accept=".wsdl,.xml" onchange="uploadServices()">
                     <div class="file-upload-icon">📄</div>
-                    <div class="file-upload-text">Select WSDL files</div>
+                    <div class="file-upload-text">Select WSDL files (Test Data)</div>
                     <div class="file-upload-hint">Accepted formats: .wsdl, .xml | Batch upload limited to 500 files</div>
                 </div>
 
@@ -1157,6 +1268,7 @@
                 <button class="btn btn-primary" onclick="confirmAnnotation()">Start Annotation</button>
             </div>
         </div>
+        
     </div>
 
     <script>

@@ -1,6 +1,6 @@
 """
 Flask API for intelligent service composition system
-Enhanced version with time estimation and real-time progress
+Enhanced version with time estimation, real-time progress, LLM training and continuous learning
 """
 
 from flask import Flask, request, jsonify, Response
@@ -39,6 +39,26 @@ app_state = {
         'current_service': '',
         'completed': False,
         'error': None
+    },
+    # Training data and learning state
+    'training_data': {
+        'services': [],
+        'requests': [],
+        'solutions': {},
+        'best_solutions': {}
+    },
+    'learning_state': {
+        'is_trained': False,
+        'training_examples': [],
+        'composition_history': [],
+        'success_patterns': [],
+        'error_patterns': [],
+        'performance_metrics': {
+            'total_compositions': 0,
+            'successful_compositions': 0,
+            'average_utility': 0,
+            'learning_rate': 0
+        }
     }
 }
 
@@ -50,9 +70,159 @@ def health_check():
         'status': 'healthy',
         'services_loaded': len(app_state['services']),
         'services_annotated': len(app_state['annotated_services']),
-        'requests_loaded': len(app_state['requests'])
+        'requests_loaded': len(app_state['requests']),
+        'is_trained': app_state['learning_state']['is_trained'],
+        'training_examples': len(app_state['learning_state']['training_examples'])
     })
 
+
+# ============== TRAINING ENDPOINTS ==============
+
+@app.route('/api/training/upload-data', methods=['POST'])
+def upload_training_data():
+    """Upload training data (WSDL files + requests + solutions)"""
+    try:
+        # Get training WSDL files
+        wsdl_files = request.files.getlist('wsdl_files')
+        requests_file = request.files.get('requests_file')
+        solutions_file = request.files.get('solutions_file')
+        best_solutions_file = request.files.get('best_solutions_file')
+        
+        training_services = []
+        training_requests = []
+        training_solutions = {}
+        training_best_solutions = {}
+        
+        # Parse WSDL files
+        if wsdl_files:
+            for file in wsdl_files:
+                if file.filename.endswith('.wsdl') or file.filename.endswith('.xml'):
+                    try:
+                        content = file.read().decode('utf-8')
+                        service = app_state['parser'].parse_content(content, file.filename)
+                        if service:
+                            training_services.append(service)
+                    except Exception as e:
+                        print(f"Error parsing {file.filename}: {e}")
+        
+        # Parse requests
+        if requests_file:
+            with tempfile.NamedTemporaryFile(mode='wb', suffix='.xml', delete=False) as tmp:
+                requests_file.save(tmp.name)
+                tmp_path = tmp.name
+            
+            try:
+                training_requests = parse_requests_xml(tmp_path)
+            finally:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+        
+        # Parse solutions (expected format similar to best solutions)
+        if solutions_file:
+            with tempfile.NamedTemporaryFile(mode='wb', suffix='.xml', delete=False) as tmp:
+                solutions_file.save(tmp.name)
+                tmp_path = tmp.name
+            
+            try:
+                training_solutions = parse_best_solutions_xml(tmp_path)
+            finally:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+        
+        # Parse best solutions
+        if best_solutions_file:
+            with tempfile.NamedTemporaryFile(mode='wb', suffix='.xml', delete=False) as tmp:
+                best_solutions_file.save(tmp.name)
+                tmp_path = tmp.name
+            
+            try:
+                training_best_solutions = parse_best_solutions_xml(tmp_path)
+            finally:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+        
+        # Store training data
+        app_state['training_data']['services'] = training_services
+        app_state['training_data']['requests'] = training_requests
+        app_state['training_data']['solutions'] = training_solutions
+        app_state['training_data']['best_solutions'] = training_best_solutions
+        
+        return jsonify({
+            'message': 'Training data uploaded successfully',
+            'training_services': len(training_services),
+            'training_requests': len(training_requests),
+            'training_solutions': len(training_solutions),
+            'training_best_solutions': len(training_best_solutions)
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/training/start', methods=['POST'])
+def start_training():
+    """Train the LLM with the uploaded training data"""
+    try:
+        if not app_state['training_data']['services']:
+            return jsonify({'error': 'No training data available'}), 400
+        
+        # Initialize or get LLM composer
+        if not app_state['llm_composer']:
+            services = app_state['annotated_services'] or app_state['services']
+            app_state['llm_composer'] = LLMComposer(services)
+        
+        # Build training examples from training data
+        training_examples = []
+        
+        for req in app_state['training_data']['requests']:
+            example = {
+                'request': req.to_dict(),
+                'solution': app_state['training_data']['solutions'].get(req.id),
+                'best_solution': app_state['training_data']['best_solutions'].get(req.id)
+            }
+            
+            # Find the service used in the solution
+            if example['best_solution']:
+                service_id = example['best_solution'].get('service_id')
+                service = next(
+                    (s for s in app_state['training_data']['services'] if s.id == service_id),
+                    None
+                )
+                if service:
+                    example['service'] = service.to_dict()
+            
+            training_examples.append(example)
+        
+        # Train the LLM composer
+        app_state['llm_composer'].train(training_examples)
+        
+        # Update learning state
+        app_state['learning_state']['is_trained'] = True
+        app_state['learning_state']['training_examples'] = training_examples
+        
+        return jsonify({
+            'message': 'LLM training completed',
+            'training_examples_count': len(training_examples),
+            'is_trained': True
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/training/status', methods=['GET'])
+def get_training_status():
+    """Get current training status and metrics"""
+    return jsonify({
+        'is_trained': app_state['learning_state']['is_trained'],
+        'training_examples': len(app_state['learning_state']['training_examples']),
+        'composition_history': len(app_state['learning_state']['composition_history']),
+        'success_patterns': len(app_state['learning_state']['success_patterns']),
+        'performance_metrics': app_state['learning_state']['performance_metrics']
+    })
+
+
+# ============== SERVICE MANAGEMENT ENDPOINTS ==============
 
 @app.route('/api/services/upload', methods=['POST'])
 def upload_services():
@@ -87,10 +257,18 @@ def upload_services():
         if services:
             app_state['services'].extend(services)
             
-            # Reset composers
+            # Reset composers with learning capability
             app_state['annotator'] = ServiceAnnotator(app_state['services'])
             app_state['classic_composer'] = ClassicComposer(app_state['services'])
-            app_state['llm_composer'] = LLMComposer(app_state['services'])
+            
+            # Initialize LLM composer with training data if available
+            if app_state['learning_state']['is_trained']:
+                app_state['llm_composer'] = LLMComposer(
+                    app_state['services'],
+                    training_examples=app_state['learning_state']['training_examples']
+                )
+            else:
+                app_state['llm_composer'] = LLMComposer(app_state['services'])
             
             message = f'{len(services)} services loaded successfully'
             if errors:
@@ -297,6 +475,8 @@ def generate_enriched_wsdl(service):
     return '\n'.join(xml_lines)
 
 
+# ============== ANNOTATION ENDPOINTS ==============
+
 @app.route('/api/annotate/estimate', methods=['POST'])
 def estimate_annotation_time():
     """Estimate time needed for annotation"""
@@ -387,7 +567,15 @@ def start_annotation():
         
         # Update composers
         app_state['classic_composer'] = ClassicComposer(app_state['services'])
-        app_state['llm_composer'] = LLMComposer(app_state['services'])
+        
+        # Update LLM composer with training if available
+        if app_state['learning_state']['is_trained']:
+            app_state['llm_composer'] = LLMComposer(
+                app_state['services'],
+                training_examples=app_state['learning_state']['training_examples']
+            )
+        else:
+            app_state['llm_composer'] = LLMComposer(app_state['services'])
         
         # Mark as completed
         app_state['annotation_progress']['completed'] = True
@@ -419,6 +607,8 @@ def get_annotation_progress():
     
     return jsonify(progress)
 
+
+# ============== COMPOSITION REQUEST ENDPOINTS ==============
 
 @app.route('/api/requests/upload', methods=['POST'])
 def upload_requests():
@@ -460,6 +650,8 @@ def get_requests():
     })
 
 
+# ============== COMPOSITION ENDPOINTS ==============
+
 @app.route('/api/compose/classic', methods=['POST'])
 def compose_classic():
     """Classic composition (Solution A)"""
@@ -488,7 +680,7 @@ def compose_classic():
 
 @app.route('/api/compose/llm', methods=['POST'])
 def compose_llm():
-    """Intelligent composition with LLM (Solution B)"""
+    """Intelligent composition with LLM (Solution B) - Enhanced with learning"""
     try:
         data = request.json
         request_id = data.get('request_id')
@@ -502,8 +694,12 @@ def compose_llm():
         
         if not app_state['llm_composer']:
             services = app_state['annotated_services'] or app_state['services']
-            app_state['llm_composer'] = LLMComposer(services)
+            app_state['llm_composer'] = LLMComposer(
+                services,
+                training_examples=app_state['learning_state']['training_examples']
+            )
         
+        # Perform composition
         result = app_state['llm_composer'].compose(
             comp_request,
             enable_reasoning=enable_reasoning,
@@ -511,6 +707,41 @@ def compose_llm():
         )
         
         app_state['results_llm'][request_id] = result
+        
+        # CONTINUOUS LEARNING: Record this composition for learning
+        composition_record = {
+            'timestamp': datetime.now().isoformat(),
+            'request_id': request_id,
+            'request': comp_request.to_dict(),
+            'result': result.to_dict(),
+            'success': result.success,
+            'utility': result.utility_value
+        }
+        
+        app_state['learning_state']['composition_history'].append(composition_record)
+        
+        # Update performance metrics
+        metrics = app_state['learning_state']['performance_metrics']
+        metrics['total_compositions'] += 1
+        if result.success:
+            metrics['successful_compositions'] += 1
+        
+        # Calculate average utility
+        total_utility = sum(
+            record['utility'] for record in app_state['learning_state']['composition_history']
+        )
+        metrics['average_utility'] = total_utility / len(app_state['learning_state']['composition_history'])
+        
+        # Calculate learning rate (improvement over time)
+        if len(app_state['learning_state']['composition_history']) >= 10:
+            recent_avg = sum(
+                record['utility'] for record in app_state['learning_state']['composition_history'][-10:]
+            ) / 10
+            overall_avg = metrics['average_utility']
+            metrics['learning_rate'] = ((recent_avg - overall_avg) / overall_avg * 100) if overall_avg > 0 else 0
+        
+        # Learn from this composition
+        app_state['llm_composer'].learn_from_composition(composition_record)
         
         return jsonify(result.to_dict())
     
@@ -536,6 +767,8 @@ def llm_chat():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+# ============== COMPARISON ENDPOINTS ==============
 
 @app.route('/api/best-solutions/upload', methods=['POST'])
 def upload_best_solutions():
