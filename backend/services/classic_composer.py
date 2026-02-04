@@ -37,7 +37,7 @@ class ClassicComposer:
                 result = self._greedy_compose(request)
             
             result.computation_time = time.time() - start_time
-            result.success = result.utility_value > 0
+            result.success = len(result.services) > 0  # Service trouvé = succès
         
         except Exception as e:
             print(f"Erreur de composition: {e}")
