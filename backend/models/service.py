@@ -3,18 +3,40 @@ Modèles de données pour les services web
 """
 
 class QoS:
-    def __init__(self, data=None):
-        if data is None:
-            data = {}
-        self.response_time = float(data.get('ResponseTime', 0))
-        self.availability = float(data.get('Availability', 0))
-        self.throughput = float(data.get('Throughput', 0))
-        self.successability = float(data.get('Successability', 0))
-        self.reliability = float(data.get('Reliability', 0))
-        self.compliance = float(data.get('Compliance', 0))
-        self.best_practices = float(data.get('BestPractices', 0))
-        self.latency = float(data.get('Latency', 0))
-        self.documentation = float(data.get('Documentation', 0))
+    def __init__(self, data=None, **kwargs):
+        """
+        Initialize QoS with either:
+        1. A dictionary with keys like 'ResponseTime', 'Availability', etc.
+        2. Named parameters like response_time=, availability=, etc.
+        
+        Args:
+            data: Dictionary with QoS values (optional)
+            **kwargs: Named parameters (response_time, availability, etc.)
+        """
+        # Si des kwargs sont fournis, on les utilise en priorité
+        if kwargs:
+            self.response_time = float(kwargs.get('response_time', 0))
+            self.availability = float(kwargs.get('availability', 0))
+            self.throughput = float(kwargs.get('throughput', 0))
+            self.successability = float(kwargs.get('successability', 0))
+            self.reliability = float(kwargs.get('reliability', 0))
+            self.compliance = float(kwargs.get('compliance', 0))
+            self.best_practices = float(kwargs.get('best_practices', 0))
+            self.latency = float(kwargs.get('latency', 0))
+            self.documentation = float(kwargs.get('documentation', 0))
+        else:
+            # Sinon, on utilise le format dict (compatibilité avec l'ancien code)
+            if data is None:
+                data = {}
+            self.response_time = float(data.get('ResponseTime', 0))
+            self.availability = float(data.get('Availability', 0))
+            self.throughput = float(data.get('Throughput', 0))
+            self.successability = float(data.get('Successability', 0))
+            self.reliability = float(data.get('Reliability', 0))
+            self.compliance = float(data.get('Compliance', 0))
+            self.best_practices = float(data.get('BestPractices', 0))
+            self.latency = float(data.get('Latency', 0))
+            self.documentation = float(data.get('Documentation', 0))
     
     def to_dict(self):
         return {

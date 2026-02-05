@@ -50,232 +50,358 @@ class ClassicComposer:
     
     def _dijkstra_compose(self, request):
         """
-        Composition utilisant l'algorithme de Dijkstra pour trouver la solution optimale
+        VRAI algorithme de Dijkstra : Explore le graphe de services pour trouver
+        le chemin optimal (meilleure utilité) de l'état initial à l'état final
         """
         result = CompositionResult()
         
-        # Étape 1: Trouver tous les services qui peuvent produire le résultat désiré
-        candidate_services = [
-            s for s in self.services
-            if request.resultant in s.outputs
-        ]
+        # État initial : (utilité_négative, chemin_services, paramètres_disponibles)
+        # On utilise -utilité car heapq est un min-heap et on veut maximiser
+        initial_state = (0, [], set(request.provided))
         
-        if not candidate_services:
-            result.explanation = f"Aucun service ne peut produire '{request.resultant}'"
-            return result
+        # File de priorité : heap avec (priorité, compteur, état)
+        # Le compteur évite les erreurs de comparaison entre sets
+        counter = 0
+        priority_queue = [(0, counter, initial_state)]
         
-        # Étape 2: Filtrer les services qui ont tous leurs inputs disponibles
-        valid_services = [
-            s for s in candidate_services
-            if s.has_required_inputs(request.provided)
-        ]
+        # Dictionnaire des meilleures utilités atteintes pour chaque ensemble de paramètres
+        best_utilities = {}
+        best_utilities[frozenset(request.provided)] = 0
         
-        if not valid_services:
-            result.explanation = f"Aucun service candidat n'a tous ses inputs disponibles parmi: {', '.join(request.provided)}"
-            return result
+        # Meilleure solution trouvée
+        best_solution = None
+        best_solution_utility = -float('inf')
         
-        # Étape 3: Évaluer TOUS les services valides
-        services_evaluated = []
+        # Exploration
+        max_iterations = 1000
+        iterations = 0
         
-        for service in valid_services:
-            qos_checks = service.qos.meets_constraints(request.qos_constraints)
-            constraints_met = sum(qos_checks.values())
-            total_constraints = len(qos_checks)
-            constraints_ratio = constraints_met / total_constraints if total_constraints > 0 else 0
+        while priority_queue and iterations < max_iterations:
+            iterations += 1
             
-            utility = calculate_utility(
-                service.qos,
-                request.qos_constraints,
-                qos_checks
+            # Extraire l'état avec la meilleure utilité cumulée
+            neg_utility, _, (current_utility, path, available_params) = heapq.heappop(priority_queue)
+            
+            # Si on a déjà trouvé mieux pour cet ensemble de paramètres, passer
+            params_key = frozenset(available_params)
+            if params_key in best_utilities and best_utilities[params_key] > current_utility:
+                continue
+            
+            # Si on a atteint le but (résultat désiré disponible)
+            if request.resultant in available_params:
+                if current_utility > best_solution_utility:
+                    best_solution_utility = current_utility
+                    best_solution = path
+                continue  # Continue pour voir s'il y a mieux
+            
+            # Explorer tous les services applicables
+            for service in self.services:
+                # Éviter les cycles
+                if service.id in path:
+                    continue
+                
+                # Le service peut-il s'exécuter ?
+                if not service.has_required_inputs(available_params):
+                    continue
+                
+                # Calculer l'utilité de ce service
+                qos_checks = service.qos.meets_constraints(request.qos_constraints)
+                service_utility = calculate_utility(
+                    service.qos,
+                    request.qos_constraints,
+                    qos_checks
+                )
+                
+                # Nouveau chemin et paramètres
+                new_path = path + [service.id]
+                new_params = available_params | set(service.outputs)
+                new_params_key = frozenset(new_params)
+                
+                # Calculer l'utilité cumulée (minimum du chemin = maillon le plus faible)
+                if path:
+                    new_utility = min(current_utility, service_utility)
+                else:
+                    new_utility = service_utility
+                
+                # Si on a déjà trouvé mieux pour cet ensemble de paramètres, passer
+                if new_params_key in best_utilities and best_utilities[new_params_key] >= new_utility:
+                    continue
+                
+                # Enregistrer cette nouvelle meilleure utilité pour cet ensemble
+                best_utilities[new_params_key] = new_utility
+                
+                # Ajouter à la file de priorité
+                counter += 1
+                new_state = (new_utility, new_path, new_params)
+                heapq.heappush(priority_queue, (-new_utility, counter, new_state))
+        
+        # Construire le résultat
+        if best_solution:
+            result.services = [self.service_dict[sid] for sid in best_solution]
+            result.workflow = best_solution
+            result.utility_value = best_solution_utility
+            result.success = True
+            
+            # Calculer QoS agrégée
+            total_response_time = sum(s.qos.response_time for s in result.services)
+            min_reliability = min(s.qos.reliability for s in result.services)
+            min_availability = min(s.qos.availability for s in result.services)
+            
+            from models.service import QoS
+            result.qos_achieved = QoS(
+                response_time=total_response_time,
+                reliability=min_reliability,
+                availability=min_availability
             )
             
-            services_evaluated.append({
-                'service': service,
-                'utility': utility,
-                'constraints_met': constraints_met,
-                'total_constraints': total_constraints,
-                'constraints_ratio': constraints_ratio,
-                'qos_checks': qos_checks
-            })
-        
-        if not services_evaluated:
-            result.explanation = "Aucun service n'a pu être évalué"
-            return result
-        
-        # CORRECTION: Trier par UTILITÉ en premier (critère principal), puis contraintes
-        services_evaluated.sort(
-            key=lambda x: (x['utility'], x['constraints_ratio']), 
-            reverse=True
-        )
-        
-        best_candidate = services_evaluated[0]
-        best_service = best_candidate['service']
-        
-        result.services = [best_service]
-        result.workflow = [best_service.id]
-        result.utility_value = best_candidate['utility']
-        result.qos_achieved = best_service.qos
-        result.success = True
-        
-        result.explanation = (
-            f"Dijkstra optimal: Service '{best_service.id}' sélectionné | "
-            f"Utilité: {best_candidate['utility']:.2f} | "
-            f"Contraintes: {best_candidate['constraints_met']}/{best_candidate['total_constraints']} "
-            f"({best_candidate['constraints_ratio']*100:.1f}%)"
-        )
+            result.explanation = (
+                f"Dijkstra: {len(best_solution)} service(s) - "
+                f"{' → '.join(best_solution)} | "
+                f"Utilité: {best_solution_utility:.3f} | "
+                f"Exploré {iterations} états"
+            )
+        else:
+            result.explanation = f"Aucune composition trouvée après {iterations} itérations"
         
         return result
     
     def _astar_compose(self, request):
         """
-        A* avec heuristique basée sur la QoS
+        VRAI algorithme A* : Dijkstra + heuristique pour guider la recherche
+        f(n) = g(n) + h(n) où:
+        - g(n) = utilité du chemin actuel (ce qu'on a déjà)
+        - h(n) = heuristique estimant l'utilité potentielle restante
         """
         result = CompositionResult()
         
-        candidate_services = [
-            s for s in self.services
-            if request.resultant in s.outputs
-        ]
-        
-        if not candidate_services:
-            result.explanation = f"Aucun service ne peut produire '{request.resultant}'"
-            return result
-        
-        valid_services = [
-            s for s in candidate_services
-            if s.has_required_inputs(request.provided)
-        ]
-        
-        if not valid_services:
-            result.explanation = f"Aucun service n'a tous les inputs requis"
-            return result
-        
-        services_evaluated = []
-        
-        for service in valid_services:
-            qos_checks = service.qos.meets_constraints(request.qos_constraints)
-            constraints_met = sum(qos_checks.values())
-            total_constraints = len(qos_checks)
-            constraints_ratio = constraints_met / total_constraints if total_constraints > 0 else 0
+        # Calculer une heuristique pour chaque service
+        # L'heuristique estime la "qualité" potentielle d'un service
+        def calculate_heuristic(service, available_params):
+            # Heuristique basée sur :
+            # 1. La proximité du but (est-ce que ce service produit le résultat ?)
+            # 2. La qualité QoS du service
             
-            utility = calculate_utility(
-                service.qos,
-                request.qos_constraints,
-                qos_checks
-            )
+            goal_bonus = 1.0 if request.resultant in service.outputs else 0.0
             
-            # CORRECTION: Heuristique améliorée avec normalisation
-            max_response = max((s.qos.response_time for s in valid_services), default=1)
-            max_cost = max((s.qos.cost for s in valid_services), default=1)
-            
+            # Normalisation de response_time
+            max_response = max((s.qos.response_time for s in self.services), default=1)
             normalized_response = 1 - (service.qos.response_time / max_response) if max_response > 0 else 0
-            normalized_cost = 1 - (service.qos.cost / max_cost) if max_cost > 0 else 0
             
-            heuristic = (
-                service.qos.reliability * 0.3 +
-                service.qos.availability * 0.3 +
-                normalized_response * 0.2 +
-                normalized_cost * 0.2
+            # Heuristique combinée
+            h = (
+                goal_bonus * 0.5 +  # Bonus important si produit le but
+                service.qos.reliability * 0.2 +
+                service.qos.availability * 0.2 +
+                normalized_response * 0.1
             )
             
-            astar_score = utility + heuristic
+            return h
+        
+        # État initial
+        initial_state = (0, 0, [], set(request.provided))  # (g, h, path, params)
+        
+        counter = 0
+        # File de priorité : (f=g+h, compteur, (g, h, path, params))
+        priority_queue = [(0, counter, initial_state)]
+        
+        # Meilleurs scores g pour chaque ensemble de paramètres
+        best_g_scores = {}
+        best_g_scores[frozenset(request.provided)] = 0
+        
+        best_solution = None
+        best_solution_utility = -float('inf')
+        
+        max_iterations = 1000
+        iterations = 0
+        
+        while priority_queue and iterations < max_iterations:
+            iterations += 1
             
-            services_evaluated.append({
-                'service': service,
-                'utility': utility,
-                'heuristic': heuristic,
-                'astar_score': astar_score,
-                'constraints_met': constraints_met,
-                'total_constraints': total_constraints,
-                'constraints_ratio': constraints_ratio
-            })
+            f_score, _, (g_score, h_score, path, available_params) = heapq.heappop(priority_queue)
+            
+            # Vérifier si on a déjà mieux pour ces paramètres
+            params_key = frozenset(available_params)
+            if params_key in best_g_scores and best_g_scores[params_key] > g_score:
+                continue
+            
+            # But atteint ?
+            if request.resultant in available_params:
+                if g_score > best_solution_utility:
+                    best_solution_utility = g_score
+                    best_solution = path
+                continue
+            
+            # Explorer les services applicables
+            for service in self.services:
+                if service.id in path:
+                    continue
+                
+                if not service.has_required_inputs(available_params):
+                    continue
+                
+                # Calculer g(n) - utilité du chemin
+                qos_checks = service.qos.meets_constraints(request.qos_constraints)
+                service_utility = calculate_utility(
+                    service.qos,
+                    request.qos_constraints,
+                    qos_checks
+                )
+                
+                new_path = path + [service.id]
+                new_params = available_params | set(service.outputs)
+                new_params_key = frozenset(new_params)
+                
+                # g(n) = utilité cumulée (minimum)
+                new_g = min(g_score, service_utility) if path else service_utility
+                
+                # h(n) = heuristique
+                new_h = calculate_heuristic(service, new_params)
+                
+                # f(n) = g(n) + h(n)
+                new_f = new_g + new_h
+                
+                # Vérifier si c'est mieux
+                if new_params_key in best_g_scores and best_g_scores[new_params_key] >= new_g:
+                    continue
+                
+                best_g_scores[new_params_key] = new_g
+                
+                # Ajouter à la file (on veut maximiser, donc -f)
+                counter += 1
+                new_state = (new_g, new_h, new_path, new_params)
+                heapq.heappush(priority_queue, (-new_f, counter, new_state))
         
-        if not services_evaluated:
-            result.explanation = "Aucun service n'a pu être évalué"
-            return result
-        
-        # CORRECTION: Trier par score A* en premier
-        services_evaluated.sort(
-            key=lambda x: (x['astar_score'], x['utility']), 
-            reverse=True
-        )
-        
-        best_candidate = services_evaluated[0]
-        best_service = best_candidate['service']
-        
-        result.services = [best_service]
-        result.workflow = [best_service.id]
-        result.utility_value = best_candidate['utility']
-        result.qos_achieved = best_service.qos
-        result.success = True
-        
-        result.explanation = (
-            f"A* optimal: Service '{best_service.id}' | "
-            f"Utilité: {best_candidate['utility']:.2f} | "
-            f"Heuristique: {best_candidate['heuristic']:.2f} | "
-            f"Score A*: {best_candidate['astar_score']:.2f} | "
-            f"Contraintes: {best_candidate['constraints_met']}/{best_candidate['total_constraints']}"
-        )
+        # Construire le résultat
+        if best_solution:
+            result.services = [self.service_dict[sid] for sid in best_solution]
+            result.workflow = best_solution
+            result.utility_value = best_solution_utility
+            result.success = True
+            
+            # QoS agrégée
+            total_response_time = sum(s.qos.response_time for s in result.services)
+            min_reliability = min(s.qos.reliability for s in result.services)
+            min_availability = min(s.qos.availability for s in result.services)
+            
+            from models.service import QoS
+            result.qos_achieved = QoS(
+                response_time=total_response_time,
+                reliability=min_reliability,
+                availability=min_availability
+            )
+            
+            result.explanation = (
+                f"A*: {len(best_solution)} service(s) - "
+                f"{' → '.join(best_solution)} | "
+                f"Utilité: {best_solution_utility:.3f} | "
+                f"Exploré {iterations} états (guidé par heuristique)"
+            )
+        else:
+            result.explanation = f"Aucune composition A* trouvée après {iterations} itérations"
         
         return result
     
     def _greedy_compose(self, request):
         """
-        CORRECTION: Composition gloutonne basée sur l'utilité maximale
+        Algorithme GLOUTON : Prend la meilleure décision locale à chaque étape
+        sans explorer complètement - rapide mais pas optimal
         """
         result = CompositionResult()
         
-        candidate_services = [
-            s for s in self.services
-            if request.resultant in s.outputs and s.has_required_inputs(request.provided)
-        ]
+        available_params = set(request.provided)
+        path = []
+        utilities = []
         
-        if not candidate_services:
-            result.explanation = "Aucun service candidat trouvé (greedy)"
-            return result
+        max_steps = 10
+        steps = 0
         
-        # Évaluer tous les candidats
-        services_with_utility = []
-        
-        for service in candidate_services:
-            qos_checks = service.qos.meets_constraints(request.qos_constraints)
-            utility = calculate_utility(
-                service.qos,
+        while request.resultant not in available_params and steps < max_steps:
+            steps += 1
+            
+            # Trouver tous les services applicables maintenant
+            applicable_services = [
+                s for s in self.services
+                if s.id not in path and s.has_required_inputs(available_params)
+            ]
+            
+            if not applicable_services:
+                # Aucun service applicable, échec
+                break
+            
+            # GREEDY: Choisir le service avec la MEILLEURE utilité locale
+            best_service = None
+            best_local_utility = -float('inf')
+            
+            for service in applicable_services:
+                qos_checks = service.qos.meets_constraints(request.qos_constraints)
+                service_utility = calculate_utility(
+                    service.qos,
+                    request.qos_constraints,
+                    qos_checks
+                )
+                
+                # Bonus si ce service produit le résultat désiré
+                if request.resultant in service.outputs:
+                    service_utility += 10  # Bonus important
+                
+                if service_utility > best_local_utility:
+                    best_local_utility = service_utility
+                    best_service = service
+            
+            if best_service is None:
+                break
+            
+            # Ajouter le service choisi
+            path.append(best_service.id)
+            available_params.update(best_service.outputs)
+            
+            # Calculer l'utilité réelle (sans bonus)
+            qos_checks = best_service.qos.meets_constraints(request.qos_constraints)
+            real_utility = calculate_utility(
+                best_service.qos,
                 request.qos_constraints,
                 qos_checks
             )
+            utilities.append(real_utility)
             
-            constraints_met = sum(qos_checks.values())
-            total_constraints = len(qos_checks)
+            # Si on a atteint le but, arrêter
+            if request.resultant in available_params:
+                break
+        
+        # Construire le résultat
+        if request.resultant in available_params:
+            result.services = [self.service_dict[sid] for sid in path]
+            result.workflow = path
+            result.utility_value = min(utilities) if utilities else 0
+            result.success = True
             
-            services_with_utility.append({
-                'service': service,
-                'utility': utility,
-                'constraints_met': constraints_met,
-                'total_constraints': total_constraints
-            })
-        
-        # CORRECTION: Prendre le service avec la MEILLEURE UTILITÉ (pas juste reliability)
-        best = max(services_with_utility, key=lambda x: x['utility'])
-        best_service = best['service']
-        
-        result.services = [best_service]
-        result.workflow = [best_service.id]
-        result.utility_value = best['utility']
-        result.qos_achieved = best_service.qos
-        result.success = True
-        
-        result.explanation = (
-            f"Greedy: Service '{best_service.id}' (meilleure utilité: {best['utility']:.2f}) | "
-            f"Reliability: {best_service.qos.reliability:.2f} | "
-            f"Contraintes: {best['constraints_met']}/{best['total_constraints']}"
-        )
+            # QoS agrégée
+            total_response_time = sum(s.qos.response_time for s in result.services)
+            min_reliability = min(s.qos.reliability for s in result.services)
+            min_availability = min(s.qos.availability for s in result.services)
+            
+            from models.service import QoS
+            result.qos_achieved = QoS(
+                response_time=total_response_time,
+                reliability=min_reliability,
+                availability=min_availability
+            )
+            
+            result.explanation = (
+                f"Greedy: {len(path)} service(s) - "
+                f"{' → '.join(path)} | "
+                f"Utilité: {result.utility_value:.3f} | "
+                f"{steps} décisions locales"
+            )
+        else:
+            result.explanation = f"Greedy n'a pas trouvé de composition après {steps} étapes"
         
         return result
     
     def compose_sequential(self, request):
         """
-        CORRECTION: Composition séquentielle avec agrégation correcte
+        Composition séquentielle simple - construit une chaîne de services
+        en minimisant le nombre d'étapes
         """
         result = CompositionResult()
         start_time = time.time()
@@ -284,9 +410,7 @@ class ClassicComposer:
         used_services = []
         utilities = []
         
-        # CORRECTION: Variables pour agréger les QoS
         total_response_time = 0
-        total_cost = 0
         min_reliability = 1.0
         min_availability = 1.0
         
@@ -320,7 +444,6 @@ class ClassicComposer:
             used_services.append(next_service)
             available_params.update(next_service.outputs)
             
-            # Calculer l'utilité
             qos_checks = next_service.qos.meets_constraints(request.qos_constraints)
             utility = calculate_utility(
                 next_service.qos,
@@ -329,35 +452,29 @@ class ClassicComposer:
             )
             utilities.append(utility)
             
-            # CORRECTION: Agréger les QoS correctement
             total_response_time += next_service.qos.response_time
-            total_cost += next_service.qos.cost
             min_reliability = min(min_reliability, next_service.qos.reliability)
             min_availability = min(min_availability, next_service.qos.availability)
         
         if request.resultant in available_params:
             result.services = used_services
             result.workflow = [s.id for s in used_services]
-            
-            # CORRECTION: Utilité = MINIMUM (une chaîne = son maillon le plus faible)
             result.utility_value = min(utilities) if utilities else 0
             
-            # CORRECTION: Créer/mettre à jour QoS agrégée
             from models.service import QoS
             result.qos_achieved = QoS(
                 response_time=total_response_time,
-                cost=total_cost,
                 reliability=min_reliability,
                 availability=min_availability
             )
             
             result.success = True
             result.explanation = (
-                f"Composition séquentielle de {len(used_services)} service(s) | "
-                f"Utilité minimale: {result.utility_value:.2f}"
+                f"Séquentiel: {len(used_services)} service(s) | "
+                f"Utilité: {result.utility_value:.3f}"
             )
         else:
-            result.explanation = "Impossible de produire le résultat désiré"
+            result.explanation = f"Séquentiel impossible après {iterations} itérations"
         
         result.computation_time = time.time() - start_time
         
