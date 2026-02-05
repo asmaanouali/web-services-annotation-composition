@@ -1,6 +1,7 @@
 """
 Solution A: Composition classique de services web
 Utilise des algorithmes de recherche classiques (Dijkstra, A*)
+CORRECTED VERSION - Corrections des bugs uniquement
 """
 
 import time
@@ -37,7 +38,6 @@ class ClassicComposer:
                 result = self._greedy_compose(request)
             
             result.computation_time = time.time() - start_time
-            # FIX: Success if we found at least one service, not based on utility
             result.success = len(result.services) > 0
         
         except Exception as e:
@@ -49,20 +49,98 @@ class ClassicComposer:
         return result
     
     def _dijkstra_compose(self, request):
-        """Composition utilisant l'algorithme de Dijkstra modifié"""
+        """
+        Composition utilisant l'algorithme de Dijkstra pour trouver la solution optimale
+        """
         result = CompositionResult()
         
-        # Trouver tous les services qui peuvent produire le résultat désiré
+        # Étape 1: Trouver tous les services qui peuvent produire le résultat désiré
         candidate_services = [
             s for s in self.services
             if request.resultant in s.outputs
         ]
         
         if not candidate_services:
-            result.explanation = f"Aucun service ne peut produire {request.resultant}"
+            result.explanation = f"Aucun service ne peut produire '{request.resultant}'"
             return result
         
-        # Filtrer les services qui ont tous leurs inputs disponibles
+        # Étape 2: Filtrer les services qui ont tous leurs inputs disponibles
+        valid_services = [
+            s for s in candidate_services
+            if s.has_required_inputs(request.provided)
+        ]
+        
+        if not valid_services:
+            result.explanation = f"Aucun service candidat n'a tous ses inputs disponibles parmi: {', '.join(request.provided)}"
+            return result
+        
+        # Étape 3: Évaluer TOUS les services valides
+        services_evaluated = []
+        
+        for service in valid_services:
+            qos_checks = service.qos.meets_constraints(request.qos_constraints)
+            constraints_met = sum(qos_checks.values())
+            total_constraints = len(qos_checks)
+            constraints_ratio = constraints_met / total_constraints if total_constraints > 0 else 0
+            
+            utility = calculate_utility(
+                service.qos,
+                request.qos_constraints,
+                qos_checks
+            )
+            
+            services_evaluated.append({
+                'service': service,
+                'utility': utility,
+                'constraints_met': constraints_met,
+                'total_constraints': total_constraints,
+                'constraints_ratio': constraints_ratio,
+                'qos_checks': qos_checks
+            })
+        
+        if not services_evaluated:
+            result.explanation = "Aucun service n'a pu être évalué"
+            return result
+        
+        # CORRECTION: Trier par UTILITÉ en premier (critère principal), puis contraintes
+        services_evaluated.sort(
+            key=lambda x: (x['utility'], x['constraints_ratio']), 
+            reverse=True
+        )
+        
+        best_candidate = services_evaluated[0]
+        best_service = best_candidate['service']
+        
+        result.services = [best_service]
+        result.workflow = [best_service.id]
+        result.utility_value = best_candidate['utility']
+        result.qos_achieved = best_service.qos
+        result.success = True
+        
+        result.explanation = (
+            f"Dijkstra optimal: Service '{best_service.id}' sélectionné | "
+            f"Utilité: {best_candidate['utility']:.2f} | "
+            f"Contraintes: {best_candidate['constraints_met']}/{best_candidate['total_constraints']} "
+            f"({best_candidate['constraints_ratio']*100:.1f}%)"
+        )
+        
+        return result
+    
+    def _astar_compose(self, request):
+        """
+        A* avec heuristique basée sur la QoS
+        """
+        result = CompositionResult()
+        
+        candidate_services = [
+            s for s in self.services
+            if request.resultant in s.outputs
+        ]
+        
+        if not candidate_services:
+            result.explanation = f"Aucun service ne peut produire '{request.resultant}'"
+            return result
+        
         valid_services = [
             s for s in candidate_services
             if s.has_required_inputs(request.provided)
@@ -72,122 +150,152 @@ class ClassicComposer:
             result.explanation = f"Aucun service n'a tous les inputs requis"
             return result
         
-        # Calculer l'utilité pour chaque service valide
-        best_service = None
-        best_utility = -float('inf')
+        services_evaluated = []
         
         for service in valid_services:
-            # Vérifier les contraintes QoS
             qos_checks = service.qos.meets_constraints(request.qos_constraints)
+            constraints_met = sum(qos_checks.values())
+            total_constraints = len(qos_checks)
+            constraints_ratio = constraints_met / total_constraints if total_constraints > 0 else 0
             
-            # Calculer l'utilité
             utility = calculate_utility(
                 service.qos,
                 request.qos_constraints,
                 qos_checks
             )
             
-            if utility > best_utility:
-                best_utility = utility
-                best_service = service
+            # CORRECTION: Heuristique améliorée avec normalisation
+            max_response = max((s.qos.response_time for s in valid_services), default=1)
+            max_cost = max((s.qos.cost for s in valid_services), default=1)
+            
+            normalized_response = 1 - (service.qos.response_time / max_response) if max_response > 0 else 0
+            normalized_cost = 1 - (service.qos.cost / max_cost) if max_cost > 0 else 0
+            
+            heuristic = (
+                service.qos.reliability * 0.3 +
+                service.qos.availability * 0.3 +
+                normalized_response * 0.2 +
+                normalized_cost * 0.2
+            )
+            
+            astar_score = utility + heuristic
+            
+            services_evaluated.append({
+                'service': service,
+                'utility': utility,
+                'heuristic': heuristic,
+                'astar_score': astar_score,
+                'constraints_met': constraints_met,
+                'total_constraints': total_constraints,
+                'constraints_ratio': constraints_ratio
+            })
         
-        if best_service:
-            result.services = [best_service]
-            result.workflow = [best_service.id]
-            result.utility_value = best_utility
-            result.qos_achieved = best_service.qos
-            result.success = True
-            result.explanation = f"Service {best_service.id} sélectionné avec utilité {best_utility:.2f}"
-        else:
-            result.explanation = "Aucun service ne satisfait les contraintes"
+        if not services_evaluated:
+            result.explanation = "Aucun service n'a pu être évalué"
+            return result
         
-        return result
-    
-    def _astar_compose(self, request):
-        """Composition utilisant A* (similaire à Dijkstra pour ce cas)"""
-        # Pour cette version simplifiée, A* est similaire à Dijkstra
-        # avec une heuristique basée sur la QoS
-        result = self._dijkstra_compose(request)
-        result.explanation = result.explanation.replace("Dijkstra", "A*")
+        # CORRECTION: Trier par score A* en premier
+        services_evaluated.sort(
+            key=lambda x: (x['astar_score'], x['utility']), 
+            reverse=True
+        )
+        
+        best_candidate = services_evaluated[0]
+        best_service = best_candidate['service']
+        
+        result.services = [best_service]
+        result.workflow = [best_service.id]
+        result.utility_value = best_candidate['utility']
+        result.qos_achieved = best_service.qos
+        result.success = True
+        
+        result.explanation = (
+            f"A* optimal: Service '{best_service.id}' | "
+            f"Utilité: {best_candidate['utility']:.2f} | "
+            f"Heuristique: {best_candidate['heuristic']:.2f} | "
+            f"Score A*: {best_candidate['astar_score']:.2f} | "
+            f"Contraintes: {best_candidate['constraints_met']}/{best_candidate['total_constraints']}"
+        )
+        
         return result
     
     def _greedy_compose(self, request):
-        """Composition gloutonne - sélectionne le meilleur service directement"""
+        """
+        CORRECTION: Composition gloutonne basée sur l'utilité maximale
+        """
         result = CompositionResult()
         
-        # Trouver le service avec la meilleure QoS qui peut produire le résultat
         candidate_services = [
             s for s in self.services
             if request.resultant in s.outputs and s.has_required_inputs(request.provided)
         ]
         
         if not candidate_services:
-            result.explanation = "Aucun service candidat trouvé"
+            result.explanation = "Aucun service candidat trouvé (greedy)"
             return result
         
-        # Trier par reliability (approche gloutonne)
-        candidate_services.sort(key=lambda s: s.qos.reliability, reverse=True)
+        # Évaluer tous les candidats
+        services_with_utility = []
         
-        best_service = candidate_services[0]
+        for service in candidate_services:
+            qos_checks = service.qos.meets_constraints(request.qos_constraints)
+            utility = calculate_utility(
+                service.qos,
+                request.qos_constraints,
+                qos_checks
+            )
+            
+            constraints_met = sum(qos_checks.values())
+            total_constraints = len(qos_checks)
+            
+            services_with_utility.append({
+                'service': service,
+                'utility': utility,
+                'constraints_met': constraints_met,
+                'total_constraints': total_constraints
+            })
         
-        # Calculer l'utilité
-        qos_checks = best_service.qos.meets_constraints(request.qos_constraints)
-        utility = calculate_utility(
-            best_service.qos,
-            request.qos_constraints,
-            qos_checks
-        )
+        # CORRECTION: Prendre le service avec la MEILLEURE UTILITÉ (pas juste reliability)
+        best = max(services_with_utility, key=lambda x: x['utility'])
+        best_service = best['service']
         
         result.services = [best_service]
         result.workflow = [best_service.id]
-        result.utility_value = utility
+        result.utility_value = best['utility']
         result.qos_achieved = best_service.qos
         result.success = True
-        result.explanation = f"Approche gloutonne: {best_service.id} (reliability: {best_service.qos.reliability:.2f})"
+        
+        result.explanation = (
+            f"Greedy: Service '{best_service.id}' (meilleure utilité: {best['utility']:.2f}) | "
+            f"Reliability: {best_service.qos.reliability:.2f} | "
+            f"Contraintes: {best['constraints_met']}/{best['total_constraints']}"
+        )
         
         return result
     
-    def _build_service_graph(self):
-        """Construit un graphe de dépendances entre services"""
-        graph = {}
-        
-        for service in self.services:
-            neighbors = []
-            
-            # Trouver les services qui peuvent suivre ce service
-            for other in self.services:
-                if other.id == service.id:
-                    continue
-                
-                # Si les outputs de service matchent les inputs de other
-                if any(out in other.inputs for out in service.outputs):
-                    neighbors.append(other.id)
-            
-            graph[service.id] = neighbors
-        
-        return graph
-    
     def compose_sequential(self, request):
         """
-        Composition séquentielle - construit une chaîne de services
-        (plus complexe, pour des requêtes nécessitant plusieurs services)
+        CORRECTION: Composition séquentielle avec agrégation correcte
         """
         result = CompositionResult()
         start_time = time.time()
         
-        # État initial
         available_params = set(request.provided)
         used_services = []
-        total_utility = 0
+        utilities = []
         
-        # Tant qu'on n'a pas le résultat désiré
+        # CORRECTION: Variables pour agréger les QoS
+        total_response_time = 0
+        total_cost = 0
+        min_reliability = 1.0
+        min_availability = 1.0
+        
         max_iterations = 10
         iterations = 0
         
         while request.resultant not in available_params and iterations < max_iterations:
             iterations += 1
             
-            # Trouver un service qui peut s'exécuter avec les paramètres disponibles
             next_service = None
             best_contribution = -1
             
@@ -196,11 +304,9 @@ class ClassicComposer:
                     continue
                 
                 if service.has_required_inputs(available_params):
-                    # Calculer la contribution (nouveaux outputs produits)
                     new_outputs = set(service.outputs) - available_params
                     contribution = len(new_outputs)
                     
-                    # Bonus si produit le résultat désiré
                     if request.resultant in service.outputs:
                         contribution += 100
                     
@@ -211,7 +317,6 @@ class ClassicComposer:
             if next_service is None:
                 break
             
-            # Ajouter le service
             used_services.append(next_service)
             available_params.update(next_service.outputs)
             
@@ -222,15 +327,35 @@ class ClassicComposer:
                 request.qos_constraints,
                 qos_checks
             )
-            total_utility += utility
+            utilities.append(utility)
+            
+            # CORRECTION: Agréger les QoS correctement
+            total_response_time += next_service.qos.response_time
+            total_cost += next_service.qos.cost
+            min_reliability = min(min_reliability, next_service.qos.reliability)
+            min_availability = min(min_availability, next_service.qos.availability)
         
-        # Construire le résultat
         if request.resultant in available_params:
             result.services = used_services
             result.workflow = [s.id for s in used_services]
-            result.utility_value = total_utility / len(used_services) if used_services else 0
+            
+            # CORRECTION: Utilité = MINIMUM (une chaîne = son maillon le plus faible)
+            result.utility_value = min(utilities) if utilities else 0
+            
+            # CORRECTION: Créer/mettre à jour QoS agrégée
+            from models.service import QoS
+            result.qos_achieved = QoS(
+                response_time=total_response_time,
+                cost=total_cost,
+                reliability=min_reliability,
+                availability=min_availability
+            )
+            
             result.success = True
-            result.explanation = f"Composition séquentielle de {len(used_services)} service(s)"
+            result.explanation = (
+                f"Composition séquentielle de {len(used_services)} service(s) | "
+                f"Utilité minimale: {result.utility_value:.2f}"
+            )
         else:
             result.explanation = "Impossible de produire le résultat désiré"
         

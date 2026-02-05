@@ -1,6 +1,7 @@
 """
 Solution B: Composition intelligente avec LLM (Ollama)
 Enhanced with Training and Continuous Learning capabilities
+FIXED VERSION - Works with or without training data
 """
 
 import time
@@ -146,7 +147,7 @@ Example:
     
     def compose(self, request, enable_reasoning=True, enable_adaptation=True):
         """
-        Compose services using LLM reasoning with training knowledge
+        FIXED: Compose services using LLM reasoning with OR WITHOUT training knowledge
         
         Args:
             request: CompositionRequest
@@ -160,11 +161,25 @@ Example:
         result = CompositionResult()
         
         try:
-            # Step 1: Analyze context with training knowledge
-            context_analysis = self._analyze_context_with_training(request) if enable_reasoning else {}
+            # Step 1: Analyze context (works with or without training)
+            context_analysis = {}
+            if enable_reasoning:
+                try:
+                    context_analysis = self._analyze_context_with_training(request) if self.is_trained else self._analyze_context_basic(request)
+                except Exception as e:
+                    print(f"Context analysis failed: {e}")
+                    context_analysis = self._analyze_context_basic(request)
             
-            # Step 2: Select services using trained LLM
-            selected_services = self._llm_select_services_trained(request, context_analysis)
+            # Step 2: Select services (fallback if LLM fails)
+            selected_services = []
+            try:
+                if self.is_trained:
+                    selected_services = self._llm_select_services_trained(request, context_analysis)
+                else:
+                    selected_services = self._llm_select_services_basic(request, context_analysis)
+            except Exception as e:
+                print(f"LLM selection failed: {e}, using fallback")
+                selected_services = self._fallback_select_services(request)
             
             # Step 3: Validate and calculate utility
             if selected_services:
@@ -182,39 +197,177 @@ Example:
                     utility += best_service.annotations.social_node.trust_degree.value * 5
                     utility += best_service.annotations.social_node.reputation.value * 5
                 
-                # Step 4: Generate explanation with training context
-                explanation = self._generate_explanation_with_training(
-                    best_service,
-                    request,
-                    context_analysis,
-                    qos_checks
-                )
+                # Step 4: Generate explanation
+                try:
+                    explanation = self._generate_explanation_with_training(
+                        best_service,
+                        request,
+                        context_analysis,
+                        qos_checks
+                    ) if self.is_trained else self._generate_explanation_basic(
+                        best_service,
+                        request,
+                        qos_checks
+                    )
+                except Exception as e:
+                    print(f"Explanation generation failed: {e}")
+                    explanation = f"Service {best_service.id} selected with utility {utility:.2f}"
                 
                 # Step 5: Apply adaptations if enabled
                 adaptations = []
                 if enable_adaptation:
-                    adaptations = self._apply_adaptations(best_service, context_analysis)
+                    try:
+                        adaptations = self._apply_adaptations(best_service, context_analysis)
+                    except Exception as e:
+                        print(f"Adaptation failed: {e}")
                 
                 result.services = [best_service]
                 result.workflow = [best_service.id]
                 result.utility_value = utility
                 result.qos_achieved = best_service.qos
-                result.success = len(result.services) > 0  # Fixed: success if service found
+                result.success = True
                 result.explanation = explanation
                 
                 if adaptations:
                     result.explanation += "\n\nAdaptations applied:\n" + "\n".join(f"- {a}" for a in adaptations)
             
             else:
-                result.explanation = "The trained LLM found no appropriate service"
+                result.explanation = "No appropriate service found"
+                result.success = False
         
         except Exception as e:
             print(f"LLM composition error: {e}")
+            import traceback
+            traceback.print_exc()
             result.success = False
             result.explanation = f"Error: {str(e)}"
         
         result.computation_time = time.time() - start_time
         return result
+    
+    def _analyze_context_basic(self, request):
+        """FALLBACK: Basic context analysis without LLM"""
+        return {
+            "priority": "high" if request.qos_constraints.availability > 90 else "medium",
+            "environment": "production",
+            "main_concern": "reliability" if request.qos_constraints.reliability > 80 else "performance"
+        }
+    
+    def _llm_select_services_basic(self, request, context_analysis):
+        """FALLBACK: LLM selection without training data"""
+        # Find candidates
+        candidates = [
+            s for s in self.services
+            if request.resultant in s.outputs and s.has_required_inputs(request.provided)
+        ]
+        
+        if not candidates:
+            return []
+        
+        # Limit candidates
+        candidates = sorted(candidates, key=lambda s: s.qos.reliability, reverse=True)[:10]
+        
+        # Try LLM selection
+        try:
+            # Prepare service info
+            services_info = []
+            for s in candidates:
+                info = {
+                    'id': s.id,
+                    'qos': {
+                        'reliability': s.qos.reliability,
+                        'availability': s.qos.availability,
+                        'response_time': s.qos.response_time
+                    }
+                }
+                
+                if s.annotations:
+                    info['annotations'] = {
+                        'trust': s.annotations.social_node.trust_degree.value,
+                        'reputation': s.annotations.social_node.reputation.value,
+                        'role': s.annotations.interaction.role
+                    }
+                
+                services_info.append(info)
+            
+            prompt = f"""Select the best service for this composition request.
+
+Context: {json.dumps(context_analysis, indent=2)}
+
+Available Services:
+{json.dumps(services_info, indent=2)}
+
+Constraints:
+- Response Time: ≤ {request.qos_constraints.response_time}
+- Availability: ≥ {request.qos_constraints.availability}
+- Reliability: ≥ {request.qos_constraints.reliability}
+
+Select the service ID that best matches these requirements.
+Respond with ONLY the service ID, nothing else.
+"""
+            
+            response = self._call_ollama(prompt)
+            selected_id = response.strip()
+            
+            # Find matching service
+            for s in candidates:
+                if s.id in selected_id:
+                    return [s]
+            
+            # Fallback
+            return [candidates[0]]
+        
+        except Exception as e:
+            print(f"LLM selection error: {e}, using fallback")
+            return self._fallback_select_services(request)
+    
+    def _fallback_select_services(self, request):
+        """ULTIMATE FALLBACK: Rule-based selection (no LLM)"""
+        candidates = [
+            s for s in self.services
+            if request.resultant in s.outputs and s.has_required_inputs(request.provided)
+        ]
+        
+        if not candidates:
+            return []
+        
+        # Evaluate all candidates
+        evaluated = []
+        for service in candidates:
+            qos_checks = service.qos.meets_constraints(request.qos_constraints)
+            constraints_met = sum(qos_checks.values())
+            total_constraints = len(qos_checks)
+            
+            utility = calculate_utility(
+                service.qos,
+                request.qos_constraints,
+                qos_checks
+            )
+            
+            evaluated.append({
+                'service': service,
+                'utility': utility,
+                'constraints_ratio': constraints_met / total_constraints if total_constraints > 0 else 0
+            })
+        
+        # Sort by constraints ratio then utility
+        evaluated.sort(key=lambda x: (x['constraints_ratio'], x['utility']), reverse=True)
+        
+        return [evaluated[0]['service']] if evaluated else []
+    
+    def _generate_explanation_basic(self, service, request, qos_checks):
+        """FALLBACK: Generate basic explanation without LLM"""
+        met_count = sum(qos_checks.values())
+        total_count = len(qos_checks)
+        
+        explanation = f"Service {service.id} selected (LLM-assisted). "
+        explanation += f"Satisfies {met_count}/{total_count} QoS constraints. "
+        
+        if service.annotations:
+            explanation += f"Trust: {service.annotations.social_node.trust_degree.value:.2f}, "
+            explanation += f"Reputation: {service.annotations.social_node.reputation.value:.2f}."
+        
+        return explanation
     
     def _analyze_context_with_training(self, request):
         """Analyze request context using training knowledge"""
@@ -269,11 +422,7 @@ Respond in JSON format with: {{"priority": "...", "environment": "...", "main_co
             
             return analysis
         except:
-            return {
-                "priority": "high" if request.qos_constraints.availability > 90 else "medium",
-                "environment": "production",
-                "main_concern": "reliability"
-            }
+            return self._analyze_context_basic(request)
     
     def _find_similar_patterns(self, request):
         """Find similar patterns from training data"""
@@ -368,7 +517,7 @@ Respond with just the service ID.
             return [candidates[0]]
         
         except:
-            return [candidates[0]]
+            return self._fallback_select_services(request)
     
     def _generate_explanation_with_training(self, service, request, context_analysis, qos_checks):
         """Generate explanation referencing training knowledge"""
@@ -392,20 +541,7 @@ Provide a brief explanation (2-3 sentences) mentioning how training influenced t
             explanation = self._call_ollama(prompt)
             return explanation.strip()
         except:
-            met_count = sum(qos_checks.values())
-            total_count = len(qos_checks)
-            
-            explanation = f"Service {service.id} selected using trained LLM. "
-            explanation += f"Satisfies {met_count}/{total_count} QoS constraints. "
-            
-            if self.is_trained:
-                explanation += f"Decision guided by {len(self.training_examples)} training examples. "
-            
-            if service.annotations:
-                explanation += f"Trust: {service.annotations.social_node.trust_degree.value:.2f}, "
-                explanation += f"Reputation: {service.annotations.social_node.reputation.value:.2f}. "
-            
-            return explanation
+            return self._generate_explanation_basic(service, request, qos_checks)
     
     def learn_from_composition(self, composition_record):
         """

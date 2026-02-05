@@ -1,11 +1,12 @@
 """
 Utilitaires pour le calcul de la QoS et de l'utilité
+FIXED VERSION - Corrects utility calculation to give meaningful values
 """
 
 
 def calculate_utility(qos_achieved, qos_constraints, qos_checks):
     """
-    Calcule la valeur d'utilité d'un service
+    FIXED: Calcule la valeur d'utilité d'un service avec une formule plus équilibrée
     
     Args:
         qos_achieved: QoS réelles du service
@@ -13,8 +14,14 @@ def calculate_utility(qos_achieved, qos_constraints, qos_checks):
         qos_checks: Dict des vérifications QoS
     
     Returns:
-        float: Valeur d'utilité
+        float: Valeur d'utilité (0-150+)
+    
+    CHANGEMENTS:
+    - Formule plus équilibrée qui ne pénalise pas trop les services partiellement conformes
+    - Bonus pour satisfaction complète des contraintes
+    - Score de qualité intrinsèque du service
     """
+    
     # Nombre de contraintes satisfaites
     met_constraints = sum(qos_checks.values())
     total_constraints = len(qos_checks)
@@ -22,36 +29,101 @@ def calculate_utility(qos_achieved, qos_constraints, qos_checks):
     # Ratio de satisfaction (0 à 1)
     satisfaction_ratio = met_constraints / total_constraints if total_constraints > 0 else 0
     
-    # Score de qualité normalisé (0 à 100)
+    # ============================================================
+    # PARTIE 1: Score de Qualité Intrinsèque (0-100)
+    # ============================================================
+    # Ce score évalue la qualité générale du service indépendamment des contraintes
+    
     quality_score = (
-        normalize(qos_achieved.availability, 0, 100, 0, 100) * 0.15 +
-        normalize(qos_achieved.reliability, 0, 100, 0, 100) * 0.15 +
-        normalize(qos_achieved.successability, 0, 100, 0, 100) * 0.15 +
-        normalize(qos_achieved.throughput, 0, 1000, 0, 100) * 0.10 +
-        normalize(qos_achieved.compliance, 0, 100, 0, 100) * 0.10 +
-        normalize(qos_achieved.best_practices, 0, 100, 0, 100) * 0.10 +
-        normalize(qos_achieved.documentation, 0, 100, 0, 100) * 0.05 +
-        normalize_inverse(qos_achieved.response_time, 0, 1000, 0, 100) * 0.10 +
-        normalize_inverse(qos_achieved.latency, 0, 1000, 0, 100) * 0.10
+        normalize(qos_achieved.availability, 0, 100, 0, 15) +      # 15 points max
+        normalize(qos_achieved.reliability, 0, 100, 0, 15) +       # 15 points max
+        normalize(qos_achieved.successability, 0, 100, 0, 15) +    # 15 points max
+        normalize(qos_achieved.throughput, 0, 1000, 0, 10) +       # 10 points max
+        normalize(qos_achieved.compliance, 0, 100, 0, 10) +        # 10 points max
+        normalize(qos_achieved.best_practices, 0, 100, 0, 10) +    # 10 points max
+        normalize(qos_achieved.documentation, 0, 100, 0, 5) +      # 5 points max
+        normalize_inverse(qos_achieved.response_time, 0, 1000, 0, 10) +  # 10 points max
+        normalize_inverse(qos_achieved.latency, 0, 1000, 0, 10)          # 10 points max
     )
+    # Total possible: 100 points
     
-    # Formule d'utilité finale
-    # Pénalité si contraintes non satisfaites
-    penalty = (1 - satisfaction_ratio) * 100
+    # ============================================================
+    # PARTIE 2: Score de Conformité aux Contraintes (0-100)
+    # ============================================================
+    # Ce score évalue à quel point le service respecte les contraintes spécifiques
     
-    utility = quality_score * satisfaction_ratio - penalty
+    conformity_score = 0
+    constraint_weights = {
+        'ResponseTime': 12,
+        'Availability': 12,
+        'Throughput': 11,
+        'Successability': 11,
+        'Reliability': 12,
+        'Compliance': 11,
+        'BestPractices': 10,
+        'Latency': 11,
+        'Documentation': 10
+    }
     
-    # Bonus si toutes les contraintes sont satisfaites
+    for constraint_name, is_met in qos_checks.items():
+        if is_met:
+            conformity_score += constraint_weights.get(constraint_name, 10)
+    
+    # Total possible: 100 points (si toutes contraintes satisfaites)
+    
+    # ============================================================
+    # PARTIE 3: Formule Finale d'Utilité
+    # ============================================================
+    
+    # CHANGEMENT PRINCIPAL: Formule plus douce, moins punitive
+    # Au lieu de: utility = quality_score * satisfaction_ratio - (1 - satisfaction_ratio) * 100
+    # On utilise une combinaison pondérée
+    
+    # Utilité de base = moyenne pondérée qualité + conformité
+    base_utility = (quality_score * 0.4) + (conformity_score * 0.6)
+    
+    # Bonus pour satisfaction complète (toutes contraintes respectées)
     if satisfaction_ratio == 1.0:
-        utility += 50
+        bonus = 50  # Gros bonus pour satisfaction totale
+    elif satisfaction_ratio >= 0.8:
+        bonus = 25  # Bonus moyen si presque toutes contraintes OK
+    elif satisfaction_ratio >= 0.6:
+        bonus = 10  # Petit bonus si majorité des contraintes OK
+    else:
+        bonus = 0
     
-    return max(utility, 0)  # Minimum 0
+    # Pénalité douce pour non-conformité (moins sévère qu'avant)
+    # Au lieu de soustraire directement (1 - satisfaction_ratio) * 100
+    # On applique un facteur de réduction
+    if satisfaction_ratio < 0.5:
+        # Si moins de 50% des contraintes: pénalité plus forte
+        penalty_factor = 0.5  # Réduit l'utilité de moitié
+    elif satisfaction_ratio < 0.7:
+        # Si 50-70% des contraintes: pénalité modérée
+        penalty_factor = 0.7
+    elif satisfaction_ratio < 1.0:
+        # Si 70-100% des contraintes: pénalité légère
+        penalty_factor = 0.9
+    else:
+        # Toutes contraintes: pas de pénalité
+        penalty_factor = 1.0
+    
+    # Calcul final
+    utility = (base_utility * penalty_factor) + bonus
+    
+    # Assurer que l'utilité est positive
+    utility = max(utility, 0)
+    
+    return utility
 
 
 def normalize(value, min_val, max_val, target_min, target_max):
     """Normalise une valeur dans une nouvelle plage"""
     if max_val == min_val:
         return target_min
+    
+    # Assurer que value est dans la plage [min_val, max_val]
+    value = max(min_val, min(value, max_val))
     
     normalized = (value - min_val) / (max_val - min_val)
     return target_min + normalized * (target_max - target_min)
@@ -61,6 +133,9 @@ def normalize_inverse(value, min_val, max_val, target_min, target_max):
     """Normalise une valeur de manière inversée (plus bas = mieux)"""
     if max_val == min_val:
         return target_max
+    
+    # Assurer que value est dans la plage [min_val, max_val]
+    value = max(min_val, min(value, max_val))
     
     normalized = 1 - ((value - min_val) / (max_val - min_val))
     return target_min + normalized * (target_max - target_min)
@@ -154,3 +229,76 @@ def compare_qos(qos1, qos2):
             }
     
     return comparison
+
+
+def calculate_utility_detailed(qos_achieved, qos_constraints, qos_checks):
+    """
+    Version détaillée du calcul d'utilité pour debug
+    Retourne un dictionnaire avec tous les détails du calcul
+    """
+    met_constraints = sum(qos_checks.values())
+    total_constraints = len(qos_checks)
+    satisfaction_ratio = met_constraints / total_constraints if total_constraints > 0 else 0
+    
+    # Score de qualité
+    quality_components = {
+        'availability': normalize(qos_achieved.availability, 0, 100, 0, 15),
+        'reliability': normalize(qos_achieved.reliability, 0, 100, 0, 15),
+        'successability': normalize(qos_achieved.successability, 0, 100, 0, 15),
+        'throughput': normalize(qos_achieved.throughput, 0, 1000, 0, 10),
+        'compliance': normalize(qos_achieved.compliance, 0, 100, 0, 10),
+        'best_practices': normalize(qos_achieved.best_practices, 0, 100, 0, 10),
+        'documentation': normalize(qos_achieved.documentation, 0, 100, 0, 5),
+        'response_time': normalize_inverse(qos_achieved.response_time, 0, 1000, 0, 10),
+        'latency': normalize_inverse(qos_achieved.latency, 0, 1000, 0, 10)
+    }
+    
+    quality_score = sum(quality_components.values())
+    
+    # Score de conformité
+    conformity_score = 0
+    constraint_weights = {
+        'ResponseTime': 12, 'Availability': 12, 'Throughput': 11,
+        'Successability': 11, 'Reliability': 12, 'Compliance': 11,
+        'BestPractices': 10, 'Latency': 11, 'Documentation': 10
+    }
+    
+    for constraint_name, is_met in qos_checks.items():
+        if is_met:
+            conformity_score += constraint_weights.get(constraint_name, 10)
+    
+    # Calcul bonus/pénalité
+    if satisfaction_ratio == 1.0:
+        bonus = 50
+    elif satisfaction_ratio >= 0.8:
+        bonus = 25
+    elif satisfaction_ratio >= 0.6:
+        bonus = 10
+    else:
+        bonus = 0
+    
+    if satisfaction_ratio < 0.5:
+        penalty_factor = 0.5
+    elif satisfaction_ratio < 0.7:
+        penalty_factor = 0.7
+    elif satisfaction_ratio < 1.0:
+        penalty_factor = 0.9
+    else:
+        penalty_factor = 1.0
+    
+    base_utility = (quality_score * 0.4) + (conformity_score * 0.6)
+    utility = (base_utility * penalty_factor) + bonus
+    utility = max(utility, 0)
+    
+    return {
+        'utility': utility,
+        'quality_score': quality_score,
+        'quality_components': quality_components,
+        'conformity_score': conformity_score,
+        'satisfaction_ratio': satisfaction_ratio,
+        'met_constraints': met_constraints,
+        'total_constraints': total_constraints,
+        'bonus': bonus,
+        'penalty_factor': penalty_factor,
+        'base_utility': base_utility
+    }

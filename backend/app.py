@@ -1,6 +1,7 @@
 """
 Flask API for intelligent service composition system
 Enhanced version with time estimation, real-time progress, LLM training and continuous learning
+FIXED VERSION - XML import corrected
 """
 
 from flask import Flask, request, jsonify, Response
@@ -80,7 +81,7 @@ def health_check():
 
 @app.route('/api/training/upload-data', methods=['POST'])
 def upload_training_data():
-    """Upload training data (WSDL files + requests + solutions)"""
+    """Upload training data (WSDL files + requests + solutions) - FIXED VERSION"""
     try:
         # Get training WSDL files
         wsdl_files = request.files.getlist('wsdl_files')
@@ -95,6 +96,7 @@ def upload_training_data():
         
         # Parse WSDL files
         if wsdl_files:
+            print(f"Processing {len(wsdl_files)} WSDL files...")
             for file in wsdl_files:
                 if file.filename.endswith('.wsdl') or file.filename.endswith('.xml'):
                     try:
@@ -105,47 +107,106 @@ def upload_training_data():
                     except Exception as e:
                         print(f"Error parsing {file.filename}: {e}")
         
-        # Parse requests
+        # Parse requests - FIXED VERSION
         if requests_file:
+            print(f"Processing requests file: {requests_file.filename}")
+            
+            # Create temporary file with proper handling
             with tempfile.NamedTemporaryFile(mode='wb', suffix='.xml', delete=False) as tmp:
-                requests_file.save(tmp.name)
+                # Read and write content
+                content = requests_file.read()
+                tmp.write(content)
+                tmp.flush()  # IMPORTANT: Force write to buffer
+                os.fsync(tmp.fileno())  # IMPORTANT: Sync with disk
                 tmp_path = tmp.name
             
             try:
+                print(f"Parsing requests from: {tmp_path}")
+                print(f"File size: {os.path.getsize(tmp_path)} bytes")
+                
+                # Parse the file
                 training_requests = parse_requests_xml(tmp_path)
+                print(f"✓ Parsed {len(training_requests)} requests")
+                
+            except Exception as e:
+                print(f"✗ Error parsing requests: {e}")
+                import traceback
+                traceback.print_exc()
             finally:
+                # Clean up temporary file
                 if os.path.exists(tmp_path):
                     os.remove(tmp_path)
+                    print(f"Cleaned up temp file: {tmp_path}")
         
-        # Parse solutions (expected format similar to best solutions)
+        # Parse solutions - FIXED VERSION
         if solutions_file:
+            print(f"Processing solutions file: {solutions_file.filename}")
+            
             with tempfile.NamedTemporaryFile(mode='wb', suffix='.xml', delete=False) as tmp:
-                solutions_file.save(tmp.name)
+                content = solutions_file.read()
+                tmp.write(content)
+                tmp.flush()  # IMPORTANT
+                os.fsync(tmp.fileno())  # IMPORTANT
                 tmp_path = tmp.name
             
             try:
+                print(f"Parsing solutions from: {tmp_path}")
+                print(f"File size: {os.path.getsize(tmp_path)} bytes")
+                
                 training_solutions = parse_best_solutions_xml(tmp_path)
+                print(f"✓ Parsed {len(training_solutions)} solutions")
+                
+            except Exception as e:
+                print(f"✗ Error parsing solutions: {e}")
+                import traceback
+                traceback.print_exc()
             finally:
                 if os.path.exists(tmp_path):
                     os.remove(tmp_path)
+                    print(f"Cleaned up temp file: {tmp_path}")
         
-        # Parse best solutions
+        # Parse best solutions - FIXED VERSION
         if best_solutions_file:
+            print(f"Processing best solutions file: {best_solutions_file.filename}")
+            
             with tempfile.NamedTemporaryFile(mode='wb', suffix='.xml', delete=False) as tmp:
-                best_solutions_file.save(tmp.name)
+                content = best_solutions_file.read()
+                tmp.write(content)
+                tmp.flush()  # IMPORTANT
+                os.fsync(tmp.fileno())  # IMPORTANT
                 tmp_path = tmp.name
             
             try:
+                print(f"Parsing best solutions from: {tmp_path}")
+                print(f"File size: {os.path.getsize(tmp_path)} bytes")
+                
                 training_best_solutions = parse_best_solutions_xml(tmp_path)
+                print(f"✓ Parsed {len(training_best_solutions)} best solutions")
+                
+            except Exception as e:
+                print(f"✗ Error parsing best solutions: {e}")
+                import traceback
+                traceback.print_exc()
             finally:
                 if os.path.exists(tmp_path):
                     os.remove(tmp_path)
+                    print(f"Cleaned up temp file: {tmp_path}")
         
         # Store training data
         app_state['training_data']['services'] = training_services
         app_state['training_data']['requests'] = training_requests
         app_state['training_data']['solutions'] = training_solutions
         app_state['training_data']['best_solutions'] = training_best_solutions
+        
+        # Log final results
+        print("\n" + "=" * 60)
+        print("TRAINING DATA UPLOAD SUMMARY")
+        print("=" * 60)
+        print(f"Training Services: {len(training_services)}")
+        print(f"Training Requests: {len(training_requests)}")
+        print(f"Training Solutions: {len(training_solutions)}")
+        print(f"Training Best Solutions: {len(training_best_solutions)}")
+        print("=" * 60 + "\n")
         
         return jsonify({
             'message': 'Training data uploaded successfully',
@@ -156,6 +217,9 @@ def upload_training_data():
         })
     
     except Exception as e:
+        print(f"\n✗ UPLOAD ERROR: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 
@@ -612,21 +676,29 @@ def get_annotation_progress():
 
 @app.route('/api/requests/upload', methods=['POST'])
 def upload_requests():
-    """Load requests file"""
+    """Load requests file - FIXED VERSION"""
     try:
         file = request.files.get('file')
         
         if not file:
             return jsonify({'error': 'No file provided'}), 400
         
-        # Use cross-platform compatible temporary file
+        # Use cross-platform compatible temporary file with proper flush
         with tempfile.NamedTemporaryFile(mode='wb', suffix='.xml', delete=False) as tmp:
-            file.save(tmp.name)
+            content = file.read()
+            tmp.write(content)
+            tmp.flush()  # IMPORTANT
+            os.fsync(tmp.fileno())  # IMPORTANT
             tmp_path = tmp.name
         
         try:
+            print(f"Parsing requests from: {tmp_path}")
+            print(f"File size: {os.path.getsize(tmp_path)} bytes")
+            
             requests_list = parse_requests_xml(tmp_path)
             app_state['requests'] = requests_list
+            
+            print(f"✓ Parsed {len(requests_list)} requests")
             
             return jsonify({
                 'message': f'{len(requests_list)} requests loaded',
@@ -636,8 +708,12 @@ def upload_requests():
             # Clean up temporary file
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
+                print(f"Cleaned up temp file: {tmp_path}")
     
     except Exception as e:
+        print(f"✗ Error uploading requests: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 
@@ -772,21 +848,29 @@ def llm_chat():
 
 @app.route('/api/best-solutions/upload', methods=['POST'])
 def upload_best_solutions():
-    """Load best solutions file"""
+    """Load best solutions file - FIXED VERSION"""
     try:
         file = request.files.get('file')
         
         if not file:
             return jsonify({'error': 'No file provided'}), 400
         
-        # Use cross-platform compatible temporary file
+        # Use cross-platform compatible temporary file with proper flush
         with tempfile.NamedTemporaryFile(mode='wb', suffix='.xml', delete=False) as tmp:
-            file.save(tmp.name)
+            content = file.read()
+            tmp.write(content)
+            tmp.flush()  # IMPORTANT
+            os.fsync(tmp.fileno())  # IMPORTANT
             tmp_path = tmp.name
         
         try:
+            print(f"Parsing best solutions from: {tmp_path}")
+            print(f"File size: {os.path.getsize(tmp_path)} bytes")
+            
             solutions = parse_best_solutions_xml(tmp_path)
             app_state['best_solutions'] = solutions
+            
+            print(f"✓ Parsed {len(solutions)} best solutions")
             
             return jsonify({
                 'message': f'{len(solutions)} best solutions loaded',
@@ -796,8 +880,12 @@ def upload_best_solutions():
             # Clean up temporary file
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
+                print(f"Cleaned up temp file: {tmp_path}")
     
     except Exception as e:
+        print(f"✗ Error uploading best solutions: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 
