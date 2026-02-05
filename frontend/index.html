@@ -1,6 +1,3 @@
-Index · HTML
-Copier
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -811,7 +808,7 @@ Copier
 
         <!-- TAB 1: SERVICE MANAGEMENT -->
         <div class="tab-content active">
-            <!-- TRAINING DATA SECTION - NEW -->
+            <!-- TRAINING DATA SECTION - FIXED -->
             <div class="section">
                 <div class="section-title">LLM Training (Optional)</div>
                 
@@ -835,7 +832,7 @@ Copier
                             Training WSDL Files:
                         </label>
                         <div class="file-upload-area" style="padding: 20px;" onclick="document.getElementById('training-wsdl-files').click()">
-                            <input type="file" id="training-wsdl-files" multiple accept=".wsdl,.xml">
+                            <input type="file" id="training-wsdl-files" multiple accept=".wsdl,.xml" onchange="updateTrainingFileCount('wsdl')">
                             <div class="file-upload-icon" style="font-size: 32px;">📚</div>
                             <div class="file-upload-text" style="font-size: 13px;">Training Services</div>
                         </div>
@@ -848,7 +845,7 @@ Copier
                             Training Requests:
                         </label>
                         <div class="file-upload-area" style="padding: 20px;" onclick="document.getElementById('training-requests-file').click()">
-                            <input type="file" id="training-requests-file" accept=".xml">
+                            <input type="file" id="training-requests-file" accept=".xml" onchange="updateTrainingFileCount('requests')">
                             <div class="file-upload-icon" style="font-size: 32px;">📋</div>
                             <div class="file-upload-text" style="font-size: 13px;">Requests.xml</div>
                         </div>
@@ -861,7 +858,7 @@ Copier
                             Training Solutions:
                         </label>
                         <div class="file-upload-area" style="padding: 20px;" onclick="document.getElementById('training-solutions-file').click()">
-                            <input type="file" id="training-solutions-file" accept=".xml">
+                            <input type="file" id="training-solutions-file" accept=".xml" onchange="updateTrainingFileCount('solutions')">
                             <div class="file-upload-icon" style="font-size: 32px;">✅</div>
                             <div class="file-upload-text" style="font-size: 13px;">Solutions.xml</div>
                         </div>
@@ -874,7 +871,7 @@ Copier
                             Best Solutions:
                         </label>
                         <div class="file-upload-area" style="padding: 20px;" onclick="document.getElementById('training-best-solutions-file').click()">
-                            <input type="file" id="training-best-solutions-file" accept=".xml">
+                            <input type="file" id="training-best-solutions-file" accept=".xml" onchange="updateTrainingFileCount('best')">
                             <div class="file-upload-icon" style="font-size: 32px;">🏆</div>
                             <div class="file-upload-text" style="font-size: 13px;">BestSolutions.xml</div>
                         </div>
@@ -1355,6 +1352,355 @@ Copier
             const count = selectedServiceIds.size;
             countSpan.textContent = `${count} selected service(s)`;
             countSpan.style.color = count > 0 ? '#2d5016' : '#1a3a52';
+        }
+
+        /**
+         * FIXED: Update training file count/name display
+         * @param {string} type - Type of file: 'wsdl', 'requests', 'solutions', or 'best'
+         */
+        function updateTrainingFileCount(type) {
+            console.log(`Updating file count for type: ${type}`);
+            
+            let fileInputId, displayId;
+            
+            switch(type) {
+                case 'wsdl':
+                    fileInputId = 'training-wsdl-files';
+                    displayId = 'training-wsdl-count';
+                    break;
+                case 'requests':
+                    fileInputId = 'training-requests-file';
+                    displayId = 'training-requests-name';
+                    break;
+                case 'solutions':
+                    fileInputId = 'training-solutions-file';
+                    displayId = 'training-solutions-name';
+                    break;
+                case 'best':
+                    fileInputId = 'training-best-solutions-file';
+                    displayId = 'training-best-name';
+                    break;
+                default:
+                    console.error('Unknown training file type:', type);
+                    return;
+            }
+            
+            const fileInput = document.getElementById(fileInputId);
+            const display = document.getElementById(displayId);
+            
+            if (!fileInput || !display) {
+                console.error(`File input (${fileInputId}) or display (${displayId}) not found`);
+                return;
+            }
+            
+            if (type === 'wsdl') {
+                // Multiple files for WSDL
+                const fileCount = fileInput.files.length;
+                
+                if (fileCount === 0) {
+                    display.textContent = '0 files selected';
+                    display.style.color = '#666';
+                    display.style.fontWeight = 'normal';
+                } else {
+                    display.textContent = `${fileCount} file${fileCount > 1 ? 's' : ''} selected`;
+                    display.style.color = '#2d5016';
+                    display.style.fontWeight = '600';
+                }
+            } else {
+                // Single file for XML files
+                if (fileInput.files.length > 0) {
+                    const fileName = fileInput.files[0].name;
+                    display.textContent = fileName;
+                    display.style.color = '#2d5016';
+                    display.style.fontWeight = '600';
+                } else {
+                    display.textContent = 'No file selected';
+                    display.style.color = '#666';
+                    display.style.fontWeight = 'normal';
+                }
+            }
+            
+            console.log(`Updated ${type}: ${display.textContent}`);
+        }
+
+        /**
+         * Upload training data and train the LLM
+         */
+        async function uploadAndTrainLLM() {
+            console.log('=== Starting uploadAndTrainLLM ===');
+            
+            // Get all file inputs
+            const wsdlFiles = document.getElementById('training-wsdl-files').files;
+            const requestsFile = document.getElementById('training-requests-file').files[0];
+            const solutionsFile = document.getElementById('training-solutions-file').files[0];
+            const bestSolutionsFile = document.getElementById('training-best-solutions-file').files[0];
+            
+            console.log('Files selected:');
+            console.log('- WSDL files:', wsdlFiles.length);
+            console.log('- Requests:', requestsFile ? requestsFile.name : 'none');
+            console.log('- Solutions:', solutionsFile ? solutionsFile.name : 'none');
+            console.log('- Best solutions:', bestSolutionsFile ? bestSolutionsFile.name : 'none');
+            
+            // Validation: Required files
+            if (wsdlFiles.length === 0) {
+                alert('⚠️ Please select at least one training WSDL file');
+                return;
+            }
+            
+            if (!requestsFile) {
+                alert('⚠️ Please select a training requests file (Requests.xml)');
+                return;
+            }
+            
+            // Validation: Optional but recommended files
+            const hasCompleteData = solutionsFile && bestSolutionsFile;
+            
+            if (!hasCompleteData) {
+                const confirmResult = confirm(
+                    '⚠️ Missing Optional Files\n\n' +
+                    'You haven\'t provided Solutions.xml and/or BestSolutions.xml.\n\n' +
+                    'Training will be less effective without complete training data.\n\n' +
+                    'Do you want to continue anyway?'
+                );
+                
+                if (!confirmResult) {
+                    return;
+                }
+            }
+            
+            // Show progress section
+            document.getElementById('training-progress-section').style.display = 'block';
+            const progressBar = document.getElementById('training-progress');
+            const progressText = document.getElementById('training-progress-text');
+            
+            // Initialize progress
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+            progressBar.style.background = '#1a3a52';
+            progressText.textContent = 'Preparing training data...';
+            
+            // Prepare FormData
+            const formData = new FormData();
+            
+            // Add WSDL files
+            console.log('Adding WSDL files to FormData...');
+            for (let i = 0; i < wsdlFiles.length; i++) {
+                formData.append('wsdl_files', wsdlFiles[i]);
+                console.log(`  - Added: ${wsdlFiles[i].name}`);
+            }
+            
+            // Add requests file
+            console.log('Adding requests file to FormData...');
+            formData.append('requests_file', requestsFile);
+            console.log(`  - Added: ${requestsFile.name}`);
+            
+            // Add optional files if provided
+            if (solutionsFile) {
+                console.log('Adding solutions file to FormData...');
+                formData.append('solutions_file', solutionsFile);
+                console.log(`  - Added: ${solutionsFile.name}`);
+            }
+            
+            if (bestSolutionsFile) {
+                console.log('Adding best solutions file to FormData...');
+                formData.append('best_solutions_file', bestSolutionsFile);
+                console.log(`  - Added: ${bestSolutionsFile.name}`);
+            }
+            
+            try {
+                // ========== STEP 1: Upload training data ==========
+                console.log('STEP 1: Uploading training data...');
+                progressText.textContent = 'Uploading training data to server...';
+                progressBar.style.width = '25%';
+                progressBar.textContent = '25%';
+                
+                const uploadResponse = await fetch(`${API_URL}/training/upload-data`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('Upload response status:', uploadResponse.status);
+                const uploadData = await uploadResponse.json();
+                console.log('Upload response data:', uploadData);
+                
+                if (!uploadResponse.ok) {
+                    throw new Error(uploadData.error || 'Failed to upload training data');
+                }
+                
+                // Update progress
+                progressText.textContent = 
+                    `✓ Data uploaded: ${uploadData.training_services} services, ` +
+                    `${uploadData.training_requests} requests, ` +
+                    `${uploadData.training_solutions || 0} solutions, ` +
+                    `${uploadData.training_best_solutions || 0} best solutions`;
+                progressBar.style.width = '50%';
+                progressBar.textContent = '50%';
+                
+                // ========== STEP 2: Train the LLM ==========
+                console.log('STEP 2: Training LLM...');
+                progressText.textContent = 'Training LLM with uploaded data (this may take a moment)...';
+                progressBar.style.width = '75%';
+                progressBar.textContent = '75%';
+                
+                const trainResponse = await fetch(`${API_URL}/training/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                console.log('Training response status:', trainResponse.status);
+                const trainData = await trainResponse.json();
+                console.log('Training response data:', trainData);
+                
+                if (!trainResponse.ok) {
+                    throw new Error(trainData.error || 'Training process failed');
+                }
+                
+                // ========== Training completed successfully ==========
+                console.log('Training completed successfully!');
+                progressBar.style.width = '100%';
+                progressBar.textContent = '100%';
+                progressBar.style.background = '#2d5016';
+                progressText.textContent = 
+                    `✅ Training completed successfully! ${trainData.training_examples_count} examples learned`;
+                
+                // Update UI elements
+                updateTrainingStatus(true, trainData.training_examples_count);
+                await loadLearningMetrics();
+                
+                // Show success message
+                alert(
+                    `✅ LLM Training Completed Successfully!\n\n` +
+                    `📊 Training Summary:\n` +
+                    `  • ${uploadData.training_services} training services loaded\n` +
+                    `  • ${uploadData.training_requests} training requests processed\n` +
+                    `  • ${uploadData.training_solutions || 0} solution examples\n` +
+                    `  • ${uploadData.training_best_solutions || 0} best solution examples\n` +
+                    `  • ${trainData.training_examples_count} total training examples\n\n` +
+                    `🎯 The LLM is now trained and ready to make better composition decisions!`
+                );
+                
+            } catch (error) {
+                // Error handling
+                console.error('Training error:', error);
+                
+                progressBar.style.width = '100%';
+                progressBar.style.background = '#8b0000';
+                progressBar.textContent = 'Error';
+                progressText.textContent = `❌ Error: ${error.message}`;
+                
+                alert(
+                    `❌ Training Failed\n\n` +
+                    `Error: ${error.message}\n\n` +
+                    `Please check:\n` +
+                    `• Backend server is running (http://localhost:5000)\n` +
+                    `• Training files are valid XML/WSDL format\n` +
+                    `• Console for detailed error logs`
+                );
+            }
+        }
+
+        /**
+         * Update the training status badge display
+         */
+        function updateTrainingStatus(isTrained, exampleCount = 0) {
+            const badge = document.getElementById('training-status-badge');
+            const text = document.getElementById('training-status-text');
+            
+            if (!badge || !text) {
+                console.error('Training status badge elements not found');
+                return;
+            }
+            
+            if (isTrained) {
+                badge.style.background = '#f0f7ed';
+                badge.style.borderColor = '#2d5016';
+                text.style.color = '#2d5016';
+                text.innerHTML = `✅ LLM Trained - ${exampleCount} training example${exampleCount !== 1 ? 's' : ''} loaded`;
+            } else {
+                badge.style.background = '#f0f0f0';
+                badge.style.borderColor = '#d0d0d0';
+                text.style.color = '#666';
+                text.innerHTML = '⚠️ LLM Not Trained - Upload training data below';
+            }
+        }
+
+        /**
+         * Load and display learning metrics
+         */
+        async function loadLearningMetrics() {
+            try {
+                const response = await fetch(`${API_URL}/training/status`);
+                
+                if (!response.ok) {
+                    console.warn('Could not load training status');
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.is_trained) {
+                    // Show metrics section
+                    const metricsSection = document.getElementById('learning-metrics-section');
+                    if (metricsSection) {
+                        metricsSection.style.display = 'block';
+                    }
+                    
+                    // Update individual metrics
+                    const totalCompsEl = document.getElementById('metric-total-comps');
+                    if (totalCompsEl) {
+                        totalCompsEl.textContent = data.performance_metrics.total_compositions;
+                    }
+                    
+                    const successRateEl = document.getElementById('metric-success-rate');
+                    if (successRateEl) {
+                        const successRate = data.performance_metrics.total_compositions > 0
+                            ? (data.performance_metrics.successful_compositions / data.performance_metrics.total_compositions * 100).toFixed(1)
+                            : 0;
+                        successRateEl.textContent = `${successRate}%`;
+                    }
+                    
+                    const avgUtilityEl = document.getElementById('metric-avg-utility');
+                    if (avgUtilityEl) {
+                        avgUtilityEl.textContent = data.performance_metrics.average_utility.toFixed(2);
+                    }
+                    
+                    const learningRateEl = document.getElementById('metric-learning-rate');
+                    if (learningRateEl) {
+                        const rate = data.performance_metrics.learning_rate;
+                        learningRateEl.textContent = `${rate >= 0 ? '+' : ''}${rate.toFixed(1)}%`;
+                    }
+                    
+                    // Update training status badge
+                    updateTrainingStatus(true, data.training_examples);
+                }
+                
+            } catch (error) {
+                console.error('Error loading learning metrics:', error);
+            }
+        }
+
+        /**
+         * Check training status when page loads
+         */
+        async function checkTrainingStatus() {
+            try {
+                const response = await fetch(`${API_URL}/training/status`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.is_trained && data.training_examples > 0) {
+                        console.log(`LLM is trained with ${data.training_examples} examples`);
+                        updateTrainingStatus(true, data.training_examples);
+                        await loadLearningMetrics();
+                    } else {
+                        console.log('LLM is not trained yet');
+                        updateTrainingStatus(false, 0);
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking training status:', error);
+            }
         }
 
         async function uploadServices() {
@@ -2282,6 +2628,31 @@ Copier
                 </div>
             `;
         }
+
+        // ============== INITIALIZATION ==============
+
+        // Check training status when the page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', checkTrainingStatus);
+        } else {
+            // DOMContentLoaded already fired
+            checkTrainingStatus();
+        }
+
+        // Poll learning metrics every 30 seconds to keep them updated
+        setInterval(async () => {
+            try {
+                const response = await fetch(`${API_URL}/training/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.is_trained) {
+                        await loadLearningMetrics();
+                    }
+                }
+            } catch (error) {
+                // Silently fail - don't spam console with errors
+            }
+        }, 30000); // 30 seconds
     </script>
 </body>
 </html>
