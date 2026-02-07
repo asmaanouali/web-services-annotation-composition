@@ -789,6 +789,26 @@
             font-weight: 600;
             color: #1a3a52;
         }
+        /* Styles pour boutons désactivés */
+button:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
+/* Animation pour le badge d'avertissement */
+@keyframes pulseWarning {
+    0%, 100% { background-color: #fff9e6; }
+    50% { background-color: #fff5d9; }
+}
+
+#llm-annotation-warning {
+    animation: pulseWarning 2s ease-in-out infinite;
+}
+
+#llm-compose-button:disabled::before {
+    content: '🔒 ';
+}
     </style>
 </head>
 <body>
@@ -1097,6 +1117,18 @@
 
         <!-- TAB 4: LLM COMPOSITION -->
         <div class="tab-content">
+            <div id="llm-annotation-warning" 
+     class="info-box" 
+     style="background: #fff9e6; border-left-color: #f0ad4e; display: none; margin-bottom: 25px;">
+    <strong>⚠️ Warning: Services Not Annotated</strong><br>
+    <span id="annotation-warning-text">
+        Intelligent composition requires annotated services for optimal results.
+    </span>
+    <br><br>
+    <button class="btn" onclick="showTab(1)" style="margin-top: 10px;">
+        📝 Go to Annotation Tab (Tab 2)
+    </button>
+</div>
             <div class="section">
                 <div class="section-title">Request Selection</div>
                 
@@ -1131,7 +1163,7 @@
                     </label>
                 </div>
 
-                <button class="btn btn-primary" onclick="composeLLM()">
+                <button id="llm-compose-button" class="btn btn-primary" onclick="composeLLM()">
                     Execute Intelligent Composition
                 </button>
             </div>
@@ -1277,6 +1309,39 @@
         let selectedServiceIds = new Set();
         let isUploading = false;
         let annotationProgressInterval = null;
+        async function checkAnnotationStatusForLLM() {
+    try {
+        const response = await fetch(`${API_URL}/annotation/status`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        const warning = document.getElementById('llm-annotation-warning');
+        const text = document.getElementById('annotation-warning-text');
+        const composeButton = document.getElementById('llm-compose-button');
+        
+        if (!data.services_annotated || data.annotation_count === 0) {
+            if (warning) warning.style.display = 'block';
+            if (text) {
+                text.innerHTML = `Intelligent composition requires annotated services.<br><br>
+                    <strong>Current status:</strong> ${data.annotation_count}/${data.total_services} annotated (${data.percentage.toFixed(1)}%)`;
+            }
+            if (composeButton) {
+                composeButton.disabled = true;
+                composeButton.style.opacity = '0.5';
+                composeButton.innerHTML = 'Composition Locked (Annotation Required)';
+            }
+        } else {
+            if (warning) warning.style.display = 'none';
+            if (composeButton) {
+                composeButton.disabled = false;
+                composeButton.style.opacity = '1';
+                composeButton.innerHTML = 'Execute Intelligent Composition';
+            }
+        }
+    } catch (error) {
+        console.error('Error checking annotation status:', error);
+    }
+}
 
         function showTab(index) {
             const tabs = document.querySelectorAll('.tab');
@@ -1284,6 +1349,10 @@
             
             tabs.forEach((tab, i) => {
                 if (i === index) {
+                    // NOUVEAU: Vérifier statut pour Tab 4
+            if (index === 3) {
+                setTimeout(() => checkAnnotationStatusForLLM(), 100);
+            }
                     tab.classList.add('active');
                     contents[i].classList.add('active');
                     
@@ -2151,6 +2220,7 @@
                     </div>
                 ` : ''}
             `;
+            checkAnnotationStatusForLLM();
         }
 
         async function downloadAnnotatedService(serviceId) {
@@ -2382,6 +2452,19 @@
         }
 
         async function composeLLM() {
+            try {
+        const statusResponse = await fetch(`${API_URL}/annotation/status`);
+        const statusData = await statusResponse.json();
+        
+        if (!statusData.services_annotated || statusData.annotation_count === 0) {
+            alert('⚠️ Services Not Annotated\n\nPlease annotate services in Tab 2 first.\n\n' +
+                  `Current: ${statusData.annotation_count}/${statusData.total_services} annotated`);
+            return;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        return;
+    }
             const requestId = document.getElementById('request-select-llm').value;
             const enableReasoning = document.getElementById('enable-reasoning').checked;
             const enableAdaptation = document.getElementById('enable-adaptation').checked;
@@ -2637,6 +2720,11 @@
         } else {
             // DOMContentLoaded already fired
             checkTrainingStatus();
+            if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', checkAnnotationStatusForLLM);
+} else {
+    checkAnnotationStatusForLLM();
+}
         }
 
         // Poll learning metrics every 30 seconds to keep them updated

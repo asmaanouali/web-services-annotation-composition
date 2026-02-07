@@ -1,7 +1,7 @@
 """
 Flask API for intelligent service composition system
-Enhanced version with time estimation, real-time progress, LLM training and continuous learning
-FIXED VERSION - XML import corrected
+Enhanced version with annotation requirement for LLM composition
+MODIFICATION: LLM composition requires annotated services
 """
 
 from flask import Flask, request, jsonify, Response
@@ -41,6 +41,12 @@ app_state = {
         'completed': False,
         'error': None
     },
+    # NEW: Track annotation status
+    'annotation_status': {
+        'services_annotated': False,
+        'annotation_count': 0,
+        'total_services': 0
+    },
     # Training data and learning state
     'training_data': {
         'services': [],
@@ -73,8 +79,27 @@ def health_check():
         'services_annotated': len(app_state['annotated_services']),
         'requests_loaded': len(app_state['requests']),
         'is_trained': app_state['learning_state']['is_trained'],
-        'training_examples': len(app_state['learning_state']['training_examples'])
+        'training_examples': len(app_state['learning_state']['training_examples']),
+        'annotation_status': app_state['annotation_status']
     })
+
+
+# NEW: Endpoint to check if services are annotated
+@app.route('/api/annotation/status', methods=['GET'])
+def get_annotation_status():
+    """Get current annotation status"""
+    # Check if any services have annotations
+    annotated_count = sum(1 for s in app_state['services'] if hasattr(s, 'annotations') and s.annotations is not None)
+    total_count = len(app_state['services'])
+    
+    app_state['annotation_status'] = {
+        'services_annotated': annotated_count > 0,
+        'annotation_count': annotated_count,
+        'total_services': total_count,
+        'percentage': (annotated_count / total_count * 100) if total_count > 0 else 0
+    }
+    
+    return jsonify(app_state['annotation_status'])
 
 
 # ============== TRAINING ENDPOINTS ==============
@@ -333,6 +358,13 @@ def upload_services():
                 )
             else:
                 app_state['llm_composer'] = LLMComposer(app_state['services'])
+            
+            # NEW: Reset annotation status when new services are uploaded
+            app_state['annotation_status'] = {
+                'services_annotated': False,
+                'annotation_count': 0,
+                'total_services': len(app_state['services'])
+            }
             
             message = f'{len(services)} services loaded successfully'
             if errors:
@@ -641,6 +673,15 @@ def start_annotation():
         else:
             app_state['llm_composer'] = LLMComposer(app_state['services'])
         
+        # NEW: Update annotation status
+        annotated_count = sum(1 for s in app_state['services'] if hasattr(s, 'annotations') and s.annotations is not None)
+        app_state['annotation_status'] = {
+            'services_annotated': annotated_count > 0,
+            'annotation_count': annotated_count,
+            'total_services': len(app_state['services']),
+            'percentage': (annotated_count / len(app_state['services']) * 100) if len(app_state['services']) > 0 else 0
+        }
+        
         # Mark as completed
         app_state['annotation_progress']['completed'] = True
         
@@ -756,8 +797,23 @@ def compose_classic():
 
 @app.route('/api/compose/llm', methods=['POST'])
 def compose_llm():
-    """Intelligent composition with LLM (Solution B) - Enhanced with learning"""
+    """
+    Intelligent composition with LLM (Solution B) - Enhanced with learning
+    MODIFICATION: Requires services to be annotated first
+    """
     try:
+        # NEW: Check if services are annotated
+        annotated_count = sum(1 for s in app_state['services'] if hasattr(s, 'annotations') and s.annotations is not None)
+        
+        if annotated_count == 0:
+            return jsonify({
+                'error': 'Services must be annotated before LLM composition',
+                'message': 'Please annotate the services first in Tab 2 (Automatic Annotation) before using intelligent composition.',
+                'services_annotated': False,
+                'annotation_count': 0,
+                'total_services': len(app_state['services'])
+            }), 400
+        
         data = request.json
         request_id = data.get('request_id')
         enable_reasoning = data.get('enable_reasoning', True)
