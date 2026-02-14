@@ -575,36 +575,112 @@ def generate_enriched_wsdl(service):
 
 @app.route('/api/annotate/estimate', methods=['POST'])
 def estimate_annotation_time():
-    """Estimate time needed for annotation"""
+    """Estimate annotation time with detailed breakdown based on real parameters"""
     try:
         data = request.json or {}
         use_llm = data.get('use_llm', False)
         service_ids = data.get('service_ids', None)
         annotation_types = data.get('annotation_types', ['interaction', 'context', 'policy'])
         
-        # Calculate number of services
+        # Get target services
         if service_ids:
-            num_services = len(service_ids)
+            target_services = [s for s in app_state['services'] if s.id in service_ids]
         else:
-            num_services = len(app_state['services'])
+            target_services = app_state['services']
         
-        # Estimate time per service (in seconds)
+        num_services = len(target_services)
+        num_types = len(annotation_types)
+        total_services = len(app_state['services'])
+        
+        # ---- Complexity analysis ----
+        if target_services:
+            avg_inputs = sum(len(s.inputs) for s in target_services) / num_services
+            avg_outputs = sum(len(s.outputs) for s in target_services) / num_services
+            avg_io = avg_inputs + avg_outputs
+        else:
+            avg_inputs = 0
+            avg_outputs = 0
+            avg_io = 0
+        
+        # Complexity factor: more I/O = more processing
+        complexity_factor = 1.0 + (avg_io / 15.0)
+        
+        # ---- Time breakdown ----
+        breakdown = {}
+        
+        # 1. Base processing time per service
+        base_time_per_service = 0.02  # 20ms per service (parsing, init)
+        breakdown['base_processing'] = {
+            'label': 'Base Processing',
+            'time': num_services * base_time_per_service,
+            'detail': f'{num_services} services × {base_time_per_service*1000:.0f}ms'
+        }
+        
+        # 2. Annotation generation per type
         if use_llm:
-            # With LLM: approximately 8-12 seconds per service per annotation type
-            # (LLM inference time + processing overhead)
-            time_per_service = len(annotation_types) * 10  # 10 seconds per type
+            # LLM inference: ~3-5s per call, one call per type per service
+            llm_latency = 4.0  # avg seconds per LLM call
+            annotation_time = num_services * num_types * llm_latency * complexity_factor
+            breakdown['annotation_generation'] = {
+                'label': 'LLM Annotation Generation',
+                'time': annotation_time,
+                'detail': f'{num_services} × {num_types} types × ~{llm_latency}s per LLM call × {complexity_factor:.1f}x complexity'
+            }
         else:
-            # Without LLM: very fast, approximately 0.5 second per service
-            time_per_service = 0.5
+            classic_time_per_type = 0.05  # 50ms per type per service (rule-based)
+            annotation_time = num_services * num_types * classic_time_per_type * complexity_factor
+            breakdown['annotation_generation'] = {
+                'label': 'Classic Annotation Generation',
+                'time': annotation_time,
+                'detail': f'{num_services} × {num_types} types × {classic_time_per_type*1000:.0f}ms × {complexity_factor:.1f}x complexity'
+            }
         
-        total_time = num_services * time_per_service
+        # 3. Social association building (O(n²) pairwise comparison)
+        pairs = num_services * total_services
+        association_time_per_pair = 0.002  # 2ms per pair
+        association_time = pairs * association_time_per_pair
+        breakdown['association_building'] = {
+            'label': 'Social Association Building',
+            'time': association_time,
+            'detail': f'{num_services} × {total_services} pairs × {association_time_per_pair*1000:.0f}ms'
+        }
+        
+        # 4. Social node property calculation
+        property_time = num_services * 0.01  # 10ms per service
+        breakdown['property_calculation'] = {
+            'label': 'Social Node Properties',
+            'time': property_time,
+            'detail': f'{num_services} services × 10ms'
+        }
+        
+        # 5. Network overhead (if LLM)
+        if use_llm:
+            network_overhead = num_services * num_types * 0.5  # 500ms network per call
+            breakdown['network_overhead'] = {
+                'label': 'Network Overhead (Ollama)',
+                'time': network_overhead,
+                'detail': f'{num_services * num_types} API calls × ~500ms'
+            }
+        
+        # Total time
+        total_time = sum(item['time'] for item in breakdown.values())
+        
+        # Add 10% safety margin
+        total_time_with_margin = total_time * 1.1
         
         return jsonify({
-            'estimated_time_seconds': total_time,
+            'estimated_time_seconds': total_time_with_margin,
             'num_services': num_services,
-            'time_per_service': time_per_service,
+            'num_annotation_types': num_types,
             'use_llm': use_llm,
-            'annotation_types': annotation_types
+            'annotation_types': annotation_types,
+            'complexity_factor': round(complexity_factor, 2),
+            'avg_io_per_service': round(avg_io, 1),
+            'avg_inputs': round(avg_inputs, 1),
+            'avg_outputs': round(avg_outputs, 1),
+            'total_services_in_repo': total_services,
+            'breakdown': breakdown,
+            'safety_margin': '10%'
         })
     
     except Exception as e:
@@ -945,34 +1021,92 @@ def upload_best_solutions():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/compose/compare', methods=['POST'])
+def compose_compare():
+    """Run all three classic algorithms + LLM on the same request for comparison"""
+    try:
+        data = request.json
+        request_id = data.get('request_id')
+        
+        comp_request = next((r for r in app_state['requests'] if r.id == request_id), None)
+        if not comp_request:
+            return jsonify({'error': 'Request not found'}), 404
+        
+        results = {}
+        
+        # Run all classic algorithms
+        if app_state['classic_composer']:
+            for algo in ['dijkstra', 'astar', 'greedy']:
+                try:
+                    result = app_state['classic_composer'].compose(comp_request, algo)
+                    results[algo] = result.to_dict()
+                    app_state['results_classic'][f"{request_id}_{algo}"] = result
+                except Exception as e:
+                    results[algo] = {'success': False, 'error': str(e), 'utility_value': 0, 'computation_time': 0}
+        
+        # Run LLM composition if available
+        annotated_count = sum(1 for s in app_state['services'] if hasattr(s, 'annotations') and s.annotations is not None)
+        if app_state['llm_composer'] and annotated_count > 0:
+            try:
+                llm_result = app_state['llm_composer'].compose(comp_request)
+                results['llm'] = llm_result.to_dict()
+                app_state['results_llm'][request_id] = llm_result
+            except Exception as e:
+                results['llm'] = {'success': False, 'error': str(e), 'utility_value': 0, 'computation_time': 0}
+        else:
+            results['llm'] = {'success': False, 'error': 'LLM not available or services not annotated', 'utility_value': 0, 'computation_time': 0}
+        
+        return jsonify(results)
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/comparison', methods=['GET'])
 def get_comparison():
-    """Compare results Solution A vs B vs Best Solutions"""
+    """Enhanced comparison: Solution A vs B vs Best Solutions with rich metrics"""
     try:
         comparisons = []
         
-        for request_id in app_state['requests']:
-            req_id = request_id.id
+        for req in app_state['requests']:
+            req_id = req.id
             
             comparison = {
                 'request_id': req_id,
                 'best_known': app_state['best_solutions'].get(req_id),
-                'classic': app_state['results_classic'].get(req_id),
-                'llm': app_state['results_llm'].get(req_id)
+                'classic': None,
+                'llm': None
             }
             
-            if comparison['classic']:
-                comparison['classic'] = comparison['classic'].to_dict()
-            if comparison['llm']:
-                comparison['llm'] = comparison['llm'].to_dict()
+            # Get classic result (any algorithm)
+            classic_result = app_state['results_classic'].get(req_id)
+            if classic_result:
+                comparison['classic'] = classic_result.to_dict() if hasattr(classic_result, 'to_dict') else classic_result
+            
+            # Get LLM result
+            llm_result = app_state['results_llm'].get(req_id)
+            if llm_result:
+                comparison['llm'] = llm_result.to_dict() if hasattr(llm_result, 'to_dict') else llm_result
             
             comparisons.append(comparison)
         
         stats = calculate_statistics(comparisons)
         
+        # Add training impact info
+        training_impact = {
+            'is_trained': app_state['learning_state']['is_trained'],
+            'training_examples': len(app_state['learning_state']['training_examples']),
+            'composition_history': len(app_state['learning_state']['composition_history']),
+            'performance_metrics': app_state['learning_state']['performance_metrics']
+        }
+        
         return jsonify({
             'comparisons': comparisons,
-            'statistics': stats
+            'statistics': stats,
+            'training_impact': training_impact,
+            'total_requests': len(app_state['requests']),
+            'total_services': len(app_state['services']),
+            'annotated_services': sum(1 for s in app_state['services'] if hasattr(s, 'annotations') and s.annotations is not None)
         })
     
     except Exception as e:
@@ -980,34 +1114,67 @@ def get_comparison():
 
 
 def calculate_statistics(comparisons):
-    """Calculate global statistics"""
+    """Calculate rich global statistics for comparison"""
     stats = {
         'classic': {
-            'success_rate': 0,
-            'avg_utility': 0,
-            'avg_time': 0,
-            'better_than_best': 0
+            'success_rate': 0, 'avg_utility': 0, 'avg_time': 0,
+            'max_utility': 0, 'min_utility': 0,
+            'total_composed': 0, 'avg_services_used': 0, 'avg_states_explored': 0
         },
         'llm': {
-            'success_rate': 0,
-            'avg_utility': 0,
-            'avg_time': 0,
-            'better_than_best': 0
+            'success_rate': 0, 'avg_utility': 0, 'avg_time': 0,
+            'max_utility': 0, 'min_utility': 0,
+            'total_composed': 0, 'avg_services_used': 0
+        },
+        'comparison': {
+            'classic_wins': 0, 'llm_wins': 0, 'ties': 0,
+            'avg_utility_gap': 0, 'avg_time_ratio': 0
         }
     }
     
-    classic_results = [c['classic'] for c in comparisons if c['classic']]
-    llm_results = [c['llm'] for c in comparisons if c['llm']]
+    classic_results = [c['classic'] for c in comparisons if c['classic'] and c['classic'].get('success')]
+    llm_results = [c['llm'] for c in comparisons if c['llm'] and c['llm'].get('success')]
     
     if classic_results:
-        stats['classic']['success_rate'] = sum(1 for r in classic_results if r['success']) / len(classic_results) * 100
-        stats['classic']['avg_utility'] = sum(r['utility_value'] for r in classic_results) / len(classic_results)
+        utilities = [r['utility_value'] for r in classic_results]
+        stats['classic']['success_rate'] = len(classic_results) / max(len(comparisons), 1) * 100
+        stats['classic']['avg_utility'] = sum(utilities) / len(utilities)
+        stats['classic']['max_utility'] = max(utilities)
+        stats['classic']['min_utility'] = min(utilities)
         stats['classic']['avg_time'] = sum(r['computation_time'] for r in classic_results) / len(classic_results)
+        stats['classic']['total_composed'] = len(classic_results)
+        stats['classic']['avg_services_used'] = sum(len(r.get('services', [])) for r in classic_results) / len(classic_results)
+        stats['classic']['avg_states_explored'] = sum(r.get('states_explored', 0) for r in classic_results) / len(classic_results)
     
     if llm_results:
-        stats['llm']['success_rate'] = sum(1 for r in llm_results if r['success']) / len(llm_results) * 100
-        stats['llm']['avg_utility'] = sum(r['utility_value'] for r in llm_results) / len(llm_results)
+        utilities = [r['utility_value'] for r in llm_results]
+        stats['llm']['success_rate'] = len(llm_results) / max(len(comparisons), 1) * 100
+        stats['llm']['avg_utility'] = sum(utilities) / len(utilities)
+        stats['llm']['max_utility'] = max(utilities)
+        stats['llm']['min_utility'] = min(utilities)
         stats['llm']['avg_time'] = sum(r['computation_time'] for r in llm_results) / len(llm_results)
+        stats['llm']['total_composed'] = len(llm_results)
+        stats['llm']['avg_services_used'] = sum(len(r.get('services', [])) for r in llm_results) / len(llm_results)
+    
+    # Head-to-head comparison
+    for comp in comparisons:
+        if comp['classic'] and comp['llm'] and comp['classic'].get('success') and comp['llm'].get('success'):
+            cu = comp['classic']['utility_value']
+            lu = comp['llm']['utility_value']
+            if cu > lu:
+                stats['comparison']['classic_wins'] += 1
+            elif lu > cu:
+                stats['comparison']['llm_wins'] += 1
+            else:
+                stats['comparison']['ties'] += 1
+    
+    # Utility gap
+    if stats['classic']['avg_utility'] > 0 and stats['llm']['avg_utility'] > 0:
+        stats['comparison']['avg_utility_gap'] = stats['llm']['avg_utility'] - stats['classic']['avg_utility']
+    
+    # Time ratio
+    if stats['classic']['avg_time'] > 0 and stats['llm']['avg_time'] > 0:
+        stats['comparison']['avg_time_ratio'] = stats['llm']['avg_time'] / stats['classic']['avg_time']
     
     return stats
 

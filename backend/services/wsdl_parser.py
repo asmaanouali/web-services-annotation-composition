@@ -1,5 +1,9 @@
 """
-Parser WSDL pour extraire les informations des services
+PARSER COMPLET CORRIGÉ pour Discovery & Composition
+====================================================
+
+Remplace TOUT le contenu de backend/services/wsdl_parser.py
+avec ce fichier complet.
 """
 
 import xml.etree.ElementTree as ET
@@ -131,7 +135,6 @@ class WSDLParser:
         qos_found = False
         
         # Méthode 1: Chercher la balise <QoS> dans le XML (avec ou sans namespace)
-        # Essayer plusieurs variantes
         qos_element = None
         
         # Essayer sans namespace
@@ -201,9 +204,10 @@ class WSDLParser:
 def parse_requests_xml(filepath):
     """
     Parse le fichier Requests.xml
-    Support 2 formats:
+    Support 3 formats:
     1. Format standard: <Requests><Request id="...">...</Request></Requests>
-    2. Format WSChallenge: <WSChallenge><DiscoveryRoutine name="...">...</DiscoveryRoutine></WSChallenge>
+    2. Format WSChallenge Discovery: <WSChallenge><DiscoveryRoutine>...</DiscoveryRoutine></WSChallenge>
+    3. Format WSChallenge Composition: <WSChallenge><CompositionRoutine>...</CompositionRoutine></WSChallenge>
     """
     from models.service import CompositionRequest
     
@@ -215,8 +219,17 @@ def parse_requests_xml(filepath):
         
         # Détecter le format du fichier
         if root.tag == 'WSChallenge':
-            # Format WSChallenge
-            for routine in root.findall('.//DiscoveryRoutine'):
+            # Format WSChallenge - chercher DiscoveryRoutine OU CompositionRoutine
+            routines = root.findall('.//DiscoveryRoutine')
+            routine_type = 'Discovery'
+            
+            if not routines:  # Si pas de DiscoveryRoutine, chercher CompositionRoutine
+                routines = root.findall('.//CompositionRoutine')
+                routine_type = 'Composition'
+            
+            print(f"📋 Found {len(routines)} {routine_type}Routine(s) in file")
+            
+            for routine in routines:
                 request_name = routine.get('name', 'unknown')
                 comp_req = CompositionRequest(request_name)
                 
@@ -284,7 +297,7 @@ def parse_requests_xml(filepath):
                 requests.append(comp_req)
     
     except Exception as e:
-        print(f"Erreur lors du parsing des requêtes: {e}")
+        print(f"❌ Erreur lors du parsing des requêtes: {e}")
         import traceback
         traceback.print_exc()
     
@@ -292,24 +305,50 @@ def parse_requests_xml(filepath):
 
 
 def parse_best_solutions_xml(filepath):
-    """Parse le fichier BestSolutions.xml"""
+    """
+    Parse le fichier BestSolutions.xml
+    Support 2 formats:
+    1. Discovery: 1 service unique par case
+    2. Composition: LISTE de services par case (workflow/chaîne)
+    """
     solutions = {}
     
     try:
         tree = ET.parse(filepath)
         root = tree.getroot()
         
-        for sol in root.findall('.//Solution'):
-            request_id = sol.get('requestId', 'unknown')
-            service_id = sol.find('ServiceId')
-            utility = sol.find('Utility')
+        for case in root.findall('.//case'):
+            request_id = case.get('name', 'unknown')
             
+            # Trouver TOUS les services dans ce case
+            services = case.findall('.//service')
+            service_ids = [s.get('name', '').strip() for s in services if s.get('name')]
+            
+            # Trouver l'utility
+            utility_elem = case.find('.//utility')
+            utility_value = 0
+            if utility_elem is not None:
+                utility_str = utility_elem.get('value', '0')
+                try:
+                    utility_value = float(utility_str)
+                except:
+                    utility_value = 0
+            
+            # CORRECTION MAJEURE:
+            # - Discovery: service_ids aura 1 élément
+            # - Composition: service_ids aura plusieurs éléments (workflow)
             solutions[request_id] = {
-                'service_id': service_id.text if service_id is not None else None,
-                'utility': float(utility.text) if utility is not None else 0
+                'service_id': service_ids[0] if len(service_ids) == 1 else None,  # Pour compatibilité Discovery
+                'service_ids': service_ids,  # NOUVEAU: Liste complète pour Composition
+                'utility': utility_value,
+                'is_workflow': len(service_ids) > 1  # Flag pour identifier Composition
             }
+            
+            print(f"  • {request_id}: {len(service_ids)} service(s), utility={utility_value:.2f}")
     
     except Exception as e:
-        print(f"Erreur lors du parsing des solutions: {e}")
+        print(f"❌ Erreur lors du parsing des best solutions: {e}")
+        import traceback
+        traceback.print_exc()
     
     return solutions

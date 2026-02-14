@@ -114,13 +114,17 @@ class CompositionRequest:
 
 class CompositionResult:
     def __init__(self):
-        self.services = []  # Liste des services utilisés
-        self.workflow = []  # Séquence d'exécution
+        self.services = []
+        self.workflow = []
         self.utility_value = 0.0
         self.qos_achieved = QoS()
         self.computation_time = 0.0
         self.success = False
         self.explanation = ""
+        self.algorithm_trace = []
+        self.graph_data = None
+        self.algorithm_used = ""
+        self.states_explored = 0
     
     def to_dict(self):
         return {
@@ -130,5 +134,9 @@ class CompositionResult:
             'qos_achieved': self.qos_achieved.to_dict(),
             'computation_time': self.computation_time,
             'success': self.success,
-            'explanation': self.explanation
+            'explanation': self.explanation,
+            'algorithm_trace': self.algorithm_trace,
+            'graph_data': self.graph_data,
+            'algorithm_used': self.algorithm_used,
+            'states_explored': self.states_explored
         }
