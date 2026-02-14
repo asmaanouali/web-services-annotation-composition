@@ -1960,13 +1960,47 @@ async function uploadBestSolutions() {
 // COMPARATIVE ANALYSIS
 // ============================================================
 async function loadComparison() {
+    if (!currentRequests.length) { alert('Load requests first in Tab 3.'); return; }
+
+    // Auto-compose all requests with the classic composer to populate results
+    const btn = document.querySelector('#tab-4 .btn-primary');
+    const origText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px"></span> Running comparisons...';
+    btn.disabled = true;
+
     try {
+        // Initialize composers
+        if (currentServices.length > 0) {
+            // Run classic compositions for each request that has no result yet
+            for (const req of currentRequests) {
+                try {
+                    const cr = await fetch(`${API}/compose/classic`, {
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({ request_id: req.id, algorithm: 'dijkstra' })
+                    });
+                    if (!cr.ok) console.warn(`Classic comp failed for ${req.id}`);
+                } catch(e) { console.warn(e); }
+
+                // LLM composition (will 400 if not annotated — that's fine)
+                try {
+                    await fetch(`${API}/compose/llm`, {
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({ request_id: req.id })
+                    });
+                } catch(e) {}
+            }
+        }
+
         const r = await fetch(`${API}/comparison`);
         const d = await r.json();
         if (r.ok) {
             renderComparison(d);
         } else { alert(`Error: ${d.error}`); }
     } catch(e) { alert(`Error: ${e.message}`); }
+    finally {
+        btn.innerHTML = origText;
+        btn.disabled = false;
+    }
 }
 
 function renderComparison(data) {
