@@ -165,7 +165,7 @@ class ClassicComposer:
         best_solution = None
         best_solution_utility = -float('inf')
         
-        max_iterations = 10000000
+        max_iterations = 100000
         iterations = 0
         explored_services = set()
         
@@ -351,7 +351,7 @@ class ClassicComposer:
         best_solution_utility = -float('inf')
         explored_services = set()
         
-        max_iterations = 10000000
+        max_iterations = 100000
         iterations = 0
         
         trace.append({
