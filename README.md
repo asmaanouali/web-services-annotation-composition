@@ -1725,38 +1725,8 @@ This system implements and compares:
    - Reinforcement learning
    - Transfer learning across domains
    - Federated learning for privacy
-
----
-
-## License
-
-[Specify your license here]
-
-## Contributors
-
-[List contributors]
-
-## Citation
-
-If you use this system in research, please cite:
-```bibtex
-@software{intelligent_service_composition,
-  title = {Intelligent Web Service Composition System},
-  author = {[Your Name]},
-  year = {2026},
-  url = {[Repository URL]}
-}
-```
-
----
-
-## Contact & Support
-
-- **Issues**: [GitHub Issues]
-- **Email**: [Contact Email]
-- **Documentation**: [Wiki/Docs URL]
-
+   
 ---
 
 **Last Updated**: February 2026  
-**Version**: 1.0.0
+**Version**: 1.0.1
