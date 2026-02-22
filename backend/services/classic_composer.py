@@ -7,7 +7,10 @@ WITH full algorithm trace for step-by-step visualization
 import time
 import heapq
 from models.service import CompositionResult, QoS
-from utils.qos_calculator import calculate_utility
+from utils.qos_calculator import calculate_utility, aggregate_qos
+
+# Wall-clock timeout for algorithms (seconds)
+ALGORITHM_TIMEOUT = 30
 
 
 class ClassicComposer:
@@ -25,9 +28,6 @@ class ClassicComposer:
         result.algorithm_used = algorithm
         
         try:
-            # Build the service dependency graph for visualization
-            graph_data = self._build_service_graph(request)
-            
             if algorithm == "dijkstra":
                 result = self._dijkstra_compose(request)
             elif algorithm == "astar":
@@ -38,6 +38,9 @@ class ClassicComposer:
             result.computation_time = time.time() - start_time
             result.success = len(result.services) > 0
             result.algorithm_used = algorithm
+            
+            # Build graph data for visualization (only once, after algorithm completes)
+            graph_data = self._build_service_graph(request)
             
             # Attach graph data with path info
             if result.workflow:
@@ -168,6 +171,7 @@ class ClassicComposer:
         max_iterations = 100000
         iterations = 0
         explored_services = set()
+        deadline = time.time() + ALGORITHM_TIMEOUT
         
         # Record initial state
         trace.append({
@@ -179,7 +183,7 @@ class ClassicComposer:
             'best_utility': 0
         })
         
-        while priority_queue and iterations < max_iterations:
+        while priority_queue and iterations < max_iterations and time.time() < deadline:
             iterations += 1
             
             neg_utility, _, (current_utility, path, available_params) = heapq.heappop(priority_queue)
@@ -235,6 +239,9 @@ class ClassicComposer:
                 new_params = available_params | set(service.outputs)
                 new_params_key = frozenset(new_params)
                 
+                # Bottleneck utility model: path utility = min utility among all services
+                # in the chain. This ensures the weakest link determines overall quality.
+                # For the first service (empty path), we use its utility directly.
                 new_utility = min(current_utility, service_utility) if path else service_utility
                 
                 if new_params_key in best_utilities and best_utilities[new_params_key] >= new_utility:
@@ -266,15 +273,7 @@ class ClassicComposer:
             result.success = True
             result.states_explored = iterations
             
-            total_rt = sum(s.qos.response_time for s in result.services)
-            min_rel = min(s.qos.reliability for s in result.services)
-            min_avail = min(s.qos.availability for s in result.services)
-            
-            result.qos_achieved = QoS(
-                response_time=total_rt,
-                reliability=min_rel,
-                availability=min_avail
-            )
+            result.qos_achieved = aggregate_qos(result.services)
             
             # Record final summary
             trace.append({
@@ -353,6 +352,7 @@ class ClassicComposer:
         
         max_iterations = 100000
         iterations = 0
+        deadline = time.time() + ALGORITHM_TIMEOUT
         
         trace.append({
             'step': 0,
@@ -361,7 +361,7 @@ class ClassicComposer:
             'available_params': list(request.provided)[:5]
         })
         
-        while priority_queue and iterations < max_iterations:
+        while priority_queue and iterations < max_iterations and time.time() < deadline:
             iterations += 1
             
             f_score, _, (g_score, h_score, path, available_params) = heapq.heappop(priority_queue)
@@ -415,6 +415,7 @@ class ClassicComposer:
                 new_params = available_params | set(service.outputs)
                 new_params_key = frozenset(new_params)
                 
+                # Bottleneck utility model (same as Dijkstra): weakest service determines path quality
                 new_g = min(g_score, service_utility) if path else service_utility
                 new_h = calculate_heuristic(service, new_params)
                 new_f = new_g + new_h
@@ -447,15 +448,7 @@ class ClassicComposer:
             result.success = True
             result.states_explored = iterations
             
-            total_rt = sum(s.qos.response_time for s in result.services)
-            min_rel = min(s.qos.reliability for s in result.services)
-            min_avail = min(s.qos.availability for s in result.services)
-            
-            result.qos_achieved = QoS(
-                response_time=total_rt,
-                reliability=min_rel,
-                availability=min_avail
-            )
+            result.qos_achieved = aggregate_qos(result.services)
             
             trace.append({
                 'step': iterations,
@@ -605,15 +598,7 @@ class ClassicComposer:
             result.success = True
             result.states_explored = steps
             
-            total_rt = sum(s.qos.response_time for s in result.services)
-            min_rel = min(s.qos.reliability for s in result.services)
-            min_avail = min(s.qos.availability for s in result.services)
-            
-            result.qos_achieved = QoS(
-                response_time=total_rt,
-                reliability=min_rel,
-                availability=min_avail
-            )
+            result.qos_achieved = aggregate_qos(result.services)
             
             trace.append({
                 'step': steps,

@@ -242,6 +242,9 @@ def parse_requests_xml(filepath):
                 resultant = routine.find('Resultant')
                 if resultant is not None and resultant.text:
                     comp_req.resultant = resultant.text.strip()
+                else:
+                    print(f"⚠️ Warning: Request '{request_name}' has no Resultant element — skipping (composition would always fail)")
+                    continue
                 
                 # QoS Constraints (format: valeur1,valeur2,valeur3,...)
                 qos_elem = routine.find('QoS')
@@ -280,8 +283,11 @@ def parse_requests_xml(filepath):
                 
                 # Resultant parameter
                 resultant = req.find('Resultant')
-                if resultant is not None:
+                if resultant is not None and resultant.text:
                     comp_req.resultant = resultant.text.strip()
+                else:
+                    print(f"⚠️ Warning: Request '{request_id}' has no Resultant element — skipping")
+                    continue
                 
                 # QoS Constraints
                 qos_elem = req.find('QoS')

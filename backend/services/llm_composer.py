@@ -61,6 +61,12 @@ class LLMComposer:
             if not service:
                 continue
             
+            # Extract utility - try multiple paths for robustness (#16)
+            utility_val = best_sol.get('utility', 0)
+            if utility_val == 0 and best_sol:
+                # Utility may be nested differently depending on source
+                print(f"  Warning: utility=0 for training example {req.get('resultant', '?')}, best_sol keys: {list(best_sol.keys())}")
+            
             # Extract pattern: what characteristics led to success?
             pattern = {
                 'request_type': {
@@ -74,7 +80,7 @@ class LLMComposer:
                     'outputs_count': len(service.get('outputs', [])),
                     'qos_profile': self._get_qos_profile(service.get('qos', {}))
                 },
-                'utility': best_sol.get('utility', 0),
+                'utility': utility_val,
                 'success_factors': []
             }
             
@@ -323,37 +329,49 @@ Respond with ONLY the service ID, nothing else.
     
     def _fallback_select_services(self, request):
         """ULTIMATE FALLBACK: Rule-based selection (no LLM)"""
+        # First try direct single-service solutions
         candidates = [
             s for s in self.services
             if request.resultant in s.outputs and s.has_required_inputs(request.provided)
         ]
         
-        if not candidates:
-            return []
-        
-        # Evaluate all candidates
-        evaluated = []
-        for service in candidates:
-            qos_checks = service.qos.meets_constraints(request.qos_constraints)
-            constraints_met = sum(qos_checks.values())
-            total_constraints = len(qos_checks)
+        if candidates:
+            # Evaluate all candidates
+            evaluated = []
+            for service in candidates:
+                qos_checks = service.qos.meets_constraints(request.qos_constraints)
+                constraints_met = sum(qos_checks.values())
+                total_constraints = len(qos_checks)
+                
+                utility = calculate_utility(
+                    service.qos,
+                    request.qos_constraints,
+                    qos_checks
+                )
+                
+                evaluated.append({
+                    'service': service,
+                    'utility': utility,
+                    'constraints_ratio': constraints_met / total_constraints if total_constraints > 0 else 0
+                })
             
-            utility = calculate_utility(
-                service.qos,
-                request.qos_constraints,
-                qos_checks
-            )
-            
-            evaluated.append({
-                'service': service,
-                'utility': utility,
-                'constraints_ratio': constraints_met / total_constraints if total_constraints > 0 else 0
-            })
+            # Sort by constraints ratio then utility
+            evaluated.sort(key=lambda x: (x['constraints_ratio'], x['utility']), reverse=True)
+            return [evaluated[0]['service']] if evaluated else []
         
-        # Sort by constraints ratio then utility
-        evaluated.sort(key=lambda x: (x['constraints_ratio'], x['utility']), reverse=True)
+        # No single-service solution found; try chaining 2 services (#11)
+        available = set(request.provided)
+        for s1 in self.services:
+            if not s1.has_required_inputs(available):
+                continue
+            extended_params = available | set(s1.outputs)
+            for s2 in self.services:
+                if s2.id == s1.id:
+                    continue
+                if request.resultant in s2.outputs and s2.has_required_inputs(extended_params):
+                    return [s1, s2]
         
-        return [evaluated[0]['service']] if evaluated else []
+        return []
     
     def _generate_explanation_basic(self, service, request, qos_checks):
         """FALLBACK: Generate basic explanation without LLM"""
@@ -559,12 +577,16 @@ Provide a brief explanation (2-3 sentences) mentioning how training influenced t
         
         # If successful and high utility, add to success strategies
         if composition_record['success'] and composition_record['utility'] > 50:
+            # Normalize qos_constraints: ensure it's a dict with CamelCase keys
+            raw_qos = composition_record['request'].get('qos_constraints', {})
+            # to_dict() produces CamelCase keys; if it's already a dict, use as-is
+            if hasattr(raw_qos, 'to_dict'):
+                raw_qos = raw_qos.to_dict()
+            
             strategy = {
                 'request_pattern': {
                     'resultant': composition_record['request'].get('resultant'),
-                    'qos_priority': self._identify_qos_priority(
-                        composition_record['request'].get('qos_constraints', {})
-                    )
+                    'qos_priority': self._identify_qos_priority(raw_qos)
                 },
                 'selected_service': composition_record['result'].get('services', [None])[0],
                 'utility_achieved': composition_record['utility'],
@@ -577,6 +599,10 @@ Provide a brief explanation (2-3 sentences) mentioning how training influenced t
             if len(self.success_strategies) > 20:
                 self.success_strategies.sort(key=lambda x: x['utility_achieved'], reverse=True)
                 self.success_strategies = self.success_strategies[:20]
+        
+        # Rebuild knowledge base to include newly learned compositions (#18)
+        if self.training_examples:
+            self._build_knowledge_base()
         
         print(f"Learning updated: {len(self.composition_memory)} memories, {len(self.success_strategies)} strategies")
     

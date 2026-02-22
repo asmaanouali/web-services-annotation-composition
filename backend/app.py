@@ -9,6 +9,7 @@ from flask_cors import CORS
 import os
 import json
 import tempfile
+import threading
 from datetime import datetime
 
 from services.wsdl_parser import WSDLParser, parse_requests_xml, parse_best_solutions_xml
@@ -69,6 +70,21 @@ app_state = {
     }
 }
 
+# Thread-safety lock for shared mutable state (#4)
+state_lock = threading.Lock()
+
+
+def _compute_annotation_status():
+    """Single source of truth for annotation status (#10)"""
+    annotated_count = sum(1 for s in app_state['services'] if hasattr(s, 'annotations') and s.annotations is not None)
+    total_count = len(app_state['services'])
+    return {
+        'services_annotated': annotated_count > 0,
+        'annotation_count': annotated_count,
+        'total_services': total_count,
+        'percentage': (annotated_count / total_count * 100) if total_count > 0 else 0
+    }
+
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -80,7 +96,7 @@ def health_check():
         'requests_loaded': len(app_state['requests']),
         'is_trained': app_state['learning_state']['is_trained'],
         'training_examples': len(app_state['learning_state']['training_examples']),
-        'annotation_status': app_state['annotation_status']
+        'annotation_status': _compute_annotation_status()
     })
 
 
@@ -88,18 +104,9 @@ def health_check():
 @app.route('/api/annotation/status', methods=['GET'])
 def get_annotation_status():
     """Get current annotation status"""
-    # Check if any services have annotations
-    annotated_count = sum(1 for s in app_state['services'] if hasattr(s, 'annotations') and s.annotations is not None)
-    total_count = len(app_state['services'])
-    
-    app_state['annotation_status'] = {
-        'services_annotated': annotated_count > 0,
-        'annotation_count': annotated_count,
-        'total_services': total_count,
-        'percentage': (annotated_count / total_count * 100) if total_count > 0 else 0
-    }
-    
-    return jsonify(app_state['annotation_status'])
+    status = _compute_annotation_status()
+    app_state['annotation_status'] = status
+    return jsonify(status)
 
 
 # ============== TRAINING ENDPOINTS ==============
@@ -255,10 +262,9 @@ def start_training():
         if not app_state['training_data']['services']:
             return jsonify({'error': 'No training data available'}), 400
         
-        # Initialize or get LLM composer
-        if not app_state['llm_composer']:
-            services = app_state['annotated_services'] or app_state['services']
-            app_state['llm_composer'] = LLMComposer(services)
+        # Always (re)create LLM composer with current services to ensure training applies (#12)
+        services = app_state['annotated_services'] or app_state['services']
+        app_state['llm_composer'] = LLMComposer(services)
         
         # Build training examples from training data
         training_examples = []
@@ -481,11 +487,10 @@ def generate_enriched_wsdl(service):
     xml_lines.append('')
     xml_lines.append('  <!-- ========== QoS Properties ========== -->')
     xml_lines.append('  <social:QoS>')
-    qos_dict = service.qos if isinstance(service.qos, dict) else vars(service.qos)
+    # Use to_dict() which provides correct CamelCase keys (ResponseTime, etc.)
+    qos_dict = service.qos.to_dict() if hasattr(service.qos, 'to_dict') else (service.qos if isinstance(service.qos, dict) else vars(service.qos))
     for key, value in qos_dict.items():
-        xml_key = key.replace('_', '')
-        xml_key = xml_key[0].upper() + xml_key[1:]
-        xml_lines.append(f'    <social:{xml_key}>{value:.2f}</social:{xml_key}>')
+        xml_lines.append(f'    <social:{key}>{value:.2f}</social:{key}>')
     xml_lines.append('  </social:QoS>')
     xml_lines.append('')
     
@@ -713,13 +718,14 @@ def start_annotation():
         
         # Annotate selected services with progress callback
         def progress_callback(current, total, service_id):
-            app_state['annotation_progress'] = {
-                'current': current,
-                'total': total,
-                'current_service': service_id,
-                'completed': False,
-                'error': None
-            }
+            with state_lock:
+                app_state['annotation_progress'] = {
+                    'current': current,
+                    'total': total,
+                    'current_service': service_id,
+                    'completed': False,
+                    'error': None
+                }
             print(f"Annotation progress: {current}/{total} - Service: {service_id}")
         
         annotated = app_state['annotator'].annotate_all(
@@ -750,16 +756,11 @@ def start_annotation():
             app_state['llm_composer'] = LLMComposer(app_state['services'])
         
         # NEW: Update annotation status
-        annotated_count = sum(1 for s in app_state['services'] if hasattr(s, 'annotations') and s.annotations is not None)
-        app_state['annotation_status'] = {
-            'services_annotated': annotated_count > 0,
-            'annotation_count': annotated_count,
-            'total_services': len(app_state['services']),
-            'percentage': (annotated_count / len(app_state['services']) * 100) if len(app_state['services']) > 0 else 0
-        }
+        app_state['annotation_status'] = _compute_annotation_status()
         
         # Mark as completed
-        app_state['annotation_progress']['completed'] = True
+        with state_lock:
+            app_state['annotation_progress']['completed'] = True
         
         return jsonify({
             'message': 'Annotation completed',
@@ -778,13 +779,14 @@ def start_annotation():
 @app.route('/api/annotate/progress', methods=['GET'])
 def get_annotation_progress():
     """Retrieve annotation progress in real-time"""
-    progress = app_state.get('annotation_progress', {
-        'current': 0,
-        'total': 0,
-        'current_service': '',
-        'completed': False,
-        'error': None
-    })
+    with state_lock:
+        progress = app_state.get('annotation_progress', {
+            'current': 0,
+            'total': 0,
+            'current_service': '',
+            'completed': False,
+            'error': None
+        }).copy()
     
     return jsonify(progress)
 
@@ -1057,6 +1059,50 @@ def compose_compare():
             results['llm'] = {'success': False, 'error': 'LLM not available or services not annotated', 'utility_value': 0, 'computation_time': 0}
         
         return jsonify(results)
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/compose/batch', methods=['POST'])
+def compose_batch():
+    """Batch compose all requests with classic + LLM in one call (#15)"""
+    try:
+        data = request.json or {}
+        algorithm = data.get('algorithm', 'dijkstra')
+        request_ids = data.get('request_ids', [r.id for r in app_state['requests']])
+        
+        results = {}
+        annotated_count = sum(1 for s in app_state['services'] if hasattr(s, 'annotations') and s.annotations is not None)
+        
+        for req_id in request_ids:
+            comp_request = next((r for r in app_state['requests'] if r.id == req_id), None)
+            if not comp_request:
+                continue
+            
+            entry = {'classic': None, 'llm': None}
+            
+            # Classic composition
+            if app_state['classic_composer']:
+                try:
+                    result = app_state['classic_composer'].compose(comp_request, algorithm)
+                    app_state['results_classic'][req_id] = result
+                    entry['classic'] = result.to_dict()
+                except Exception as e:
+                    entry['classic'] = {'success': False, 'error': str(e), 'utility_value': 0, 'computation_time': 0}
+            
+            # LLM composition
+            if app_state['llm_composer'] and annotated_count > 0:
+                try:
+                    llm_result = app_state['llm_composer'].compose(comp_request)
+                    app_state['results_llm'][req_id] = llm_result
+                    entry['llm'] = llm_result.to_dict()
+                except Exception as e:
+                    entry['llm'] = {'success': False, 'error': str(e), 'utility_value': 0, 'computation_time': 0}
+            
+            results[req_id] = entry
+        
+        return jsonify({'results': results, 'total': len(results)})
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500

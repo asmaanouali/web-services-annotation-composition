@@ -1960,34 +1960,39 @@ async function uploadBestSolutions() {
 // COMPARATIVE ANALYSIS
 // ============================================================
 async function loadComparison() {
-    if (!currentRequests.length) { alert('Load requests first in Tab 3.'); return; }
+    if (!currentRequests.length) { alert('Please load composition requests first (use the Requests tab).'); return; }
 
-    // Auto-compose all requests with the classic composer to populate results
+    // Auto-compose all requests using the batch endpoint (#15)
     const btn = document.querySelector('#tab-4 .btn-primary');
     const origText = btn.innerHTML;
     btn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px"></span> Running comparisons...';
     btn.disabled = true;
 
     try {
-        // Initialize composers
         if (currentServices.length > 0) {
-            // Run classic compositions for each request that has no result yet
-            for (const req of currentRequests) {
-                try {
-                    const cr = await fetch(`${API}/compose/classic`, {
-                        method:'POST', headers:{'Content-Type':'application/json'},
-                        body: JSON.stringify({ request_id: req.id, algorithm: 'dijkstra' })
-                    });
-                    if (!cr.ok) console.warn(`Classic comp failed for ${req.id}`);
-                } catch(e) { console.warn(e); }
-
-                // LLM composition (will 400 if not annotated — that's fine)
-                try {
-                    await fetch(`${API}/compose/llm`, {
-                        method:'POST', headers:{'Content-Type':'application/json'},
-                        body: JSON.stringify({ request_id: req.id })
-                    });
-                } catch(e) {}
+            // Single batch call instead of sequential requests per request
+            try {
+                const batchResp = await fetch(`${API}/compose/batch`, {
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ request_ids: currentRequests.map(r => r.id), algorithm: 'dijkstra' })
+                });
+                if (!batchResp.ok) console.warn('Batch composition returned error');
+            } catch(e) { console.warn('Batch endpoint unavailable, falling back to sequential', e); 
+                // Fallback: sequential requests
+                for (const req of currentRequests) {
+                    try {
+                        await fetch(`${API}/compose/classic`, {
+                            method:'POST', headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify({ request_id: req.id, algorithm: 'dijkstra' })
+                        });
+                    } catch(e2) { console.warn(e2); }
+                    try {
+                        await fetch(`${API}/compose/llm`, {
+                            method:'POST', headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify({ request_id: req.id })
+                        });
+                    } catch(e2) {}
+                }
             }
         }
 
