@@ -159,33 +159,41 @@ def aggregate_qos(services):
     if len(services) == 1:
         return services[0].qos
     
-    aggregated = QoS()
+    # Compute aggregated values for sequential composition
+    # Times: sum
+    total_response_time = sum(s.qos.response_time for s in services)
+    total_latency = sum(s.qos.latency for s in services)
     
-    # Pour les temps: somme
-    aggregated.response_time = sum(s.qos.response_time for s in services)
-    aggregated.latency = sum(s.qos.latency for s in services)
-    
-    # Pour la disponibilité et fiabilité: produit (probabilités)
-    aggregated.availability = 1.0
-    aggregated.reliability = 1.0
-    aggregated.successability = 1.0
-    
+    # Probabilities: product (availability, reliability, successability are percentages)
+    agg_availability = 1.0
+    agg_reliability = 1.0
+    agg_successability = 1.0
     for s in services:
-        aggregated.availability *= (s.qos.availability / 100)
-        aggregated.reliability *= (s.qos.reliability / 100)
-        aggregated.successability *= (s.qos.successability / 100)
+        agg_availability *= (s.qos.availability / 100)
+        agg_reliability *= (s.qos.reliability / 100)
+        agg_successability *= (s.qos.successability / 100)
+    agg_availability *= 100
+    agg_reliability *= 100
+    agg_successability *= 100
     
-    aggregated.availability *= 100
-    aggregated.reliability *= 100
-    aggregated.successability *= 100
+    # Others: minimum (most restrictive)
+    min_throughput = min(s.qos.throughput for s in services)
+    min_compliance = min(s.qos.compliance for s in services)
+    min_best_practices = min(s.qos.best_practices for s in services)
+    min_documentation = min(s.qos.documentation for s in services)
     
-    # Pour les autres: minimum (le plus restrictif)
-    aggregated.throughput = min(s.qos.throughput for s in services)
-    aggregated.compliance = min(s.qos.compliance for s in services)
-    aggregated.best_practices = min(s.qos.best_practices for s in services)
-    aggregated.documentation = min(s.qos.documentation for s in services)
-    
-    return aggregated
+    # Construct via the QoS kwargs constructor (goes through float() validation)
+    return QoS(
+        response_time=total_response_time,
+        availability=agg_availability,
+        throughput=min_throughput,
+        successability=agg_successability,
+        reliability=agg_reliability,
+        compliance=min_compliance,
+        best_practices=min_best_practices,
+        latency=total_latency,
+        documentation=min_documentation
+    )
 
 
 def compare_qos(qos1, qos2):

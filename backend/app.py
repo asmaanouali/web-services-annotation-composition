@@ -707,14 +707,15 @@ def start_annotation():
         if not app_state['annotator']:
             app_state['annotator'] = ServiceAnnotator(app_state['services'])
         
-        # Reset progress state
-        app_state['annotation_progress'] = {
-            'current': 0,
-            'total': len(service_ids) if service_ids else len(app_state['services']),
-            'current_service': '',
-            'completed': False,
-            'error': None
-        }
+        # Reset progress state (under lock — polled concurrently by /api/annotate/progress)
+        with state_lock:
+            app_state['annotation_progress'] = {
+                'current': 0,
+                'total': len(service_ids) if service_ids else len(app_state['services']),
+                'current_service': '',
+                'completed': False,
+                'error': None
+            }
         
         # Annotate selected services with progress callback
         def progress_callback(current, total, service_id):
@@ -771,8 +772,9 @@ def start_annotation():
         })
     
     except Exception as e:
-        app_state['annotation_progress']['error'] = str(e)
-        app_state['annotation_progress']['completed'] = True
+        with state_lock:
+            app_state['annotation_progress']['error'] = str(e)
+            app_state['annotation_progress']['completed'] = True
         return jsonify({'error': str(e)}), 500
 
 
