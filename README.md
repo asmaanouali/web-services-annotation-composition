@@ -20,7 +20,6 @@ A comprehensive research platform implementing **MOF-based Social Web Services D
 10. [Configuration](#configuration)
 11. [Performance & Optimization](#performance--optimization)
 12. [Troubleshooting](#troubleshooting)
-13. [Research Background](#research-background)
 
 ---
 
