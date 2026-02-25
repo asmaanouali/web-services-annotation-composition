@@ -1713,33 +1713,6 @@ This system implements and compares:
    - Statistical analysis
    - Visualization tools
 
-### Future Research Directions
-
-1. **Hybrid Approaches**:
-   - LLM for candidate selection
-   - Classical for final path refinement
-   - Best of both worlds
-
-2. **Multi-Objective Optimization**:
-   - Pareto-optimal solutions
-   - Trade-off visualization
-   - User preference integration
-
-3. **Dynamic Composition**:
-   - Runtime service discovery
-   - Adaptive re-composition
-   - Fault tolerance
-
-4. **Scalability Enhancements**:
-   - Distributed composition
-   - Hierarchical planning
-   - Index structures for fast lookup
-
-5. **Advanced Learning**:
-   - Reinforcement learning
-   - Transfer learning across domains
-   - Federated learning for privacy
-   
 ---
 
 **Last Updated**: February 25, 2026  
