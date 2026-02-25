@@ -5,6 +5,7 @@ Référence: Benna, A., Maamar, Z., & Nacer, M. A. (2016)
 
 class SNProperty:
     """Propriété générique pour les annotations (MOF-based)"""
+    __slots__ = ('prop_name', 'value')
     def __init__(self, prop_name="", value=0.0):
         self.prop_name = prop_name
         self.value = value
@@ -18,12 +19,13 @@ class SNProperty:
 
 class SNAssociationType:
     """Type d'association sociale entre services"""
+    __slots__ = ('type_name', 'is_symmetric', 'supports_transitivity', 'is_dependent', 'temporal_aspect')
     def __init__(self):
-        self.type_name = ""  # collaboration, substitution, competition, recommendation
+        self.type_name = ""
         self.is_symmetric = False
         self.supports_transitivity = False
         self.is_dependent = False
-        self.temporal_aspect = "permanent"  # permanent, temporary, upon_request
+        self.temporal_aspect = "permanent"
     
     def to_dict(self):
         return {
@@ -37,9 +39,10 @@ class SNAssociationType:
 
 class SNAssociationWeight(SNProperty):
     """Poids d'une association sociale (spécialisation de SNProperty)"""
+    __slots__ = ('calculation_method',)
     def __init__(self, weight_type="", value=0.0):
         super().__init__(weight_type, value)
-        self.calculation_method = "interaction_count"  # interaction_count, qos_similarity, combined
+        self.calculation_method = "interaction_count"
     
     def to_dict(self):
         result = super().to_dict()
@@ -49,12 +52,13 @@ class SNAssociationWeight(SNProperty):
 
 class SNAssociation:
     """Association entre deux services (relation sociale)"""
+    __slots__ = ('source_node', 'target_node', 'association_type', 'association_weight', 'duration', 'creation_date', 'last_interaction')
     def __init__(self):
-        self.source_node = ""  # ID du service source
-        self.target_node = ""  # ID du service cible
+        self.source_node = ""
+        self.target_node = ""
         self.association_type = SNAssociationType()
         self.association_weight = SNAssociationWeight()
-        self.duration = "permanent"  # permanent, temporary
+        self.duration = "permanent"
         self.creation_date = None
         self.last_interaction = None
     

@@ -278,16 +278,20 @@ parse_best_solutions_xml(filepath) # Parse reference solutions
 **Social Association Calculation**:
 ```python
 # Collaboration Weight Formula
+# io_ratio = overlap(service_outputs, target_inputs) / len(target_inputs)
+# qos_sim  = 1.0 - abs(reliability_A - reliability_B) * 0.01
 collaboration_weight = (
-    io_compatibility * 0.5 +      # I/O match score
-    qos_similarity * 0.3 +         # QoS profile similarity
-    trust_degree * 0.2             # Trust factor
+    io_ratio * 0.5 +   # I/O compatibility ratio
+    qos_sim  * 0.3 +   # Reliability-based QoS similarity
+    0.2                # Fixed trust baseline
 )
 
-# Robustness Weight for Substitution
+# Robustness Weight for Substitution (≥70% output overlap required)
+# r_sim = 1 - abs(reliability_A - reliability_B) * 0.01
+# a_sim = 1 - abs(availability_A - availability_B) * 0.01
 robustness_weight = (
-    reliability_similarity * 0.5 +
-    availability_similarity * 0.5
+    r_sim * 0.5 +
+    a_sim * 0.5
 )
 ```
 
@@ -315,9 +319,11 @@ heapq.heappush(queue, (-utility, counter, state))
 - **Heuristic Function**:
 ```python
   h(service) = (
-      goal_proximity * 0.5 +        # 1.0 if produces target, else 0.0
-      qos_quality * 0.4 +            # Normalized QoS score
-      parameter_novelty * 0.1        # New parameters added
+      goal_bonus      * 0.5 +   # 1.0 if produces target, else 0.0
+      reliability/100 * 0.2 +   # Reliability contribution
+      availability/100* 0.2 +   # Availability contribution
+      norm_resp_time  * 0.05 +  # Normalized response time (lower=better)
+      param_novelty   * 0.05    # Proportion of truly new outputs added
   )
 ```
 - **Guarantee**: Optimal if heuristic is admissible
@@ -335,8 +341,10 @@ heapq.heappush(queue, (-utility, counter, state))
 - **Use Case**: Real-time constraints, large graphs
 
 **Service Graph Construction**:
+- **Search space**: Pre-filtered via forward + backward reachability — only services that are both reachable from provided params AND contribute toward the goal are considered
+- **Visualization graph**: Capped at top-40 by reliability for UI rendering
 - Nodes: START, services (up to 40 top-rated), END
-- Edges: 
+- Edges:
   - START → service (if service can use provided params)
   - service → END (if service produces resultant)
   - service → service (if outputs match inputs)
@@ -355,65 +363,65 @@ Each step records:
 **Architecture**:
 ```python
 class LLMComposer:
-    def __init__(services, training_examples=None):
+    def __init__(services, training_examples=None,
+                 ollama_url="http://localhost:11434"):
         self.services = services
-        self.training_examples = training_examples
-        self.learned_patterns = []
-        self.composition_memory = []
-        self.is_trained = len(training_examples) > 0
+        self.model = "llama3.2:3b"
+        self.knowledge_base = {      # populated during training
+            'patterns': [],
+            'service_rankings': {},
+            'io_chains': [],
+        }
+        self.composition_history = []  # continuous learning state
+        self.success_patterns = []
+        if training_examples:
+            self.train(training_examples)
 ```
 
 **Composition Pipeline**:
 
-1. **Context Analysis**:
-```python
-   analyze_context(request) → {
-       priority: "high" | "medium" | "low",
-       environment: "production" | "development",
-       main_concern: "performance" | "reliability" | "security"
-   }
-```
+1. **Candidate Discovery**:
+   - Index-based lookup: services accepting provided params + services producing target param
+   - Second-hop chaining: outputs of candidates feed into further services
 
-2. **Service Selection**:
-   - Filter candidates by I/O compatibility
-   - Rank by QoS constraints satisfaction
-   - Apply LLM reasoning with prompt:
-```
-     Context: {priority, environment, constraints}
-     Available Services: {service_list with QoS, annotations}
-     Training Knowledge: {few-shot examples}
-     
-     Select the best service ID.
-```
+2. **Candidate Scoring**:
+   - QoS utility score (bottleneck model)
+   - Knowledge-base bonus (training pattern match)
+   - Direct-producer bonus (+50 if service produces target directly)
+   - Input-satisfaction ratio bonus
+   - Annotation bonus (trust degree + reputation + cooperativeness from social node)
 
-3. **Explanation Generation**:
+3. **Composition Selection**:
+   - Direct (single-service) composition preferred
+   - Greedy chain building as fallback for multi-step paths
+   - LLM reasoning invoked for top-5 ambiguous candidates when `enable_reasoning=True`
+
+4. **Explanation Generation**:
    - LLM generates human-readable justification
-   - References training knowledge
+   - References training knowledge and scoring rationale
    - Explains why service was chosen
 
-4. **Adaptation Application**:
-   - Failover strategies for high priority
-   - Caching for production environment
-   - Security protocols for sensitive data
+5. **Adaptation**:
+   - Optional: apply historical composition patterns when `enable_adaptation=True`
 
 **Training & Learning**:
 
 **Training Phase**:
 ```python
 train(training_examples):
-    1. Analyze patterns → extract success factors
-    2. Build knowledge base → top 5 examples for few-shot
-    3. Identify QoS priorities → reliability/availability/performance
+    1. Extract composition patterns (request → solution service IDs + utility)
+    2. Build service quality rankings (usage frequency × utility scores)
+    3. Build I/O chain knowledge (parameter linkages from successful workflows)
 ```
 
 **Continuous Learning**:
 ```python
 learn_from_composition(record):
-    1. Add to composition memory (last 100)
-    2. If successful + high utility:
-       - Extract strategy pattern
-       - Add to success_strategies (top 20)
-    3. Update performance metrics
+    1. Append to composition_history
+    2. If successful:
+       - Append to success_patterns
+       - Update knowledge_base['service_rankings'] (usage count + avg utility)
+    3. Performance metrics recalculated from history
 ```
 
 **Few-Shot Learning Example**:
@@ -457,9 +465,14 @@ quality_score = (
 )
 
 # Step 2: Conformity Score (0-100)
+# Per-constraint weights (sum to 100 when all satisfied):
+constraint_weights = {
+    'ResponseTime': 12, 'Availability': 12, 'Reliability': 12,
+    'Throughput': 11,   'Successability': 11, 'Compliance': 11,
+    'Latency': 11,      'BestPractices': 10,  'Documentation': 10
+}
 conformity_score = sum(
-    constraint_weights[constraint] 
-    for constraint in satisfied_constraints
+    constraint_weights[c] for c, met in qos_checks.items() if met
 )
 
 # Step 3: Base Utility
@@ -546,25 +559,26 @@ def _dijkstra_compose(request):
 **Heuristic Design**:
 ```python
 def calculate_heuristic(service, available_params):
-    # Admissible heuristic: never overestimates remaining potential
+    # f(n) = g(n) + h(n): g = bottleneck utility so far, h = estimated gain
     
-    # 1. Goal proximity (0 or 0.5)
-    goal_bonus = 0.5 if request.resultant in service.outputs else 0.0
+    # 1. Goal proximity (value 1.0 weighted by 0.5 → max 0.5)
+    goal_bonus = 1.0 if request.resultant in service.outputs else 0.0
     
-    # 2. Parameter novelty (0-0.1)
+    # 2. Parameter novelty (proportion of truly new outputs)
     new_params = set(service.outputs) - available_params
-    novelty = len(new_params) / len(service.outputs) * 0.1
+    novelty = len(new_params) / max(len(service.outputs), 1)
     
-    # 3. QoS quality (0-0.4)
-    max_rt = max(s.qos.response_time for s in services)
-    norm_rt = (1 - service.qos.response_time / max_rt) * 0.1
-    quality = (
-        service.qos.reliability / 100 * 0.1 +
-        service.qos.availability / 100 * 0.1 +
-        norm_rt
+    # 3. QoS quality components
+    norm_rt = 1 - (service.qos.response_time / max_rt) if max_rt > 0 else 0
+    
+    h = (
+        goal_bonus                     * 0.5  +
+        service.qos.reliability / 100  * 0.2  +
+        service.qos.availability / 100 * 0.2  +
+        norm_rt                        * 0.05 +
+        novelty                        * 0.05
     )
-    
-    return goal_bonus + novelty + quality
+    return h
 ```
 
 **Properties**:
@@ -1728,5 +1742,5 @@ This system implements and compares:
    
 ---
 
-**Last Updated**: February 2026  
+**Last Updated**: February 25, 2026  
 **Version**: 1.0.1

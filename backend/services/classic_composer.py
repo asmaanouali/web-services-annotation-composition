@@ -6,17 +6,82 @@ WITH full algorithm trace for step-by-step visualization
 
 import time
 import heapq
+from collections import defaultdict
 from models.service import CompositionResult, QoS
 from utils.qos_calculator import calculate_utility, aggregate_qos
 
 # Wall-clock timeout for algorithms (seconds)
-ALGORITHM_TIMEOUT = 30
+ALGORITHM_TIMEOUT = 60
 
 
 class ClassicComposer:
     def __init__(self, services):
         self.services = services
         self.service_dict = {s.id: s for s in services}
+
+        # Pre-compute indexes for fast lookup
+        self._output_index = defaultdict(list)
+        self._input_index = defaultdict(list)
+        self._service_input_sets = {}
+
+        for s in services:
+            self._service_input_sets[s.id] = frozenset(s.inputs)
+            for out in s.outputs:
+                self._output_index[out].append(s)
+            for inp in s.inputs:
+                self._input_index[inp].append(s)
+
+    def _get_relevant_services(self, request):
+        """Pre-filter services using indexed forward+backward reachability.
+        Massively reduces the search space for large service pools."""
+
+        # --- Forward reachability: what params can we produce? ---
+        reachable_params = set(request.provided)
+        forward_ids = set()
+        frontier = set(request.provided)
+
+        while frontier:
+            next_frontier = set()
+            for param in frontier:
+                for s in self._input_index.get(param, []):
+                    if s.id in forward_ids:
+                        continue
+                    if self._service_input_sets[s.id] <= reachable_params:
+                        forward_ids.add(s.id)
+                        new_out = set(s.outputs) - reachable_params
+                        reachable_params |= new_out
+                        next_frontier |= new_out
+            frontier = next_frontier
+
+        if request.resultant not in reachable_params:
+            return []  # goal unreachable
+
+        # --- Backward reachability: what services lead to the goal? ---
+        needed = {request.resultant}
+        backward_ids = set()
+        frontier = {request.resultant}
+
+        while frontier:
+            next_frontier = set()
+            for param in frontier:
+                for s in self._output_index.get(param, []):
+                    if s.id in backward_ids:
+                        continue
+                    backward_ids.add(s.id)
+                    new_inputs = set(s.inputs) - needed - set(request.provided)
+                    needed |= new_inputs
+                    next_frontier |= new_inputs
+            frontier = next_frontier
+
+        # Intersection = services both reachable and useful
+        relevant_ids = forward_ids & backward_ids
+
+        # If intersection is too small, be less restrictive
+        if len(relevant_ids) < 3:
+            relevant_ids = forward_ids | backward_ids
+
+        return [self.service_dict[sid] for sid in relevant_ids
+                if sid in self.service_dict]
     
     def compose(self, request, algorithm="dijkstra"):
         """
@@ -26,21 +91,29 @@ class ClassicComposer:
         start_time = time.time()
         result = CompositionResult()
         result.algorithm_used = algorithm
-        
+
+        # Pre-filter to relevant services (key scalability fix)
+        relevant = self._get_relevant_services(request)
+        if not relevant:
+            result.success = False
+            result.explanation = "No reachable composition path exists."
+            result.computation_time = time.time() - start_time
+            return result
+
         try:
             if algorithm == "dijkstra":
-                result = self._dijkstra_compose(request)
+                result = self._dijkstra_compose(request, relevant)
             elif algorithm == "astar":
-                result = self._astar_compose(request)
+                result = self._astar_compose(request, relevant)
             else:
-                result = self._greedy_compose(request)
+                result = self._greedy_compose(request, relevant)
             
             result.computation_time = time.time() - start_time
             result.success = len(result.services) > 0
             result.algorithm_used = algorithm
             
-            # Build graph data for visualization (only once, after algorithm completes)
-            graph_data = self._build_service_graph(request)
+            # Build graph data for visualization using relevant services
+            graph_data = self._build_service_graph(request, relevant)
             
             # Attach graph data with path info
             if result.workflow:
@@ -66,28 +139,28 @@ class ClassicComposer:
         
         return result
     
-    def _build_service_graph(self, request):
+    def _build_service_graph(self, request, relevant_services=None):
         """
         Build the service dependency graph for a given request.
+        Uses pre-filtered relevant services for efficiency.
         Returns nodes and edges for SVG visualization.
         """
-        # Find all candidate services
-        candidates = []
-        for s in self.services:
-            if s.has_required_inputs(request.provided) or request.resultant in s.outputs:
-                candidates.append(s)
-        
-        # Also find chaining candidates (services whose inputs come from other candidates' outputs)
-        candidate_ids = set(c.id for c in candidates)
-        all_outputs = set()
-        for c in candidates:
-            all_outputs.update(c.outputs)
-        
-        for s in self.services:
-            if s.id not in candidate_ids and s.has_required_inputs(all_outputs | set(request.provided)):
-                candidates.append(s)
-                candidate_ids.add(s.id)
-        
+        if relevant_services:
+            candidates = relevant_services
+        else:
+            # Fallback: find candidates the old way
+            candidates = []
+            for s in self.services:
+                if s.has_required_inputs(request.provided) or request.resultant in s.outputs:
+                    candidates.append(s)
+            candidate_ids = set(c.id for c in candidates)
+            all_outputs = set()
+            for c in candidates:
+                all_outputs.update(c.outputs)
+            for s in self.services:
+                if s.id not in candidate_ids and s.has_required_inputs(all_outputs | set(request.provided)):
+                    candidates.append(s)
+
         # Limit for visualization (top 40 by reliability)
         candidates = sorted(candidates, key=lambda s: s.qos.reliability, reverse=True)[:40]
         
@@ -146,12 +219,12 @@ class ClassicComposer:
     # DIJKSTRA ALGORITHM - Full implementation with trace
     # ================================================================
     
-    def _dijkstra_compose(self, request):
+    def _dijkstra_compose(self, request, relevant_services=None):
         """
-        Real Dijkstra algorithm: explores the service graph to find
-        the optimal path (best utility) from initial state to goal state.
-        Records every exploration step for visualization.
+        Dijkstra algorithm on the pre-filtered service graph.
+        Uses frozenset indexes for O(1) input-subset checks.
         """
+        services_pool = relevant_services if relevant_services is not None else self.services
         result = CompositionResult()
         trace = []
         
@@ -168,7 +241,7 @@ class ClassicComposer:
         best_solution = None
         best_solution_utility = -float('inf')
         
-        max_iterations = 100000
+        max_iterations = 500000
         iterations = 0
         explored_services = set()
         deadline = time.time() + ALGORITHM_TIMEOUT
@@ -208,14 +281,13 @@ class ClassicComposer:
                     })
                 continue
             
-            # Explore applicable services
-            applicable = []
-            for service in self.services:
-                if service.id in path:
-                    continue
-                if not service.has_required_inputs(available_params):
-                    continue
-                applicable.append(service)
+            # Explore applicable services using pre-computed input sets
+            path_set = set(path)
+            applicable = [
+                s for s in services_pool
+                if s.id not in path_set
+                and self._service_input_sets.get(s.id, frozenset()) <= available_params
+            ]
             
             if applicable and iterations <= 50:  # Trace first 50 steps
                 trace.append({
@@ -307,30 +379,24 @@ class ClassicComposer:
     # A* ALGORITHM - Full implementation with trace
     # ================================================================
     
-    def _astar_compose(self, request):
+    def _astar_compose(self, request, relevant_services=None):
         """
-        Real A* algorithm: Dijkstra + heuristic to guide search.
-        f(n) = g(n) + h(n)
-        - g(n) = utility of current path
-        - h(n) = heuristic estimating remaining potential
-        Records every step for visualization.
+        A* algorithm on pre-filtered service graph.
+        f(n) = g(n) + h(n) with goal-oriented heuristic.
         """
+        services_pool = relevant_services if relevant_services is not None else self.services
         result = CompositionResult()
         trace = []
+
+        # Pre-compute max response time for heuristic normalization
+        _max_rt = max((s.qos.response_time for s in services_pool), default=1)
         
         def calculate_heuristic(service, available_params):
             """Heuristic: estimates how promising a service is"""
-            # Big bonus if service directly produces the goal
             goal_bonus = 1.0 if request.resultant in service.outputs else 0.0
-            
-            # How many new parameters does it add?
             new_params = set(service.outputs) - available_params
             novelty = len(new_params) / max(len(service.outputs), 1)
-            
-            # QoS quality
-            max_rt = max((s.qos.response_time for s in self.services), default=1)
-            norm_rt = 1 - (service.qos.response_time / max_rt) if max_rt > 0 else 0
-            
+            norm_rt = 1 - (service.qos.response_time / _max_rt) if _max_rt > 0 else 0
             h = (
                 goal_bonus * 0.5 +
                 service.qos.reliability / 100 * 0.2 +
@@ -350,7 +416,7 @@ class ClassicComposer:
         best_solution_utility = -float('inf')
         explored_services = set()
         
-        max_iterations = 100000
+        max_iterations = 500000
         iterations = 0
         deadline = time.time() + ALGORITHM_TIMEOUT
         
@@ -388,9 +454,11 @@ class ClassicComposer:
                     })
                 continue
             
+            path_set = set(path)
             applicable = [
-                s for s in self.services
-                if s.id not in path and s.has_required_inputs(available_params)
+                s for s in services_pool
+                if s.id not in path_set
+                and self._service_input_sets.get(s.id, frozenset()) <= available_params
             ]
             
             if applicable and iterations <= 50:
@@ -480,12 +548,12 @@ class ClassicComposer:
     # GREEDY ALGORITHM - Full implementation with trace
     # ================================================================
     
-    def _greedy_compose(self, request):
+    def _greedy_compose(self, request, relevant_services=None):
         """
-        Greedy algorithm: at each step, picks the locally best service.
-        Fast but not guaranteed optimal.
-        Records each greedy decision for visualization.
+        Greedy algorithm on pre-filtered service graph.
+        Picks the locally best service at each step.
         """
+        services_pool = relevant_services if relevant_services is not None else self.services
         result = CompositionResult()
         trace = []
         
@@ -494,7 +562,7 @@ class ClassicComposer:
         utilities = []
         explored_services = set()
         
-        max_steps = 10
+        max_steps = 50
         steps = 0
         
         trace.append({
@@ -508,10 +576,12 @@ class ClassicComposer:
         while request.resultant not in available_params and steps < max_steps:
             steps += 1
             
-            # Find all applicable services
+            # Find all applicable services using pre-computed input sets
+            path_set = set(path)
             applicable = [
-                s for s in self.services
-                if s.id not in path and s.has_required_inputs(available_params)
+                s for s in services_pool
+                if s.id not in path_set
+                and self._service_input_sets.get(s.id, frozenset()) <= available_params
             ]
             
             if not applicable:

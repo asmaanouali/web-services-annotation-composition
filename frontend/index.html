@@ -796,10 +796,11 @@
         <div id="learning-metrics" style="display:none;margin-top:20px">
             <div class="card-grid-4">
                 <div class="kpi-box"><div class="kpi-label">Training Examples</div><div class="kpi-value" id="m-total-comps">0</div></div>
-                <div class="kpi-box"><div class="kpi-label">Success Rate</div><div class="kpi-value" id="m-success-rate">0%</div></div>
+                <div class="kpi-box"><div class="kpi-label">Coverage</div><div class="kpi-value" id="m-success-rate">0%</div></div>
                 <div class="kpi-box"><div class="kpi-label">Avg Utility</div><div class="kpi-value" id="m-avg-utility">0</div></div>
-                <div class="kpi-box"><div class="kpi-label">Learning Rate</div><div class="kpi-value" id="m-learning-rate">0%</div></div>
+                <div class="kpi-box"><div class="kpi-label">Solution Rate</div><div class="kpi-value" id="m-learning-rate">0%</div></div>
             </div>
+            <div id="training-quality-details" style="display:none;margin-top:12px;padding:12px 16px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--text-muted)"></div>
         </div>
     </div>
 
@@ -1213,7 +1214,8 @@ function updateTrainingFile(type) {
 }
 
 async function uploadAndTrainLLM() {
-    const wsdlFiles = document.getElementById('training-wsdl-files').files;
+    const wsdlFiles = Array.from(document.getElementById('training-wsdl-files').files)
+        .filter(f => f.name.endsWith('.wsdl') || f.name.endsWith('.xml'));
     const reqFile = document.getElementById('training-requests-file').files[0];
     const solFile = document.getElementById('training-solutions-file').files[0];
     const bestFile = document.getElementById('training-best-solutions-file').files[0];
@@ -1227,33 +1229,67 @@ async function uploadAndTrainLLM() {
     sec.style.display = 'block';
     bar.style.width = '0%'; bar.textContent = '0%';
     bar.className = 'progress-fill';
-    txt.textContent = 'Preparing training data...';
-
-    const fd = new FormData();
-    for (let i = 0; i < wsdlFiles.length; i++) fd.append('wsdl_files', wsdlFiles[i]);
-    fd.append('requests_file', reqFile);
-    if (solFile) fd.append('solutions_file', solFile);
-    if (bestFile) fd.append('best_solutions_file', bestFile);
 
     try {
-        txt.textContent = 'Uploading training data...';
-        bar.style.width = '30%'; bar.textContent = '30%';
-        const upRes = await fetch(`${API}/training/upload-data`, { method: 'POST', body: fd });
-        const upData = await upRes.json();
-        if (!upRes.ok) throw new Error(upData.error);
+        // ÉTAPE 1 : Reset les WSDL de training
+        txt.textContent = 'Resetting previous training data...';
+        await fetch(`${API}/training/reset-wsdl`, { method: 'POST' });
 
-        txt.textContent = `Data uploaded: ${upData.training_services} services, ${upData.training_requests} requests. Training LLM...`;
-        bar.style.width = '60%'; bar.textContent = '60%';
+        // ÉTAPE 2 : Upload WSDL en batches (comme le test upload)
+        const BATCH = 200; // Plus petit pour le training
+        const totalBatches = Math.ceil(wsdlFiles.length / BATCH);
+        let totalServicesUploaded = 0;
 
-        const trRes = await fetch(`${API}/training/start`, { method: 'POST', headers: {'Content-Type':'application/json'} });
+        for (let i = 0; i < wsdlFiles.length; i += BATCH) {
+            const batch = wsdlFiles.slice(i, i + BATCH);
+            const batchNum = Math.floor(i / BATCH) + 1;
+            const pct = Math.round((i / wsdlFiles.length) * 60); // 0-60% pour les WSDL
+
+            bar.style.width = pct + '%'; bar.textContent = pct + '%';
+            txt.textContent = `Uploading WSDL batch ${batchNum}/${totalBatches} (${batch.length} files)...`;
+
+            const fd = new FormData();
+            batch.forEach(f => fd.append('wsdl_files', f));
+            fd.append('batch_num', batchNum);
+
+            const r = await fetch(`${API}/training/upload-wsdl-batch`, { method: 'POST', body: fd });
+            const d = await r.json();
+
+            if (!r.ok) throw new Error(d.error || `Batch ${batchNum} failed`);
+            totalServicesUploaded = d.total_training_services;
+            txt.textContent = `Batch ${batchNum}/${totalBatches} done → ${totalServicesUploaded} services total`;
+        }
+
+        // ÉTAPE 3 : Upload les fichiers XML (requests, solutions)
+        bar.style.width = '65%'; bar.textContent = '65%';
+        txt.textContent = 'Uploading XML files (requests, solutions)...';
+
+        const xmlFd = new FormData();
+        xmlFd.append('requests_file', reqFile);
+        if (solFile) xmlFd.append('solutions_file', solFile);
+        if (bestFile) xmlFd.append('best_solutions_file', bestFile);
+
+        const xmlRes = await fetch(`${API}/training/upload-xml-files`, { method: 'POST', body: xmlFd });
+        const xmlData = await xmlRes.json();
+        if (!xmlRes.ok) throw new Error(xmlData.error);
+
+        bar.style.width = '80%'; bar.textContent = '80%';
+        txt.textContent = `XML uploaded: ${xmlData.training_requests} requests, ${xmlData.training_solutions} solutions. Training LLM...`;
+
+        // ÉTAPE 4 : Lancer le training
+        const trRes = await fetch(`${API}/training/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
         const trData = await trRes.json();
         if (!trRes.ok) throw new Error(trData.error);
 
         bar.style.width = '100%'; bar.textContent = '100%';
         bar.classList.add('success');
-        txt.textContent = `Training complete! ${trData.training_examples_count} examples learned.`;
+        txt.textContent = `✓ Training complete! ${totalServicesUploaded} services, ${xmlData.training_requests} requests, ${trData.training_examples_count} examples learned.`;
         updateTrainingBadge(true, trData.training_examples_count);
         loadMetrics();
+
     } catch (e) {
         bar.style.width = '100%'; bar.textContent = 'Error';
         bar.classList.add('error');
@@ -1291,12 +1327,28 @@ async function loadMetrics() {
         if (d.is_trained) {
             document.getElementById('learning-metrics').style.display = 'block';
             document.getElementById('m-total-comps').textContent = d.training_examples;
-            const sr = d.performance_metrics.total_compositions > 0
-                ? (d.performance_metrics.successful_compositions / d.performance_metrics.total_compositions * 100).toFixed(1) : '0';
-            document.getElementById('m-success-rate').textContent = sr + '%';
-            document.getElementById('m-avg-utility').textContent = d.performance_metrics.average_utility.toFixed(2);
-            document.getElementById('m-learning-rate').textContent = (d.performance_metrics.learning_rate >= 0 ? '+' : '') + d.performance_metrics.learning_rate.toFixed(1) + '%';
+            const pm = d.performance_metrics;
+            const coverage = pm.total_compositions > 0
+                ? (pm.successful_compositions / pm.total_compositions * 100).toFixed(1) : '0';
+            document.getElementById('m-success-rate').textContent = coverage + '%';
+            document.getElementById('m-avg-utility').textContent = pm.average_utility.toFixed(2);
+            document.getElementById('m-learning-rate').textContent = pm.learning_rate.toFixed(1) + '%';
             updateTrainingBadge(true, d.training_examples);
+
+            // Show training quality details if available
+            const tq = d.training_quality;
+            const detailsEl = document.getElementById('training-quality-details');
+            if (tq && Object.keys(tq).length > 0 && detailsEl) {
+                const parts = [];
+                if (tq.patterns_learned !== undefined) parts.push(`<b>Patterns:</b> ${tq.patterns_learned}`);
+                if (tq.unique_operations !== undefined) parts.push(`<b>Operations:</b> ${tq.unique_operations}`);
+                if (tq.io_chains !== undefined) parts.push(`<b>I/O Chains:</b> ${tq.io_chains}`);
+                if (tq.service_rankings !== undefined) parts.push(`<b>Rankings:</b> ${tq.service_rankings}`);
+                if (parts.length > 0) {
+                    detailsEl.innerHTML = parts.join(' &nbsp;|&nbsp; ');
+                    detailsEl.style.display = 'block';
+                }
+            }
         }
     } catch(e) {}
 }
@@ -1318,7 +1370,7 @@ async function uploadServices() {
     bar.className = 'progress-fill';
 
     const BATCH = 500;
-    let total = 0, all = [];
+    let total = 0, all = [...currentServices];
     const batches = Math.ceil(files.length / BATCH);
     log.innerHTML += `<div class="log-item">Processing ${files.length} files in ${batches} batch(es)...</div>`;
 
@@ -1345,9 +1397,9 @@ async function uploadServices() {
         if (total > 0) {
             currentServices = all;
             bar.style.width = '100%'; bar.textContent = '100%'; bar.classList.add('success');
-            stat.textContent = `${total} services loaded successfully.`;
-            document.getElementById('service-count').innerHTML = `Services loaded: <span style="font-size:20px;color:var(--success)">${total}</span>`;
-            document.getElementById('hdr-svc-count').textContent = `${total} services`;
+            stat.textContent = `${total} new services loaded. Total: ${all.length} services.`;
+            document.getElementById('service-count').innerHTML = `Services loaded: <span style="font-size:20px;color:var(--success)">${all.length}</span>`;
+            document.getElementById('hdr-svc-count').textContent = `${all.length} services`;
             displayServices(all);
             all.forEach(s => selectedServiceIds.add(s.id));
         } else {
@@ -1519,11 +1571,21 @@ async function confirmAnnotation() {
     log.innerHTML += `<div class="log-item">Starting annotation: ${ids.length} services, ${types.join(', ')}, method: ${useLLM?'LLM':'Classic'}</div>`;
 
     try {
-        const promise = fetch(`${API}/annotate/start`, {
+        // Fire-and-forget: the POST returns 202 immediately, work runs in background
+        const startResp = await fetch(`${API}/annotate/start`, {
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ use_llm: useLLM, service_ids: ids, annotation_types: types })
         });
 
+        if (!startResp.ok) {
+            const errData = await startResp.json().catch(() => ({}));
+            bar.classList.add('error');
+            stat.textContent = `Error: ${errData.error || startResp.statusText}`;
+            return;
+        }
+
+        // Poll /api/annotate/progress until completed
+        let lastPct = -1;
         annInterval = setInterval(async () => {
             try {
                 const pr = await fetch(`${API}/annotate/progress`);
@@ -1532,30 +1594,27 @@ async function confirmAnnotation() {
                     const pct = Math.round(pd.current/pd.total*100);
                     bar.style.width = pct+'%'; bar.textContent = pct+'%';
                     stat.textContent = `Processing: ${pd.current}/${pd.total}`;
-                    if (pd.current_service) {
-                        const last = log.lastElementChild;
-                        if (!last || !last.textContent.includes(pd.current_service)) {
-                            log.innerHTML += `<div class="log-item ok">${pd.current_service} annotated (${pd.current}/${pd.total})</div>`;
-                            log.scrollTop = log.scrollHeight;
-                        }
+                    // Only log when percentage changes (bulk annotator reports every ~200)
+                    if (pct !== lastPct && pd.current_service) {
+                        lastPct = pct;
+                        log.innerHTML += `<div class="log-item ok">Batch annotated up to ${pd.current_service} (${pd.current}/${pd.total})</div>`;
+                        log.scrollTop = log.scrollHeight;
                     }
                 }
-                if (pd.completed) clearInterval(annInterval);
+                if (pd.completed) {
+                    clearInterval(annInterval);
+                    if (pd.error) {
+                        bar.classList.add('error');
+                        stat.textContent = `Error: ${pd.error}`;
+                    } else if (pd.result) {
+                        bar.style.width = '100%'; bar.textContent = '100%'; bar.classList.add('success');
+                        stat.textContent = `Annotation complete: ${pd.result.total_annotated} services annotated.`;
+                        showAnnotationResults(pd.result);
+                    }
+                }
             } catch(e) {}
         }, 500);
 
-        const r = await promise;
-        const d = await r.json();
-        clearInterval(annInterval);
-
-        if (r.ok) {
-            bar.style.width = '100%'; bar.textContent = '100%'; bar.classList.add('success');
-            stat.textContent = `Annotation complete: ${d.total_annotated} services annotated.`;
-            showAnnotationResults(d);
-        } else {
-            bar.classList.add('error');
-            stat.textContent = `Error: ${d.error}`;
-        }
     } catch(e) {
         clearInterval(annInterval);
         bar.classList.add('error');

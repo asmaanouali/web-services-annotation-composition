@@ -35,6 +35,7 @@ app_state = {
     'annotator': None,
     'classic_composer': None,
     'llm_composer': None,
+    'annotation_thread': None,  # Background thread for annotation
     'annotation_progress': {
         'current': 0,
         'total': 0,
@@ -255,6 +256,116 @@ def upload_training_data():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/training/upload-wsdl-batch', methods=['POST'])
+def upload_training_wsdl_batch():
+    """Upload WSDL de training par batch"""
+    try:
+        wsdl_files = request.files.getlist('wsdl_files')
+        batch_num = request.form.get('batch_num', 0)
+        
+        services = []
+        for file in wsdl_files:
+            if file.filename.endswith('.wsdl') or file.filename.endswith('.xml'):
+                try:
+                    content = file.read().decode('utf-8')
+                    service = app_state['parser'].parse_content(content, file.filename)
+                    if service:
+                        services.append(service)
+                except Exception as e:
+                    print(f"Error parsing {file.filename}: {e}")
+        
+        # Ajouter au training data existant (ne pas écraser)
+        app_state['training_data']['services'].extend(services)
+        
+        print(f"Batch {batch_num}: {len(services)} training services added (total: {len(app_state['training_data']['services'])})")
+        
+        return jsonify({
+            'message': f'Batch {batch_num}: {len(services)} services added',
+            'batch_services': len(services),
+            'total_training_services': len(app_state['training_data']['services'])
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/training/upload-xml-files', methods=['POST'])
+def upload_training_xml_files():
+    """Upload les fichiers XML de training (requests, solutions, best solutions)"""
+    try:
+        requests_file = request.files.get('requests_file')
+        solutions_file = request.files.get('solutions_file')
+        best_solutions_file = request.files.get('best_solutions_file')
+        
+        training_requests = []
+        training_solutions = {}
+        training_best_solutions = {}
+        
+        if requests_file:
+            with tempfile.NamedTemporaryFile(mode='wb', suffix='.xml', delete=False) as tmp:
+                content = requests_file.read()
+                tmp.write(content)
+                tmp.flush()
+                os.fsync(tmp.fileno())
+                tmp_path = tmp.name
+            try:
+                training_requests = parse_requests_xml(tmp_path)
+                print(f"✓ Parsed {len(training_requests)} training requests")
+            finally:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+        
+        if solutions_file:
+            with tempfile.NamedTemporaryFile(mode='wb', suffix='.xml', delete=False) as tmp:
+                content = solutions_file.read()
+                tmp.write(content)
+                tmp.flush()
+                os.fsync(tmp.fileno())
+                tmp_path = tmp.name
+            try:
+                training_solutions = parse_best_solutions_xml(tmp_path)
+                print(f"✓ Parsed {len(training_solutions)} solutions")
+            finally:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+        
+        if best_solutions_file:
+            with tempfile.NamedTemporaryFile(mode='wb', suffix='.xml', delete=False) as tmp:
+                content = best_solutions_file.read()
+                tmp.write(content)
+                tmp.flush()
+                os.fsync(tmp.fileno())
+                tmp_path = tmp.name
+            try:
+                training_best_solutions = parse_best_solutions_xml(tmp_path)
+                print(f"✓ Parsed {len(training_best_solutions)} best solutions")
+            finally:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+        
+        # Stocker les données XML
+        app_state['training_data']['requests'] = training_requests
+        app_state['training_data']['solutions'] = training_solutions
+        app_state['training_data']['best_solutions'] = training_best_solutions
+        
+        return jsonify({
+            'message': 'XML files uploaded successfully',
+            'training_requests': len(training_requests),
+            'training_solutions': len(training_solutions),
+            'training_best_solutions': len(training_best_solutions),
+            'total_training_services': len(app_state['training_data']['services'])
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/training/reset-wsdl', methods=['POST'])
+def reset_training_wsdl():
+    """Réinitialise les WSDL de training (avant un nouvel upload batch)"""
+    app_state['training_data']['services'] = []
+    return jsonify({'message': 'Training WSDL reset'})
+    
 @app.route('/api/training/start', methods=['POST'])
 def start_training():
     """Train the LLM with the uploaded training data"""
@@ -289,16 +400,38 @@ def start_training():
             training_examples.append(example)
         
         # Train the LLM composer
-        app_state['llm_composer'].train(training_examples)
+        training_quality = app_state['llm_composer'].train(training_examples)
         
         # Update learning state
         app_state['learning_state']['is_trained'] = True
         app_state['learning_state']['training_examples'] = training_examples
         
+        # Compute real metrics from training data so the UI shows non-zero values
+        total_examples = len(training_examples)
+        examples_with_solutions = sum(
+            1 for e in training_examples if e.get('best_solution')
+        )
+        total_utility = sum(
+            (e.get('best_solution') or {}).get('utility', 0)
+            for e in training_examples
+            if e.get('best_solution')
+        )
+        avg_utility = total_utility / max(examples_with_solutions, 1)
+        coverage = (examples_with_solutions / total_examples * 100) if total_examples > 0 else 0
+
+        app_state['learning_state']['performance_metrics'] = {
+            'total_compositions': total_examples,
+            'successful_compositions': examples_with_solutions,
+            'average_utility': avg_utility,
+            'learning_rate': coverage,
+        }
+        app_state['learning_state']['training_quality'] = training_quality
+        
         return jsonify({
             'message': 'LLM training completed',
-            'training_examples_count': len(training_examples),
-            'is_trained': True
+            'training_examples_count': total_examples,
+            'is_trained': True,
+            'training_quality': training_quality,
         })
     
     except Exception as e:
@@ -307,13 +440,14 @@ def start_training():
 
 @app.route('/api/training/status', methods=['GET'])
 def get_training_status():
-    """Get current training status and metrics"""
+    """Get current training status and metrics including training quality"""
     return jsonify({
         'is_trained': app_state['learning_state']['is_trained'],
         'training_examples': len(app_state['learning_state']['training_examples']),
         'composition_history': len(app_state['learning_state']['composition_history']),
         'success_patterns': len(app_state['learning_state']['success_patterns']),
-        'performance_metrics': app_state['learning_state']['performance_metrics']
+        'performance_metrics': app_state['learning_state']['performance_metrics'],
+        'training_quality': app_state['learning_state'].get('training_quality', {})
     })
 
 
@@ -614,7 +748,7 @@ def estimate_annotation_time():
         breakdown = {}
         
         # 1. Base processing time per service
-        base_time_per_service = 0.02  # 20ms per service (parsing, init)
+        base_time_per_service = 0.005  # 5ms per service (init, property calc)
         breakdown['base_processing'] = {
             'label': 'Base Processing',
             'time': num_services * base_time_per_service,
@@ -632,7 +766,8 @@ def estimate_annotation_time():
                 'detail': f'{num_services} × {num_types} types × ~{llm_latency}s per LLM call × {complexity_factor:.1f}x complexity'
             }
         else:
-            classic_time_per_type = 0.05  # 50ms per type per service (rule-based)
+            # Classic: context/policy are O(1) ~1ms, interaction uses index ~5ms
+            classic_time_per_type = 0.005  # 5ms per type per service (index-based)
             annotation_time = num_services * num_types * classic_time_per_type * complexity_factor
             breakdown['annotation_generation'] = {
                 'label': 'Classic Annotation Generation',
@@ -640,22 +775,24 @@ def estimate_annotation_time():
                 'detail': f'{num_services} × {num_types} types × {classic_time_per_type*1000:.0f}ms × {complexity_factor:.1f}x complexity'
             }
         
-        # 3. Social association building (O(n²) pairwise comparison)
-        pairs = num_services * total_services
-        association_time_per_pair = 0.002  # 2ms per pair
-        association_time = pairs * association_time_per_pair
+        # 3. Social association building (index-based, O(n * avg_degree))
+        # Estimate avg I/O fanout: each param connects to ~sqrt(N) services
+        avg_degree = min(avg_io * max(int(total_services ** 0.4), 1), total_services)
+        estimated_lookups = num_services * avg_degree
+        association_time_per_lookup = 0.00005  # 50μs per indexed lookup
+        association_time = estimated_lookups * association_time_per_lookup
         breakdown['association_building'] = {
             'label': 'Social Association Building',
             'time': association_time,
-            'detail': f'{num_services} × {total_services} pairs × {association_time_per_pair*1000:.0f}ms'
+            'detail': f'{num_services} × ~{int(avg_degree)} avg connections × 50μs'
         }
         
         # 4. Social node property calculation
-        property_time = num_services * 0.01  # 10ms per service
+        property_time = num_services * 0.002  # 2ms per service
         breakdown['property_calculation'] = {
             'label': 'Social Node Properties',
             'time': property_time,
-            'detail': f'{num_services} services × 10ms'
+            'detail': f'{num_services} services × 2ms'
         }
         
         # 5. Network overhead (if LLM)
@@ -694,83 +831,107 @@ def estimate_annotation_time():
 
 @app.route('/api/annotate/start', methods=['POST'])
 def start_annotation():
-    """Start automatic service annotation with real-time updates"""
+    """Start automatic service annotation in a background thread.
+    Returns 202 immediately; poll /api/annotate/progress for status."""
     try:
         data = request.json or {}
         use_llm = data.get('use_llm', False)
         service_ids = data.get('service_ids', None)
         annotation_types = data.get('annotation_types', ['interaction', 'context', 'policy'])
-        
+
         if not app_state['services']:
             return jsonify({'error': 'No services loaded'}), 400
-        
+
+        # Prevent starting a second annotation while one is running
+        thread = app_state.get('annotation_thread')
+        if thread and thread.is_alive():
+            return jsonify({'error': 'Annotation already in progress'}), 409
+
         if not app_state['annotator']:
             app_state['annotator'] = ServiceAnnotator(app_state['services'])
-        
-        # Reset progress state (under lock — polled concurrently by /api/annotate/progress)
+
+        total = len(service_ids) if service_ids else len(app_state['services'])
+
+        # Reset progress state
         with state_lock:
             app_state['annotation_progress'] = {
                 'current': 0,
-                'total': len(service_ids) if service_ids else len(app_state['services']),
+                'total': total,
                 'current_service': '',
                 'completed': False,
-                'error': None
+                'error': None,
+                'result': None  # will hold final result dict
             }
-        
-        # Annotate selected services with progress callback
-        def progress_callback(current, total, service_id):
-            with state_lock:
-                app_state['annotation_progress'] = {
-                    'current': current,
-                    'total': total,
-                    'current_service': service_id,
-                    'completed': False,
-                    'error': None
-                }
-            print(f"Annotation progress: {current}/{total} - Service: {service_id}")
-        
-        annotated = app_state['annotator'].annotate_all(
-            service_ids=service_ids,
-            use_llm=use_llm,
-            annotation_types=annotation_types,
-            progress_callback=progress_callback
-        )
-        
-        # Update annotated services list
-        for service in annotated:
-            idx = next((i for i, s in enumerate(app_state['services']) if s.id == service.id), None)
-            if idx is not None:
-                app_state['services'][idx] = service
-        
-        app_state['annotated_services'] = app_state['services']
-        
-        # Update composers
-        app_state['classic_composer'] = ClassicComposer(app_state['services'])
-        
-        # Update LLM composer with training if available
-        if app_state['learning_state']['is_trained']:
-            app_state['llm_composer'] = LLMComposer(
-                app_state['services'],
-                training_examples=app_state['learning_state']['training_examples']
-            )
-        else:
-            app_state['llm_composer'] = LLMComposer(app_state['services'])
-        
-        # NEW: Update annotation status
-        app_state['annotation_status'] = _compute_annotation_status()
-        
-        # Mark as completed
-        with state_lock:
-            app_state['annotation_progress']['completed'] = True
-        
+
+        # --------------- background worker ---------------
+        def _annotation_worker():
+            try:
+                log_every = max(total // 200, 1)  # log ~200 times max
+
+                def progress_callback(current, _total, service_id):
+                    with state_lock:
+                        p = app_state['annotation_progress']
+                        p['current'] = current
+                        p['total'] = _total
+                        p['current_service'] = service_id
+                    if current % log_every == 0 or current == _total:
+                        print(f"Annotation progress: {current}/{_total} - {service_id}")
+
+                annotated = app_state['annotator'].annotate_all(
+                    service_ids=service_ids,
+                    use_llm=use_llm,
+                    annotation_types=annotation_types,
+                    progress_callback=progress_callback
+                )
+
+                # Update services list
+                svc_by_id = {s.id: s for s in annotated}
+                for i, s in enumerate(app_state['services']):
+                    if s.id in svc_by_id:
+                        app_state['services'][i] = svc_by_id[s.id]
+
+                app_state['annotated_services'] = app_state['services']
+
+                # Rebuild composers
+                app_state['classic_composer'] = ClassicComposer(app_state['services'])
+                if app_state['learning_state']['is_trained']:
+                    app_state['llm_composer'] = LLMComposer(
+                        app_state['services'],
+                        training_examples=app_state['learning_state']['training_examples']
+                    )
+                else:
+                    app_state['llm_composer'] = LLMComposer(app_state['services'])
+
+                app_state['annotation_status'] = _compute_annotation_status()
+
+                with state_lock:
+                    app_state['annotation_progress']['completed'] = True
+                    app_state['annotation_progress']['result'] = {
+                        'message': 'Annotation completed',
+                        'total_annotated': len(annotated),
+                        'services': [s.to_dict() for s in annotated],
+                        'annotation_types': annotation_types,
+                        'used_llm': use_llm
+                    }
+                print(f"Annotation finished: {len(annotated)} services annotated.")
+
+            except Exception as exc:
+                import traceback
+                traceback.print_exc()
+                with state_lock:
+                    app_state['annotation_progress']['error'] = str(exc)
+                    app_state['annotation_progress']['completed'] = True
+        # -------------------------------------------------
+
+        t = threading.Thread(target=_annotation_worker, daemon=True)
+        app_state['annotation_thread'] = t
+        t.start()
+
         return jsonify({
-            'message': 'Annotation completed',
-            'total_annotated': len(annotated),
-            'services': [s.to_dict() for s in annotated],
-            'annotation_types': annotation_types,
-            'used_llm': use_llm
-        })
-    
+            'message': 'Annotation started in background',
+            'total': total
+        }), 202   # Accepted
+
     except Exception as e:
         with state_lock:
             app_state['annotation_progress']['error'] = str(e)
@@ -780,16 +941,18 @@ def start_annotation():
 
 @app.route('/api/annotate/progress', methods=['GET'])
 def get_annotation_progress():
-    """Retrieve annotation progress in real-time"""
+    """Retrieve annotation progress in real-time.
+    When completed, the 'result' field contains the full annotation result."""
     with state_lock:
         progress = app_state.get('annotation_progress', {
             'current': 0,
             'total': 0,
             'current_service': '',
             'completed': False,
-            'error': None
+            'error': None,
+            'result': None
         }).copy()
-    
+
     return jsonify(progress)
 
 

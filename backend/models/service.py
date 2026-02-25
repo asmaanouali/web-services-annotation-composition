@@ -52,17 +52,26 @@ class QoS:
         }
     
     def meets_constraints(self, constraints):
-        """Vérifie si les QoS respectent les contraintes"""
+        """Vérifie si les QoS respectent les contraintes.
+
+        A constraint value of 0 means 'no constraint' (always passes).
+        For 'lower is better' metrics (ResponseTime, Latency): value <= constraint.
+        For 'higher is better' metrics: value >= constraint.
+        """
         checks = {
-            'ResponseTime': self.response_time <= constraints.response_time,
+            # Lower is better — constraint 0 means unconstrained
+            'ResponseTime': (constraints.response_time <= 0
+                             or self.response_time <= constraints.response_time),
+            'Latency': (constraints.latency <= 0
+                        or self.latency <= constraints.latency),
+            # Higher is better — constraint 0 naturally passes (>= 0)
             'Availability': self.availability >= constraints.availability,
             'Throughput': self.throughput >= constraints.throughput,
             'Successability': self.successability >= constraints.successability,
             'Reliability': self.reliability >= constraints.reliability,
             'Compliance': self.compliance >= constraints.compliance,
             'BestPractices': self.best_practices >= constraints.best_practices,
-            'Latency': self.latency <= constraints.latency,
-            'Documentation': self.documentation >= constraints.documentation
+            'Documentation': self.documentation >= constraints.documentation,
         }
         return checks
 
