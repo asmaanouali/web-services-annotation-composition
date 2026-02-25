@@ -39,11 +39,18 @@ SUBSTITUTION_OVERLAP = 0.7
 
 
 class ServiceAnnotator:
-    def __init__(self, services=None, ollama_url="http://localhost:11434"):
+    def __init__(self, services=None, ollama_url="http://localhost:11434", training_examples=None):
         self.services = services or []
         self.service_dict = {s.id: s for s in self.services}
         self.ollama_url = ollama_url
         self.model = "llama3.2:3b"
+
+        # Pre-compute collaboration / interaction counts from training data
+        self._collaboration_counts = defaultdict(lambda: defaultdict(int))  # sid -> {other_sid -> count}
+        self._interaction_counts = defaultdict(int)  # sid -> count
+        self._has_training_data = False
+        if training_examples:
+            self._build_training_stats(training_examples)
 
         # ----- Pre-built indexes -----
         self._output_index = defaultdict(set)   # param -> set of service IDs that produce it
@@ -83,6 +90,43 @@ class ServiceAnnotator:
         # Pre-computed lengths for tight inner loops (avoid len() in hot path)
         self._input_lengths = {sid: len(ins) for sid, ins in self._service_input_sets.items()}
         self._output_lengths = {sid: len(outs) for sid, outs in self._service_output_sets.items()}
+
+    # ------------------------------------------------------------------
+    #  Build collaboration / interaction stats from training best solutions
+    # ------------------------------------------------------------------
+    def _build_training_stats(self, training_examples):
+        """Compute collaboration_history and interaction_count from real
+        training data (best solutions).
+
+        - collaboration_counts[sid][other_sid]: number of best solutions
+          where both services appear together.
+        - interaction_counts[sid]: number of best solutions where the
+          service appears.
+        """
+        for example in training_examples:
+            best = example.get('best_solution')
+            if not best:
+                continue
+            sids = best.get('service_ids') or []
+            # Fallback: single service_id field
+            if not sids and best.get('service_id'):
+                sids = [best['service_id']]
+            if not sids:
+                continue
+
+            unique_sids = list(set(sids))
+
+            # Interaction: each service appeared once in this solution
+            for sid in unique_sids:
+                self._interaction_counts[sid] += 1
+
+            # Collaboration: every pair co-occurred in this solution
+            for i, s1 in enumerate(unique_sids):
+                for s2 in unique_sids[i + 1:]:
+                    self._collaboration_counts[s1][s2] += 1
+                    self._collaboration_counts[s2][s1] += 1
+
+        self._has_training_data = bool(self._interaction_counts)
 
     # ====================================================================
     #  BULK CLASSIC ANNOTATION  (two-phase: edges → assembly)
@@ -267,7 +311,13 @@ class ServiceAnnotator:
                     else "aggregator" if len(dd) > 3
                     else "worker"
                 )
-                ia.collaboration_history = {s_id: _rnd_int(1, 100) for s_id in cc[:5]}
+                if self._has_training_data:
+                    ia.collaboration_history = {
+                        s_id: self._collaboration_counts[sid].get(s_id, 0)
+                        for s_id in cc[:5]
+                    }
+                else:
+                    ia.collaboration_history = {s_id: _rnd_int(1, 100) for s_id in cc[:5]}
 
             # ---- Context annotation ----
             if need_context:
@@ -275,7 +325,11 @@ class ServiceAnnotator:
                 ctx.context_aware = avl > 95
                 ctx.location_sensitive = _rnd_bit(1) == 1
                 ctx.time_critical = "low" if rt < 50 else ("medium" if rt < 200 else "high")
-                ctx.interaction_count = _rnd_int(10, 500)
+                ctx.interaction_count = (
+                    self._interaction_counts.get(sid, 0)
+                    if self._has_training_data
+                    else _rnd_int(10, 500)
+                )
                 ctx.last_used = now_iso
                 ctx.usage_patterns = _usage_patterns
                 if cmp > 80:
@@ -342,7 +396,7 @@ class ServiceAnnotator:
             service.annotations = ann
             annotated.append(service)
 
-            if progress_callback and (idx % 200 == 0 or idx == total - 1):
+            if progress_callback and (idx % max(total // 100, 1) == 0 or idx == total - 1):
                 progress_callback(idx + 1, total, sid)
 
         return annotated
@@ -516,7 +570,13 @@ class ServiceAnnotator:
 
         cc, dd = len(interaction.can_call), len(interaction.depends_on)
         interaction.role = "orchestrator" if cc > 3 else ("aggregator" if dd > 3 else "worker")
-        interaction.collaboration_history = {s: random.randint(1, 100) for s in interaction.can_call[:5]}
+        if self._has_training_data:
+            interaction.collaboration_history = {
+                s: self._collaboration_counts[service.id].get(s, 0)
+                for s in interaction.can_call[:5]
+            }
+        else:
+            interaction.collaboration_history = {s: random.randint(1, 100) for s in interaction.can_call[:5]}
         return interaction
 
     def _generate_context_annotations(self, service):
@@ -525,7 +585,11 @@ class ServiceAnnotator:
         ctx.context_aware = q.availability > 95
         ctx.location_sensitive = random.getrandbits(1) == 1
         ctx.time_critical = "low" if q.response_time < 50 else ("medium" if q.response_time < 200 else "high")
-        ctx.interaction_count = random.randint(10, 500)
+        ctx.interaction_count = (
+            self._interaction_counts.get(service.id, 0)
+            if self._has_training_data
+            else random.randint(10, 500)
+        )
         ctx.last_used = datetime.now().isoformat()
         ctx.usage_patterns = ["peak_hours_morning", "business_days"]
         if q.compliance > 80:

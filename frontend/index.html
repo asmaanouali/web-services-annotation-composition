@@ -1585,19 +1585,21 @@ async function confirmAnnotation() {
         }
 
         // Poll /api/annotate/progress until completed
-        let lastPct = -1;
+        let lastCurrent = -1;
         annInterval = setInterval(async () => {
             try {
                 const pr = await fetch(`${API}/annotate/progress`);
                 const pd = await pr.json();
                 if (pd.total > 0) {
-                    const pct = Math.round(pd.current/pd.total*100);
-                    bar.style.width = pct+'%'; bar.textContent = pct+'%';
-                    stat.textContent = `Processing: ${pd.current}/${pd.total}`;
-                    // Only log when percentage changes (bulk annotator reports every ~200)
-                    if (pct !== lastPct && pd.current_service) {
-                        lastPct = pct;
-                        log.innerHTML += `<div class="log-item ok">Batch annotated up to ${pd.current_service} (${pd.current}/${pd.total})</div>`;
+                    const pct = Math.round(pd.current / pd.total * 100);
+                    bar.style.width = pct + '%';
+                    bar.textContent = `${pd.current} / ${pd.total}`;
+                    stat.textContent = pd.current_service
+                        ? `Service ${pd.current} / ${pd.total} — ${pd.current_service}`
+                        : `Service ${pd.current} / ${pd.total}`;
+                    if (pd.current !== lastCurrent && pd.current_service) {
+                        lastCurrent = pd.current;
+                        log.innerHTML += `<div class="log-item ok">&#x2714; ${pd.current_service} (${pd.current}/${pd.total})</div>`;
                         log.scrollTop = log.scrollHeight;
                     }
                 }
@@ -1605,15 +1607,17 @@ async function confirmAnnotation() {
                     clearInterval(annInterval);
                     if (pd.error) {
                         bar.classList.add('error');
-                        stat.textContent = `Error: ${pd.error}`;
+                        stat.textContent = `Erreur : ${pd.error}`;
                     } else if (pd.result) {
-                        bar.style.width = '100%'; bar.textContent = '100%'; bar.classList.add('success');
-                        stat.textContent = `Annotation complete: ${pd.result.total_annotated} services annotated.`;
+                        bar.style.width = '100%';
+                        bar.textContent = `${pd.result.total_annotated} / ${pd.result.total_annotated}`;
+                        bar.classList.add('success');
+                        stat.textContent = `Annotation terminée : ${pd.result.total_annotated} services annotés.`;
                         showAnnotationResults(pd.result);
                     }
                 }
             } catch(e) {}
-        }, 500);
+        }, 300);
 
     } catch(e) {
         clearInterval(annInterval);

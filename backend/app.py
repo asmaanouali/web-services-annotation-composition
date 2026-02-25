@@ -487,7 +487,10 @@ def upload_services():
             app_state['services'].extend(services)
             
             # Reset composers with learning capability
-            app_state['annotator'] = ServiceAnnotator(app_state['services'])
+            app_state['annotator'] = ServiceAnnotator(
+                app_state['services'],
+                training_examples=app_state['learning_state'].get('training_examples')
+            )
             app_state['classic_composer'] = ClassicComposer(app_state['services'])
             
             # Initialize LLM composer with training data if available
@@ -848,7 +851,10 @@ def start_annotation():
             return jsonify({'error': 'Annotation already in progress'}), 409
 
         if not app_state['annotator']:
-            app_state['annotator'] = ServiceAnnotator(app_state['services'])
+            app_state['annotator'] = ServiceAnnotator(
+                app_state['services'],
+                training_examples=app_state['learning_state'].get('training_examples')
+            )
 
         total = len(service_ids) if service_ids else len(app_state['services'])
 
