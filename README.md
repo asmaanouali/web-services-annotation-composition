@@ -314,7 +314,7 @@ state = (utility_so_far, path, available_parameters)
 heapq.heappush(queue, (-utility, counter, state))
 ```
 
-#### **A* Algorithm**
+#### **A\* Algorithm**
 - **Strategy**: Heuristic-guided search
 - **Heuristic Function**:
 ```python
