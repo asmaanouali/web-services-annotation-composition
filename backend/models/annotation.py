@@ -146,15 +146,20 @@ class InteractionAnnotation:
 
 
 class ContextAnnotation:
-    """Annotations de contexte d'utilisation"""
+    """Annotations de contexte d'utilisation — dérivées de l'historique réel."""
     def __init__(self):
         self.context_aware = False
         self.location_sensitive = False
         self.time_critical = "low"  # low, medium, high
         self.interaction_count = 0
         self.last_used = None
-        self.usage_patterns = []
+        self.usage_patterns = []           # e.g. ["peak_hours_morning", "business_days"]
         self.environmental_requirements = []
+        # NEW: observed context summary (populated from history store)
+        self.observed_locations = {}       # {"Paris": 10, "London": 5}
+        self.observed_networks = {}        # {"wifi": 12, "4G": 8}
+        self.observed_devices = {}         # {"mobile": 5, "desktop": 15}
+        self.context_adaptation_score = 0.0  # 0–1, how well the service adapts
     
     def to_dict(self):
         return {
@@ -164,7 +169,11 @@ class ContextAnnotation:
             'interaction_count': self.interaction_count,
             'last_used': self.last_used,
             'usage_patterns': self.usage_patterns,
-            'environmental_requirements': self.environmental_requirements
+            'environmental_requirements': self.environmental_requirements,
+            'observed_locations': self.observed_locations,
+            'observed_networks': self.observed_networks,
+            'observed_devices': self.observed_devices,
+            'context_adaptation_score': self.context_adaptation_score,
         }
 
 

@@ -12,7 +12,6 @@ Performance-optimised implementation:
   – Parallel LLM calls via ThreadPoolExecutor (6 workers)
 """
 
-import random
 import json
 import requests
 from collections import defaultdict
@@ -28,6 +27,7 @@ from models.annotation import (
     ContextAnnotation,
     PolicyAnnotation,
 )
+from models.interaction_history import InteractionHistoryStore
 
 # ---------------------------------------------------------------------------
 # Tunables
@@ -39,18 +39,36 @@ SUBSTITUTION_OVERLAP = 0.7
 
 
 class ServiceAnnotator:
-    def __init__(self, services=None, ollama_url="http://localhost:11434", training_examples=None):
+    def __init__(self, services=None, ollama_url="http://localhost:11434",
+                 training_examples=None, interaction_store: InteractionHistoryStore = None):
         self.services = services or []
         self.service_dict = {s.id: s for s in self.services}
         self.ollama_url = ollama_url
         self.model = "llama3.2:3b"
 
-        # Pre-compute collaboration / interaction counts from training data
-        self._collaboration_counts = defaultdict(lambda: defaultdict(int))  # sid -> {other_sid -> count}
-        self._interaction_counts = defaultdict(int)  # sid -> count
-        self._has_training_data = False
-        if training_examples:
-            self._build_training_stats(training_examples)
+        # Interaction history store — single source of truth for annotations
+        self.history_store = interaction_store or InteractionHistoryStore()
+
+        # Import training examples into the history store if provided
+        # and the store is still empty (avoid duplicate imports).
+        if training_examples and not self.history_store.has_history:
+            self.history_store.import_from_training(training_examples)
+
+        # Pre-computed stats from the history store
+        self._history_stats = self.history_store.get_all_stats() if self.history_store.has_history else None
+
+        # Legacy compat: expose same flags for code that checks _has_training_data
+        self._collaboration_counts = defaultdict(lambda: defaultdict(int))
+        self._interaction_counts = defaultdict(int)
+        self._has_training_data = self.history_store.has_history
+        if self._has_training_data:
+            # Populate legacy dicts from store (read-only, for LLM fallback code)
+            hs = self._history_stats
+            for sid, cnt in hs['interaction_counts'].items():
+                self._interaction_counts[sid] = cnt
+            for sid, others in hs['collaboration_counts'].items():
+                for oid, cnt in others.items():
+                    self._collaboration_counts[sid][oid] = cnt
 
         # ----- Pre-built indexes -----
         self._output_index = defaultdict(set)   # param -> set of service IDs that produce it
@@ -92,41 +110,22 @@ class ServiceAnnotator:
         self._output_lengths = {sid: len(outs) for sid, outs in self._service_output_sets.items()}
 
     # ------------------------------------------------------------------
-    #  Build collaboration / interaction stats from training best solutions
+    #  Refresh stats from the history store (called after new recordings)
     # ------------------------------------------------------------------
-    def _build_training_stats(self, training_examples):
-        """Compute collaboration_history and interaction_count from real
-        training data (best solutions).
-
-        - collaboration_counts[sid][other_sid]: number of best solutions
-          where both services appear together.
-        - interaction_counts[sid]: number of best solutions where the
-          service appears.
-        """
-        for example in training_examples:
-            best = example.get('best_solution')
-            if not best:
-                continue
-            sids = best.get('service_ids') or []
-            # Fallback: single service_id field
-            if not sids and best.get('service_id'):
-                sids = [best['service_id']]
-            if not sids:
-                continue
-
-            unique_sids = list(set(sids))
-
-            # Interaction: each service appeared once in this solution
-            for sid in unique_sids:
-                self._interaction_counts[sid] += 1
-
-            # Collaboration: every pair co-occurred in this solution
-            for i, s1 in enumerate(unique_sids):
-                for s2 in unique_sids[i + 1:]:
-                    self._collaboration_counts[s1][s2] += 1
-                    self._collaboration_counts[s2][s1] += 1
-
-        self._has_training_data = bool(self._interaction_counts)
+    def refresh_history_stats(self):
+        """Recharge les statistiques depuis le store d'historique.
+        Appelé après l'enregistrement de nouvelles compositions."""
+        self._history_stats = self.history_store.get_all_stats() if self.history_store.has_history else None
+        self._has_training_data = self.history_store.has_history
+        if self._has_training_data and self._history_stats:
+            hs = self._history_stats
+            self._interaction_counts.clear()
+            self._collaboration_counts.clear()
+            for sid, cnt in hs['interaction_counts'].items():
+                self._interaction_counts[sid] = cnt
+            for sid, others in hs['collaboration_counts'].items():
+                for oid, cnt in others.items():
+                    self._collaboration_counts[sid][oid] = cnt
 
     # ====================================================================
     #  BULK CLASSIC ANNOTATION  (two-phase: edges → assembly)
@@ -255,13 +254,14 @@ class ServiceAnnotator:
         _qos_bpr = self._qos_best_practices
         _qos_doc = self._qos_documentation
         _qos_rt  = self._qos_response_time
-        _rnd_int = random.randint
-        _rnd_bit = random.getrandbits
-        _rnd_choice = random.choice
-        _retention_choices = (30, 60, 90, 180, 365)
-        _privacy_choices   = ("encrypted", "anonymized", "encrypted_and_anonymized")
-        _usage_patterns    = ["peak_hours_morning", "business_days"]
-        _env_reqs          = ["secure_network", "vpn"]
+        # History-derived bulk data
+        _hs = self._history_stats  # may be None
+        _hist_interaction = _hs['interaction_counts'] if _hs else {}
+        _hist_collab = _hs['collaboration_counts'] if _hs else {}
+        _hist_success = _hs['success_rates'] if _hs else {}
+        _hist_last = _hs['last_used'] if _hs else {}
+        _hist_util = _hs['avg_utilities'] if _hs else {}
+        _store = self.history_store
 
         # Cache __new__ for zero-init object creation (skip __init__ dispatch)
         _new_assoc   = SNAssociation.__new__
@@ -296,7 +296,7 @@ class ServiceAnnotator:
             sn.cooperativeness.value  = min(max(cooperativeness, 0.0), 1.0)
             sn.add_property("robustness_score", (rel * 0.4 + avl * 0.3 + suc * 0.3) * 0.01)
 
-            # ---- Interaction annotation (from pre-computed edges) ----
+            # ---- Interaction annotation (from pre-computed edges + history) ----
             if need_interaction:
                 ia = ann.interaction
                 cc = list(can_call_map.get(sid, set()))
@@ -311,37 +311,79 @@ class ServiceAnnotator:
                     else "aggregator" if len(dd) > 3
                     else "worker"
                 )
-                if self._has_training_data:
-                    ia.collaboration_history = {
-                        s_id: self._collaboration_counts[sid].get(s_id, 0)
-                        for s_id in cc[:5]
-                    }
-                else:
-                    ia.collaboration_history = {s_id: _rnd_int(1, 100) for s_id in cc[:5]}
+                # Collaboration history from REAL interaction records
+                sid_collab = _hist_collab.get(sid, {})
+                ia.collaboration_history = {
+                    s_id: sid_collab.get(s_id, 0)
+                    for s_id in cc[:10]
+                }
 
-            # ---- Context annotation ----
+            # ---- Context annotation (from REAL history) ----
             if need_context:
                 ctx = ann.context
-                ctx.context_aware = avl > 95
-                ctx.location_sensitive = _rnd_bit(1) == 1
-                ctx.time_critical = "low" if rt < 50 else ("medium" if rt < 200 else "high")
-                ctx.interaction_count = (
-                    self._interaction_counts.get(sid, 0)
-                    if self._has_training_data
-                    else _rnd_int(10, 500)
-                )
-                ctx.last_used = now_iso
-                ctx.usage_patterns = _usage_patterns
-                if cmp > 80:
-                    ctx.environmental_requirements = _env_reqs
+                interaction_count = _hist_interaction.get(sid, 0)
+                success_rate = _hist_success.get(sid, 0.0)
+                last_used = _hist_last.get(sid)
+                observed_ctx = _store.get_observed_contexts(sid)
+                usage_patterns = _store.get_usage_patterns(sid)
 
-            # ---- Policy annotation ----
+                # context_aware: true if the service has been invoked with
+                # context metadata at least once
+                ctx.context_aware = observed_ctx.get('total_with_context', 0) > 0
+
+                # location_sensitive: true if observed from multiple locations
+                ctx.location_sensitive = len(observed_ctx.get('locations', {})) > 1
+
+                ctx.time_critical = "low" if rt < 50 else ("medium" if rt < 200 else "high")
+                ctx.interaction_count = interaction_count
+                ctx.last_used = last_used or now_iso
+                ctx.usage_patterns = usage_patterns if usage_patterns else []
+
+                # Environmental requirements derived from observed network types
+                env_reqs = []
+                obs_nets = observed_ctx.get('networks', {})
+                if 'vpn' in obs_nets or cmp > 80:
+                    env_reqs.append('vpn')
+                if obs_nets.get('ethernet', 0) > obs_nets.get('wifi', 0):
+                    env_reqs.append('secure_network')
+                elif cmp > 85:
+                    env_reqs.append('secure_network')
+                ctx.environmental_requirements = env_reqs
+
+                # NEW: populate observed context summaries
+                ctx.observed_locations = observed_ctx.get('locations', {})
+                ctx.observed_networks = observed_ctx.get('networks', {})
+                ctx.observed_devices = observed_ctx.get('device_types', {})
+
+                # Context adaptation score: how diverse are the contexts this
+                # service has been successfully used in?
+                n_locs = len(ctx.observed_locations)
+                n_nets = len(ctx.observed_networks)
+                n_devs = len(ctx.observed_devices)
+                diversity = min((n_locs + n_nets + n_devs) / 10.0, 1.0)
+                ctx.context_adaptation_score = round(
+                    diversity * 0.6 + (success_rate * 0.4), 3
+                )
+
+            # ---- Policy annotation (deterministic from QoS) ----
             if need_policy:
                 pol = ann.policy
                 pol.gdpr_compliant = cmp > 70
-                pol.data_retention_days = _rnd_choice(_retention_choices)
+                # Retention based on observed success rate & compliance
+                sr = _hist_success.get(sid, 0.5)
+                if sr >= 0.95 and cmp > 85:
+                    pol.data_retention_days = 365
+                elif sr >= 0.8 and cmp > 70:
+                    pol.data_retention_days = 180
+                elif cmp > 60:
+                    pol.data_retention_days = 90
+                else:
+                    pol.data_retention_days = 30
                 pol.security_level = "high" if rel > 90 else ("medium" if rel > 70 else "low")
-                pol.privacy_policy = _rnd_choice(_privacy_choices)
+                pol.privacy_policy = (
+                    "encrypted_and_anonymized" if cmp > 85
+                    else ("encrypted" if rel > 70 else "anonymized")
+                )
                 if cmp > 85:
                     pol.compliance_standards = ["ISO27001", "SOC2"]
                 elif cmp > 70:
@@ -570,39 +612,72 @@ class ServiceAnnotator:
 
         cc, dd = len(interaction.can_call), len(interaction.depends_on)
         interaction.role = "orchestrator" if cc > 3 else ("aggregator" if dd > 3 else "worker")
-        if self._has_training_data:
-            interaction.collaboration_history = {
-                s: self._collaboration_counts[service.id].get(s, 0)
-                for s in interaction.can_call[:5]
-            }
-        else:
-            interaction.collaboration_history = {s: random.randint(1, 100) for s in interaction.can_call[:5]}
+        # Collaboration history from REAL interaction records
+        collab_counts = self.history_store.get_collaboration_counts(service.id)
+        interaction.collaboration_history = {
+            s: collab_counts.get(s, 0)
+            for s in interaction.can_call[:10]
+        }
         return interaction
 
     def _generate_context_annotations(self, service):
         ctx = ContextAnnotation()
         q = service.qos
-        ctx.context_aware = q.availability > 95
-        ctx.location_sensitive = random.getrandbits(1) == 1
+        sid = service.id
+
+        # Derive context from REAL observed interactions
+        observed_ctx = self.history_store.get_observed_contexts(sid)
+        usage_patterns = self.history_store.get_usage_patterns(sid)
+        success_rate = self.history_store.get_success_rate(sid)
+
+        ctx.context_aware = observed_ctx.get('total_with_context', 0) > 0
+        ctx.location_sensitive = len(observed_ctx.get('locations', {})) > 1
         ctx.time_critical = "low" if q.response_time < 50 else ("medium" if q.response_time < 200 else "high")
-        ctx.interaction_count = (
-            self._interaction_counts.get(service.id, 0)
-            if self._has_training_data
-            else random.randint(10, 500)
-        )
-        ctx.last_used = datetime.now().isoformat()
-        ctx.usage_patterns = ["peak_hours_morning", "business_days"]
-        if q.compliance > 80:
-            ctx.environmental_requirements = ["secure_network", "vpn"]
+        ctx.interaction_count = self.history_store.get_interaction_count(sid)
+        ctx.last_used = self.history_store.get_last_used(sid) or datetime.now().isoformat()
+        ctx.usage_patterns = usage_patterns if usage_patterns else []
+
+        # Environmental requirements from observed networks
+        env_reqs = []
+        obs_nets = observed_ctx.get('networks', {})
+        if 'vpn' in obs_nets or q.compliance > 80:
+            env_reqs.append('vpn')
+        if obs_nets.get('ethernet', 0) > obs_nets.get('wifi', 0) or q.compliance > 85:
+            env_reqs.append('secure_network')
+        ctx.environmental_requirements = env_reqs
+
+        # Observed context summaries
+        ctx.observed_locations = observed_ctx.get('locations', {})
+        ctx.observed_networks = observed_ctx.get('networks', {})
+        ctx.observed_devices = observed_ctx.get('device_types', {})
+
+        # Context adaptation score
+        n_locs = len(ctx.observed_locations)
+        n_nets = len(ctx.observed_networks)
+        n_devs = len(ctx.observed_devices)
+        diversity = min((n_locs + n_nets + n_devs) / 10.0, 1.0)
+        ctx.context_adaptation_score = round(diversity * 0.6 + success_rate * 0.4, 3)
         return ctx
 
     def _generate_policy_annotations(self, service):
         policy = PolicyAnnotation()
         q = service.qos
+        sr = self.history_store.get_success_rate(service.id)
         policy.gdpr_compliant = q.compliance > 70
-        policy.data_retention_days = random.choice((30, 60, 90, 180, 365))
+        # Retention based on observed success rate & compliance
+        if sr >= 0.95 and q.compliance > 85:
+            policy.data_retention_days = 365
+        elif sr >= 0.8 and q.compliance > 70:
+            policy.data_retention_days = 180
+        elif q.compliance > 60:
+            policy.data_retention_days = 90
+        else:
+            policy.data_retention_days = 30
         policy.security_level = "high" if q.reliability > 90 else ("medium" if q.reliability > 70 else "low")
-        policy.privacy_policy = random.choice(("encrypted", "anonymized", "encrypted_and_anonymized"))
+        policy.privacy_policy = (
+            "encrypted_and_anonymized" if q.compliance > 85
+            else ("encrypted" if q.reliability > 70 else "anonymized")
+        )
         if q.compliance > 85:
             policy.compliance_standards = ["ISO27001", "SOC2"]
         elif q.compliance > 70:
@@ -673,7 +748,12 @@ Respond ONLY with JSON (no markdown):
                 top = sorted(compatible_services, key=lambda x: x['match_score'], reverse=True)
                 interaction.can_call = [s['id'] for s in top[:n]]
                 interaction.collaboration_associations = interaction.can_call.copy()
-                interaction.collaboration_history = {sid: random.randint(1, 100) for sid in interaction.can_call[:5]}
+                # Use real history for collaboration counts
+                collab_counts = self.history_store.get_collaboration_counts(service.id)
+                interaction.collaboration_history = {
+                    sid: collab_counts.get(sid, 0)
+                    for sid in interaction.can_call[:10]
+                }
             else:
                 interaction = self._generate_interaction_annotations(service)
         except Exception as e:
@@ -706,12 +786,18 @@ Respond ONLY with JSON:
                 ctx.context_aware = data.get('context_aware', False)
                 ctx.location_sensitive = data.get('location_sensitive', False)
                 ctx.time_critical = data.get('time_critical', 'medium')
-                freq = data.get('usage_frequency', 'medium')
-                ctx.interaction_count = random.randint(*(200, 500) if freq == 'high' else ((50, 200) if freq == 'medium' else (10, 50)))
-                ctx.usage_patterns = ["peak_hours_morning", "business_days"]
-                ctx.last_used = datetime.now().isoformat()
-                if service.qos.compliance > 80:
-                    ctx.environmental_requirements = ["secure_network", "vpn"]
+                # Use REAL interaction count from history
+                ctx.interaction_count = self.history_store.get_interaction_count(service.id)
+                ctx.usage_patterns = self.history_store.get_usage_patterns(service.id) or []
+                ctx.last_used = self.history_store.get_last_used(service.id) or datetime.now().isoformat()
+                obs_ctx = self.history_store.get_observed_contexts(service.id)
+                env_reqs = []
+                obs_nets = obs_ctx.get('networks', {})
+                if 'vpn' in obs_nets or service.qos.compliance > 80:
+                    env_reqs.append('vpn')
+                if obs_nets.get('ethernet', 0) > obs_nets.get('wifi', 0) or service.qos.compliance > 85:
+                    env_reqs.append('secure_network')
+                ctx.environmental_requirements = env_reqs
             else:
                 ctx = self._generate_context_annotations(service)
         except Exception as e:

@@ -2,6 +2,8 @@
 Flask API for intelligent service composition system
 Enhanced version with annotation requirement for LLM composition
 MODIFICATION: LLM composition requires annotated services
+MODIFICATION: Annotations derived from real interaction history
+MODIFICATION: Context-aware adaptive services (location, network, device)
 """
 
 from flask import Flask, request, jsonify, Response
@@ -16,12 +18,17 @@ from services.wsdl_parser import WSDLParser, parse_requests_xml, parse_best_solu
 from services.annotator import ServiceAnnotator
 from services.classic_composer import ClassicComposer
 from services.llm_composer import LLMComposer
+from models.interaction_history import InteractionHistoryStore
+from models.context import ExecutionContext, compute_context_score, adapt_qos_constraints_for_context
 
 app = Flask(__name__)
 CORS(app)
 
 # Increase limit for massive uploads
 app.config['MAX_CONTENT_LENGTH'] = None
+
+# Global interaction history store (persistent, shared by all components)
+interaction_store = InteractionHistoryStore()
 
 # Global application state
 app_state = {
@@ -35,6 +42,7 @@ app_state = {
     'annotator': None,
     'classic_composer': None,
     'llm_composer': None,
+    'interaction_store': interaction_store,   # shared history store
     'annotation_thread': None,  # Background thread for annotation
     'annotation_progress': {
         'current': 0,
@@ -97,7 +105,8 @@ def health_check():
         'requests_loaded': len(app_state['requests']),
         'is_trained': app_state['learning_state']['is_trained'],
         'training_examples': len(app_state['learning_state']['training_examples']),
-        'annotation_status': _compute_annotation_status()
+        'annotation_status': _compute_annotation_status(),
+        'interaction_history': app_state['interaction_store'].summary(),
     })
 
 
@@ -426,12 +435,19 @@ def start_training():
             'learning_rate': coverage,
         }
         app_state['learning_state']['training_quality'] = training_quality
+
+        # Import training examples into interaction history store so that
+        # annotations are derived from real best-solution data, not random.
+        app_state['interaction_store'].import_from_training(training_examples)
+        if app_state['annotator']:
+            app_state['annotator'].refresh_history_stats()
         
         return jsonify({
             'message': 'LLM training completed',
             'training_examples_count': total_examples,
             'is_trained': True,
             'training_quality': training_quality,
+            'history_records': app_state['interaction_store'].total_records,
         })
     
     except Exception as e:
@@ -489,7 +505,8 @@ def upload_services():
             # Reset composers with learning capability
             app_state['annotator'] = ServiceAnnotator(
                 app_state['services'],
-                training_examples=app_state['learning_state'].get('training_examples')
+                training_examples=app_state['learning_state'].get('training_examples'),
+                interaction_store=app_state['interaction_store'],
             )
             app_state['classic_composer'] = ClassicComposer(app_state['services'])
             
@@ -853,7 +870,8 @@ def start_annotation():
         if not app_state['annotator']:
             app_state['annotator'] = ServiceAnnotator(
                 app_state['services'],
-                training_examples=app_state['learning_state'].get('training_examples')
+                training_examples=app_state['learning_state'].get('training_examples'),
+                interaction_store=app_state['interaction_store'],
             )
 
         total = len(service_ids) if service_ids else len(app_state['services'])
@@ -1020,7 +1038,7 @@ def get_requests():
 
 @app.route('/api/compose/classic', methods=['POST'])
 def compose_classic():
-    """Classic composition (Solution A)"""
+    """Classic composition (Solution A) — context-aware"""
     try:
         data = request.json
         request_id = data.get('request_id')
@@ -1030,6 +1048,16 @@ def compose_classic():
         
         if not comp_request:
             return jsonify({'error': 'Request not found'}), 404
+
+        # ── Extract execution context ──
+        exec_ctx = ExecutionContext.from_request(request)
+
+        # ── Adapt QoS constraints for current context ──
+        adapted_constraints = adapt_qos_constraints_for_context(
+            comp_request.qos_constraints, exec_ctx
+        )
+        original_constraints = comp_request.qos_constraints
+        comp_request.qos_constraints = adapted_constraints
         
         if not app_state['classic_composer']:
             services = app_state['annotated_services'] or app_state['services']
@@ -1037,8 +1065,28 @@ def compose_classic():
         
         result = app_state['classic_composer'].compose(comp_request, algorithm)
         app_state['results_classic'][request_id] = result
-        
-        return jsonify(result.to_dict())
+
+        # Restore original constraints
+        comp_request.qos_constraints = original_constraints
+
+        # ── Record interaction in history ──
+        service_ids = [s.id if hasattr(s, 'id') else s for s in result.services]
+        if service_ids:
+            app_state['interaction_store'].record_composition(
+                composition_id=f"classic_{request_id}_{algorithm}",
+                service_ids=service_ids,
+                success=result.success,
+                utility=result.utility_value,
+                context=exec_ctx.to_flat_dict(),
+                response_time_ms=result.computation_time * 1000,
+            )
+            # Refresh annotator stats so next annotation uses latest data
+            if app_state['annotator']:
+                app_state['annotator'].refresh_history_stats()
+
+        resp = result.to_dict()
+        resp['context_used'] = exec_ctx.to_dict()
+        return jsonify(resp)
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1047,7 +1095,7 @@ def compose_classic():
 @app.route('/api/compose/llm', methods=['POST'])
 def compose_llm():
     """
-    Intelligent composition with LLM (Solution B) - Enhanced with learning
+    Intelligent composition with LLM (Solution B) — context-aware + learning
     MODIFICATION: Requires services to be annotated first
     """
     try:
@@ -1072,6 +1120,16 @@ def compose_llm():
         
         if not comp_request:
             return jsonify({'error': 'Request not found'}), 404
+
+        # ── Extract execution context ──
+        exec_ctx = ExecutionContext.from_request(request)
+
+        # ── Adapt QoS constraints for current context ──
+        adapted_constraints = adapt_qos_constraints_for_context(
+            comp_request.qos_constraints, exec_ctx
+        )
+        original_constraints = comp_request.qos_constraints
+        comp_request.qos_constraints = adapted_constraints
         
         if not app_state['llm_composer']:
             services = app_state['annotated_services'] or app_state['services']
@@ -1088,6 +1146,9 @@ def compose_llm():
         )
         
         app_state['results_llm'][request_id] = result
+
+        # Restore original constraints
+        comp_request.qos_constraints = original_constraints
         
         # CONTINUOUS LEARNING: Record this composition for learning
         composition_record = {
@@ -1096,10 +1157,25 @@ def compose_llm():
             'request': comp_request.to_dict(),
             'result': result.to_dict(),
             'success': result.success,
-            'utility': result.utility_value
+            'utility': result.utility_value,
+            'context': exec_ctx.to_dict(),
         }
         
         app_state['learning_state']['composition_history'].append(composition_record)
+
+        # ── Record interaction in history store ──
+        service_ids = [s.id if hasattr(s, 'id') else s for s in result.services]
+        if service_ids:
+            app_state['interaction_store'].record_composition(
+                composition_id=f"llm_{request_id}",
+                service_ids=service_ids,
+                success=result.success,
+                utility=result.utility_value,
+                context=exec_ctx.to_flat_dict(),
+                response_time_ms=result.computation_time * 1000,
+            )
+            if app_state['annotator']:
+                app_state['annotator'].refresh_history_stats()
         
         # Update performance metrics
         metrics = app_state['learning_state']['performance_metrics']
@@ -1123,8 +1199,10 @@ def compose_llm():
         
         # Learn from this composition
         app_state['llm_composer'].learn_from_composition(composition_record)
-        
-        return jsonify(result.to_dict())
+
+        resp = result.to_dict()
+        resp['context_used'] = exec_ctx.to_dict()
+        return jsonify(resp)
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1394,6 +1472,83 @@ def calculate_statistics(comparisons):
         stats['comparison']['avg_time_ratio'] = stats['llm']['avg_time'] / stats['classic']['avg_time']
     
     return stats
+
+
+# ============== INTERACTION HISTORY ENDPOINTS ==============
+
+@app.route('/api/history/status', methods=['GET'])
+def get_history_status():
+    """Get interaction history summary."""
+    store = app_state['interaction_store']
+    return jsonify(store.summary())
+
+
+@app.route('/api/history/service/<service_id>', methods=['GET'])
+def get_service_history(service_id):
+    """Get detailed interaction stats for a specific service."""
+    store = app_state['interaction_store']
+    return jsonify({
+        'service_id': service_id,
+        'interaction_count': store.get_interaction_count(service_id),
+        'collaboration_counts': store.get_collaboration_counts(service_id),
+        'success_rate': store.get_success_rate(service_id),
+        'avg_utility': store.get_avg_utility(service_id),
+        'last_used': store.get_last_used(service_id),
+        'usage_patterns': store.get_usage_patterns(service_id),
+        'observed_contexts': store.get_observed_contexts(service_id),
+    })
+
+
+@app.route('/api/history/clear', methods=['POST'])
+def clear_history():
+    """Clear all interaction history (for testing)."""
+    app_state['interaction_store'].clear()
+    if app_state['annotator']:
+        app_state['annotator'].refresh_history_stats()
+    return jsonify({'message': 'Interaction history cleared'})
+
+
+@app.route('/api/history/import-training', methods=['POST'])
+def import_training_to_history():
+    """Import training examples into the interaction history store."""
+    examples = app_state['learning_state'].get('training_examples', [])
+    if not examples:
+        return jsonify({'error': 'No training examples available'}), 400
+    app_state['interaction_store'].import_from_training(examples)
+    if app_state['annotator']:
+        app_state['annotator'].refresh_history_stats()
+    return jsonify({
+        'message': f'Imported {len(examples)} training examples into history',
+        'history': app_state['interaction_store'].summary(),
+    })
+
+
+# ============== CONTEXT ENDPOINTS ==============
+
+@app.route('/api/context/current', methods=['GET'])
+def get_current_context():
+    """Extract and return the current execution context from the request."""
+    exec_ctx = ExecutionContext.from_request(request)
+    return jsonify(exec_ctx.to_dict())
+
+
+@app.route('/api/context/score/<service_id>', methods=['POST'])
+def get_context_score(service_id):
+    """Compute context compatibility score for a service vs current context."""
+    service = next((s for s in app_state['services'] if s.id == service_id), None)
+    if not service:
+        return jsonify({'error': 'Service not found'}), 404
+
+    exec_ctx = ExecutionContext.from_request(request)
+    observed = app_state['interaction_store'].get_observed_contexts(service_id)
+    score = compute_context_score(service, exec_ctx, observed)
+
+    return jsonify({
+        'service_id': service_id,
+        'context_score': round(score, 4),
+        'context': exec_ctx.to_dict(),
+        'observed_contexts': observed,
+    })
 
 
 if __name__ == '__main__':
