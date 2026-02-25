@@ -133,7 +133,7 @@ This system addresses the web service composition problem through two complement
 ### 1. Clone Repository
 ```bash
 git clone https://github.com/asmaanouali/web-services-annotation-composition.git
-cd service-composition-system
+cd web-services-annotation-composition
 ```
 
 ### 2. Backend Setup
