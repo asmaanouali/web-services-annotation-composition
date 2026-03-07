@@ -1,11 +1,11 @@
 """
-Magasin d'historique des interactions de services.
+Service interaction history store.
 
-Enregistre chaque invocation / composition réelle et fournit
-des méthodes d'agrégation utilisées par l'annotateur pour produire
-des annotations **basées sur l'historique**, et non synthétiques.
+Records each real invocation / composition and provides
+aggregation methods used by the annotator to produce
+**history-based** annotations, not synthetic ones.
 
-Persistance : fichier JSON local (interaction_history.json).
+Persistence: local JSON file (interaction_history.json).
 """
 
 import json
@@ -21,7 +21,7 @@ _HISTORY_FILE = os.path.join(
 
 
 class InteractionRecord:
-    """Un enregistrement d'interaction unique."""
+    """A single interaction record."""
     __slots__ = (
         "timestamp", "composition_id", "service_id",
         "co_services", "success", "utility",
@@ -76,9 +76,9 @@ class InteractionRecord:
 
 class InteractionHistoryStore:
     """
-    Magasin thread-safe pour l'historique des interactions.
+    Thread-safe store for interaction history.
 
-    Usage typique :
+    Typical usage:
         store = InteractionHistoryStore()
         store.record(InteractionRecord(service_id="s1", ...))
         stats = store.get_service_stats("s1")
@@ -88,13 +88,14 @@ class InteractionHistoryStore:
         self._path = path or _HISTORY_FILE
         self._lock = threading.Lock()
         self._records: list[InteractionRecord] = []
-        # Caches invalidés à chaque record()
+        # Caches invalidated on each record()
         self._collaboration_cache: dict | None = None
         self._interaction_count_cache: dict | None = None
         self._success_rate_cache: dict | None = None
         self._last_used_cache: dict | None = None
         self._usage_pattern_cache: dict | None = None
         self._context_cache: dict | None = None
+        self._avg_utility_cache: dict | None = None
         self._load()
 
     # ------------------------------------------------------------------
@@ -120,7 +121,7 @@ class InteractionHistoryStore:
     # Recording
     # ------------------------------------------------------------------
     def record(self, rec: InteractionRecord):
-        """Enregistre une interaction et invalide les caches."""
+        """Records an interaction and invalidates caches."""
         with self._lock:
             self._records.append(rec)
             self._invalidate_caches()
@@ -135,7 +136,7 @@ class InteractionHistoryStore:
         context: dict = None,
         response_time_ms: float = 0.0,
     ):
-        """Enregistre toutes les interactions d'une composition d'un coup."""
+        """Records all interactions of a composition at once."""
         now = datetime.utcnow().isoformat()
         with self._lock:
             for sid in service_ids:
@@ -156,10 +157,10 @@ class InteractionHistoryStore:
             self._save()
 
     def import_from_training(self, training_examples: list):
-        """Importe l'historique à partir des données d'entraînement (best solutions).
+        """Imports history from training data (best solutions).
 
-        Permet de démarrer avec un historique non-vide même avant
-        la première composition réelle.
+        Allows starting with a non-empty history even before
+        the first real composition.
         """
         with self._lock:
             for ex in training_examples:
@@ -202,12 +203,13 @@ class InteractionHistoryStore:
         self._last_used_cache = None
         self._usage_pattern_cache = None
         self._context_cache = None
+        self._avg_utility_cache = None
 
     # ------------------------------------------------------------------
     # Query helpers (used by annotator)
     # ------------------------------------------------------------------
     def get_interaction_count(self, service_id: str) -> int:
-        """Nombre total d'invocations enregistrées pour ce service."""
+        """Total number of recorded invocations for this service."""
         if self._interaction_count_cache is None:
             cache = defaultdict(int)
             for r in self._records:
@@ -216,8 +218,8 @@ class InteractionHistoryStore:
         return self._interaction_count_cache.get(service_id, 0)
 
     def get_collaboration_counts(self, service_id: str) -> dict:
-        """Retourne {other_service_id: count} — combien de fois
-        chaque paire a été composée ensemble."""
+        """Returns {other_service_id: count} — how many times
+        each pair was composed together."""
         if self._collaboration_cache is None:
             cache = defaultdict(lambda: defaultdict(int))
             for r in self._records:
@@ -227,7 +229,7 @@ class InteractionHistoryStore:
         return self._collaboration_cache.get(service_id, {})
 
     def get_success_rate(self, service_id: str) -> float:
-        """Taux de succès (0.0 – 1.0) du service dans les compositions."""
+        """Success rate (0.0 – 1.0) of the service in compositions."""
         if self._success_rate_cache is None:
             totals = defaultdict(int)
             successes = defaultdict(int)
@@ -242,12 +244,22 @@ class InteractionHistoryStore:
         return self._success_rate_cache.get(service_id, 0.0)
 
     def get_avg_utility(self, service_id: str) -> float:
-        """Utilité moyenne observée quand ce service est impliqué."""
-        utils = [r.utility for r in self._records if r.service_id == service_id and r.utility > 0]
-        return sum(utils) / len(utils) if utils else 0.0
+        """Average observed utility when this service is involved."""
+        if self._avg_utility_cache is None:
+            sums = defaultdict(float)
+            counts = defaultdict(int)
+            for r in self._records:
+                if r.utility > 0:
+                    sums[r.service_id] += r.utility
+                    counts[r.service_id] += 1
+            self._avg_utility_cache = {
+                sid: sums[sid] / counts[sid]
+                for sid in counts
+            }
+        return self._avg_utility_cache.get(service_id, 0.0)
 
     def get_last_used(self, service_id: str) -> str | None:
-        """Timestamp ISO de la dernière utilisation."""
+        """ISO timestamp of the last usage."""
         if self._last_used_cache is None:
             cache = {}
             for r in self._records:
@@ -258,54 +270,57 @@ class InteractionHistoryStore:
         return self._last_used_cache.get(service_id)
 
     def get_usage_patterns(self, service_id: str) -> list:
-        """Déduit les patterns d'utilisation réels (heures, jours)."""
+        """Infers real usage patterns (hours, days)."""
         if self._usage_pattern_cache is None:
-            self._usage_pattern_cache = {}
+            self._build_usage_pattern_cache()
 
-        if service_id in self._usage_pattern_cache:
-            return self._usage_pattern_cache[service_id]
+        return self._usage_pattern_cache.get(service_id, [])
 
-        hours = defaultdict(int)
-        weekdays = defaultdict(int)
+    def _build_usage_pattern_cache(self):
+        """Builds the usage pattern cache for all services in a single pass."""
+        hours_by_sid = defaultdict(lambda: defaultdict(int))
+        weekdays_by_sid = defaultdict(lambda: defaultdict(int))
         for r in self._records:
-            if r.service_id != service_id:
-                continue
             try:
                 dt = datetime.fromisoformat(r.timestamp)
-                hours[dt.hour] += 1
-                weekdays[dt.weekday()] += 1
+                hours_by_sid[r.service_id][dt.hour] += 1
+                weekdays_by_sid[r.service_id][dt.weekday()] += 1
             except Exception:
                 pass
 
-        patterns = []
-        if hours:
-            peak_hour = max(hours, key=hours.get)
-            if 6 <= peak_hour <= 11:
-                patterns.append("peak_hours_morning")
-            elif 12 <= peak_hour <= 17:
-                patterns.append("peak_hours_afternoon")
-            elif 18 <= peak_hour <= 23:
-                patterns.append("peak_hours_evening")
-            else:
-                patterns.append("peak_hours_night")
+        cache = {}
+        for sid in set(hours_by_sid) | set(weekdays_by_sid):
+            patterns = []
+            hours = hours_by_sid.get(sid)
+            if hours:
+                peak_hour = max(hours, key=hours.get)
+                if 6 <= peak_hour <= 11:
+                    patterns.append("peak_hours_morning")
+                elif 12 <= peak_hour <= 17:
+                    patterns.append("peak_hours_afternoon")
+                elif 18 <= peak_hour <= 23:
+                    patterns.append("peak_hours_evening")
+                else:
+                    patterns.append("peak_hours_night")
 
-        if weekdays:
-            wd_total = sum(weekdays.get(d, 0) for d in range(5))
-            we_total = sum(weekdays.get(d, 0) for d in (5, 6))
-            if wd_total > we_total * 2:
-                patterns.append("business_days")
-            elif we_total > wd_total:
-                patterns.append("weekend_heavy")
-            else:
-                patterns.append("uniform_weekly")
+            weekdays = weekdays_by_sid.get(sid)
+            if weekdays:
+                wd_total = sum(weekdays.get(d, 0) for d in range(5))
+                we_total = sum(weekdays.get(d, 0) for d in (5, 6))
+                if wd_total > we_total * 2:
+                    patterns.append("business_days")
+                elif we_total > wd_total:
+                    patterns.append("weekend_heavy")
+                else:
+                    patterns.append("uniform_weekly")
 
-        self._usage_pattern_cache[service_id] = patterns
-        return patterns
+            cache[sid] = patterns
+        self._usage_pattern_cache = cache
 
     def get_observed_contexts(self, service_id: str) -> dict:
-        """Agrège les contextes observés pour un service.
+        """Aggregates observed contexts for a service.
 
-        Retourne un résumé:
+        Returns a summary:
         {
             "locations": {"Paris": 10, "London": 5, ...},
             "networks": {"4G": 8, "wifi": 12, ...},
@@ -314,44 +329,53 @@ class InteractionHistoryStore:
         }
         """
         if self._context_cache is None:
-            self._context_cache = {}
+            self._build_context_cache()
 
-        if service_id in self._context_cache:
-            return self._context_cache[service_id]
+        return self._context_cache.get(service_id, {
+            "locations": {},
+            "networks": {},
+            "device_types": {},
+            "total_with_context": 0,
+        })
 
-        locations = defaultdict(int)
-        networks = defaultdict(int)
-        devices = defaultdict(int)
-        total_with_ctx = 0
+    def _build_context_cache(self):
+        """Builds the observed context cache for all services in a single pass."""
+        locations = defaultdict(lambda: defaultdict(int))
+        networks = defaultdict(lambda: defaultdict(int))
+        devices = defaultdict(lambda: defaultdict(int))
+        totals = defaultdict(int)
+        sids_seen = set()
 
         for r in self._records:
-            if r.service_id != service_id or not r.context:
+            sids_seen.add(r.service_id)
+            if not r.context:
                 continue
-            total_with_ctx += 1
+            totals[r.service_id] += 1
             loc = r.context.get("location")
             if loc:
-                locations[loc] += 1
+                locations[r.service_id][loc] += 1
             net = r.context.get("network_type")
             if net:
-                networks[net] += 1
+                networks[r.service_id][net] += 1
             dev = r.context.get("device_type")
             if dev:
-                devices[dev] += 1
+                devices[r.service_id][dev] += 1
 
-        result = {
-            "locations": dict(locations),
-            "networks": dict(networks),
-            "device_types": dict(devices),
-            "total_with_context": total_with_ctx,
-        }
-        self._context_cache[service_id] = result
-        return result
+        cache = {}
+        for sid in sids_seen:
+            cache[sid] = {
+                "locations": dict(locations[sid]),
+                "networks": dict(networks[sid]),
+                "device_types": dict(devices[sid]),
+                "total_with_context": totals[sid],
+            }
+        self._context_cache = cache
 
     # ------------------------------------------------------------------
     # Bulk stats (used by annotator.annotate_all)
     # ------------------------------------------------------------------
     def get_all_stats(self) -> dict:
-        """Retourne toutes les stats pré-calculées en un seul appel.
+        """Returns all pre-computed stats in a single call.
 
         {
             'interaction_counts': {sid: int, ...},
@@ -359,32 +383,27 @@ class InteractionHistoryStore:
             'success_rates': {sid: float, ...},
             'last_used': {sid: iso_str, ...},
             'avg_utilities': {sid: float, ...},
+            'observed_contexts': {sid: {...}, ...},
+            'usage_patterns': {sid: [...], ...},
         }
         """
-        # Force cache build
+        # Force all caches to build (single pass each, idempotent)
         _ = self.get_interaction_count("__dummy__")
         _ = self.get_collaboration_counts("__dummy__")
         _ = self.get_success_rate("__dummy__")
         _ = self.get_last_used("__dummy__")
-
-        # Avg utility (not cached, compute once here)
-        util_sums = defaultdict(float)
-        util_counts = defaultdict(int)
-        for r in self._records:
-            if r.utility > 0:
-                util_sums[r.service_id] += r.utility
-                util_counts[r.service_id] += 1
-        avg_utils = {
-            sid: util_sums[sid] / util_counts[sid]
-            for sid in util_counts
-        }
+        _ = self.get_avg_utility("__dummy__")
+        _ = self.get_observed_contexts("__dummy__")
+        _ = self.get_usage_patterns("__dummy__")
 
         return {
             "interaction_counts": dict(self._interaction_count_cache or {}),
             "collaboration_counts": dict(self._collaboration_cache or {}),
             "success_rates": dict(self._success_rate_cache or {}),
             "last_used": dict(self._last_used_cache or {}),
-            "avg_utilities": avg_utils,
+            "avg_utilities": dict(self._avg_utility_cache or {}),
+            "observed_contexts": dict(self._context_cache or {}),
+            "usage_patterns": dict(self._usage_pattern_cache or {}),
         }
 
     @property
@@ -396,14 +415,14 @@ class InteractionHistoryStore:
         return len(self._records) > 0
 
     def clear(self):
-        """Supprime tout l'historique (utile pour les tests)."""
+        """Deletes all history (useful for tests)."""
         with self._lock:
             self._records.clear()
             self._invalidate_caches()
             self._save()
 
     def summary(self) -> dict:
-        """Résumé rapide pour l'API /status."""
+        """Quick summary for the /status API."""
         unique_services = set(r.service_id for r in self._records)
         unique_compositions = set(r.composition_id for r in self._records if r.composition_id)
         return {

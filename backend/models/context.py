@@ -1,18 +1,18 @@
 """
-Modèle de contexte d'exécution pour les services adaptatifs (context-aware).
+Execution context model for adaptive (context-aware) services.
 
-Capture le contexte réel de chaque requête :
-  – Localisation (ville, pays, coordonnées GPS)
-  – Réseau (type, bande passante, latence)
-  – Temporel (heure, jour, fuseau horaire)
-  – Appareil (type, OS)
-  – Charge actuelle du système
+Captures the real context of each request:
+  – Location (city, country, GPS coordinates)
+  – Network (type, bandwidth, latency)
+  – Temporal (hour, day, timezone)
+  – Device (type, OS)
+  – Current system load
 
-Ce module est utilisé par :
-  1. L'annotateur — pour enrichir les ContextAnnotation à partir de
-     l'historique réel des contextes observés.
-  2. Le compositeur — pour filtrer / pondérer les services en fonction
-     du contexte courant.
+This module is used by:
+  1. The annotator — to enrich ContextAnnotation from
+     the real history of observed contexts.
+  2. The composer — to filter / weight services based on
+     the current context.
 """
 
 from __future__ import annotations
@@ -21,11 +21,11 @@ from datetime import datetime
 from typing import Optional
 
 
-# ── Contexte de requête ──────────────────────────────────────────────
+# -- Request context --
 
 @dataclass
 class LocationContext:
-    """Informations de localisation du client."""
+    """Client location information."""
     city: str = ""
     country: str = ""
     latitude: float = 0.0
@@ -53,10 +53,10 @@ class LocationContext:
 
 @dataclass
 class NetworkContext:
-    """Conditions réseau du client."""
+    """Client network conditions."""
     network_type: str = "unknown"        # wifi, 4G, 5G, 3G, ethernet, unknown
-    bandwidth_mbps: float = 0.0          # bande passante estimée
-    latency_ms: float = 0.0             # latence réseau
+    bandwidth_mbps: float = 0.0          # estimated bandwidth
+    latency_ms: float = 0.0             # network latency
     is_roaming: bool = False
     connection_quality: str = "good"      # excellent, good, fair, poor
 
@@ -81,10 +81,10 @@ class NetworkContext:
 
 @dataclass
 class TemporalContext:
-    """Contexte temporel de la requête."""
+    """Temporal context of the request."""
     timestamp: str = ""
     hour: int = 0
-    weekday: int = 0             # 0=lundi … 6=dimanche
+    weekday: int = 0             # 0=Monday … 6=Sunday
     is_business_hours: bool = True
     is_weekend: bool = False
     period: str = "morning"      # morning, afternoon, evening, night
@@ -130,7 +130,7 @@ class TemporalContext:
 
 @dataclass
 class DeviceContext:
-    """Informations sur l'appareil du client."""
+    """Client device information."""
     device_type: str = "desktop"     # mobile, tablet, desktop, iot
     os: str = ""
     screen_size: str = ""            # small, medium, large
@@ -151,18 +151,18 @@ class DeviceContext:
 
 @dataclass
 class ExecutionContext:
-    """Contexte complet d'une requête de composition.
+    """Complete context of a composition request.
 
-    Construit à partir des headers HTTP et/ou des paramètres
-    explicites fournis dans le body JSON.
+    Built from HTTP headers and/or explicit parameters
+    provided in the JSON body.
     """
     location: LocationContext = field(default_factory=LocationContext)
     network: NetworkContext = field(default_factory=NetworkContext)
     temporal: TemporalContext = field(default_factory=TemporalContext)
     device: DeviceContext = field(default_factory=DeviceContext)
-    # Charge système observée au moment de la requête
+    # System load observed at the time of the request
     system_load: float = 0.0         # 0.0 – 1.0
-    # Identifiant de session pour le suivi
+    # Session identifier for tracking
     session_id: str = ""
 
     def to_dict(self):
@@ -176,7 +176,7 @@ class ExecutionContext:
         }
 
     def to_flat_dict(self) -> dict:
-        """Version aplatie pour l'enregistrement dans InteractionRecord.context."""
+        """Flattened version for recording in InteractionRecord.context."""
         flat = {}
         if self.location.is_set():
             flat["location"] = self.location.city or self.location.country
@@ -211,22 +211,22 @@ class ExecutionContext:
 
     @classmethod
     def from_request(cls, flask_request) -> "ExecutionContext":
-        """Extrait le contexte d'exécution depuis une requête Flask.
+        """Extracts the execution context from a Flask request.
 
-        Sources :
-        1. Body JSON (champ 'context')
-        2. Headers HTTP (X-Location, X-Network-Type, User-Agent, …)
-        3. Inférence automatique (heure, jour)
+        Sources:
+        1. JSON body ('context' field)
+        2. HTTP headers (X-Location, X-Network-Type, User-Agent, …)
+        3. Automatic inference (hour, day)
         """
         ctx = cls(temporal=TemporalContext.from_now())
 
-        # ── Depuis le JSON body ──
+        # ── From JSON body ──
         data = flask_request.get_json(silent=True) or {}
         ctx_data = data.get("context", {})
         if ctx_data:
             return cls.from_dict(ctx_data)
 
-        # ── Depuis les headers HTTP ──
+        # ── From HTTP headers ──
         headers = flask_request.headers
 
         # Location
@@ -288,17 +288,17 @@ class ExecutionContext:
 # ── Adaptation helpers ───────────────────────────────────────────────
 
 def compute_context_score(service, exec_ctx: ExecutionContext, observed_contexts: dict) -> float:
-    """Calcule un score d'adéquation (0–1) entre un service et le contexte courant.
+    """Computes a suitability score (0–1) between a service and the current context.
 
-    Utilisé par le compositeur pour pondérer les services lors de la sélection.
+    Used by the composer to weight services during selection.
 
-    Facteurs :
-    - Compatibilité réseau : un service avec un temps de réponse élevé est
-      pénalisé sur un réseau lent.
-    - Compatibilité temporelle : un service régulièrement utilisé à cette
-      heure de la journée est favorisé.
-    - Compatibilité de localisation : si le service a été utilisé depuis
-      la même localisation auparavant, bonus.
+    Factors:
+    - Network compatibility: a service with high response time is
+      penalised on a slow network.
+    - Temporal compatibility: a service regularly used at this
+      time of day is favoured.
+    - Location compatibility: if the service has been used from
+      the same location before, bonus.
     """
     score = 0.5  # base neutre
 
@@ -307,32 +307,52 @@ def compute_context_score(service, exec_ctx: ExecutionContext, observed_contexts
         rt = service.qos.response_time
         net_quality = exec_ctx.network.connection_quality
         if net_quality == "poor":
-            # Favoriser les services légers (faible response_time)
+            # Favour lightweight services (low response_time)
             score += 0.2 if rt < 100 else (-0.15 if rt > 500 else 0.0)
         elif net_quality == "excellent":
-            score += 0.1  # Tous les services sont OK
+            score += 0.1  # All services are OK
         elif net_quality == "fair":
             score += 0.1 if rt < 300 else -0.05
 
         # Bandwidth check
         bw = exec_ctx.network.bandwidth_mbps
         if bw > 0 and rt > 0:
-            # Si le service a un throughput élevé et que la bande passante est faible
+            # If the service has high throughput and bandwidth is low
             if bw < 5 and hasattr(service.qos, "throughput") and service.qos.throughput > 500:
                 score -= 0.1
 
     # ── Temporal compatibility ──
     if observed_contexts and observed_contexts.get("total_with_context", 0) > 0:
-        # Pas de pattern temporel direct dans observed_contexts actuellement,
-        # mais le usage_patterns du store peut enrichir ceci.
-        pass
+        # Check if the current time period matches service usage patterns.
+        # Usage patterns are strings like "peak_hours_morning", "business_days",
+        # "peak_hours_afternoon", "weekend_activity", etc.
+        usage_patterns = observed_contexts.get("usage_patterns", [])
+        current_period = exec_ctx.temporal.period  # morning / afternoon / evening / night
+
+        # Period match: service historically used at this time of day
+        period_keywords = {
+            "morning": ["morning", "business"],
+            "afternoon": ["afternoon", "business"],
+            "evening": ["evening"],
+            "night": ["night"],
+        }
+        for kw in period_keywords.get(current_period, []):
+            if any(kw in p for p in usage_patterns):
+                score += 0.1
+                break
+
+        # Business hours match
+        if exec_ctx.temporal.is_business_hours and any("business" in p for p in usage_patterns):
+            score += 0.05
+        elif exec_ctx.temporal.is_weekend and any("weekend" in p for p in usage_patterns):
+            score += 0.05
 
     # ── Location compatibility ──
     if exec_ctx.location.is_set() and observed_contexts:
         known_locs = observed_contexts.get("locations", {})
         client_loc = exec_ctx.location.city or exec_ctx.location.country
         if client_loc and client_loc in known_locs:
-            score += 0.15  # Déjà utilisé depuis cette localisation
+            score += 0.15  # Already used from this location
 
     # ── Device compatibility ──
     if observed_contexts:
@@ -344,12 +364,12 @@ def compute_context_score(service, exec_ctx: ExecutionContext, observed_contexts
 
 
 def adapt_qos_constraints_for_context(qos_constraints, exec_ctx: ExecutionContext):
-    """Adapte les contraintes QoS en fonction du contexte courant.
+    """Adapts QoS constraints based on the current context.
 
-    Par exemple, sur un réseau lent on relâche le seuil de response_time
-    pour ne pas exclure tous les services.
+    For example, on a slow network we relax the response_time threshold
+    so as not to exclude all services.
 
-    Retourne une copie modifiée des contraintes (ne mute pas l'original).
+    Returns a modified copy of the constraints (does not mutate the original).
     """
     from models.service import QoS
 
@@ -371,12 +391,12 @@ def adapt_qos_constraints_for_context(qos_constraints, exec_ctx: ExecutionContex
     quality = exec_ctx.network.connection_quality
 
     if quality == "poor":
-        # Réseau dégradé → relâcher response_time & latency
+        # Degraded network → relax response_time & latency
         if adapted.response_time > 0:
             adapted.response_time = adapted.response_time * 2.0
         if adapted.latency > 0:
             adapted.latency = adapted.latency * 2.0
-        # Exiger une meilleure fiabilité
+        # Require better reliability
         adapted.reliability = max(adapted.reliability, 80)
     elif quality == "fair":
         if adapted.response_time > 0:
@@ -384,7 +404,7 @@ def adapt_qos_constraints_for_context(qos_constraints, exec_ctx: ExecutionContex
         if adapted.latency > 0:
             adapted.latency = adapted.latency * 1.3
     elif quality == "excellent":
-        # Réseau rapide → on peut être plus exigeant
+        # Fast network → we can be more demanding
         if adapted.response_time > 0:
             adapted.response_time = adapted.response_time * 0.8
 

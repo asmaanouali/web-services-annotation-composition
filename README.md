@@ -4,6 +4,32 @@
 
 A comprehensive research platform implementing **MOF-based Social Web Services Description Metamodel** with dual composition strategies: classical graph-based algorithms and LLM-enhanced intelligent composition with continuous learning capabilities.
 
+> **Internship project** — *An intelligent service-based system composing web services*  
+> Supervisor: Amel Benna, DSISM, CERIST  
+> Reference: Benna, A., Maamar, Z., Ahmed-Nacer, M. — *A MOF-based Social Web Services Description Metamodel*, MODELSWARD 2016.
+
+---
+
+## Quick Start (TL;DR)
+
+```bash
+# 1. Clone & install
+git clone <repo-url> && cd web-services-annotation-composition
+python -m venv venv && venv\Scripts\activate   # Windows
+pip install -r backend/requirements.txt
+
+# 2. (Optional) Install Ollama for LLM features
+#    https://ollama.com/download  →  ollama pull llama3.2:3b  →  ollama serve
+
+# 3. Launch backend
+cd backend && python app.py          # http://localhost:5000
+
+# 4. Launch frontend (in another terminal)
+cd frontend && python -m http.server 8080   # http://localhost:8080
+```
+
+Then open <http://localhost:8080> and follow the 5-tab workflow.
+
 ---
 
 ## Table of Contents
@@ -14,12 +40,14 @@ A comprehensive research platform implementing **MOF-based Social Web Services D
 4. [Installation & Setup](#installation--setup)
 5. [System Components](#system-components)
 6. [Composition Algorithms](#composition-algorithms)
-7. [Data Models & Formats](#data-models--formats)
-8. [API Reference](#api-reference)
-9. [Usage Workflows](#usage-workflows)
-10. [Configuration](#configuration)
-11. [Performance & Optimization](#performance--optimization)
-12. [Troubleshooting](#troubleshooting)
+7. [Formal Evaluation Metrics](#formal-evaluation-metrics)
+8. [Data Models & Formats](#data-models--formats)
+9. [API Reference](#api-reference)
+10. [Usage Workflows](#usage-workflows)
+11. [Screenshots](#screenshots)
+12. [Configuration](#configuration)
+13. [Performance & Optimization](#performance--optimization)
+14. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -1608,5 +1636,73 @@ ollama pull llama3.2:1b  # Faster, lower quality
 
 ---
 
-**Last Updated**: February 25, 2026  
-**Version**: 1.0.1
+## Formal Evaluation Metrics
+
+The system computes **formal IR-style evaluation metrics** when best-known (ground-truth) solutions are available. These metrics compare the compositions produced by Solution A (Classic) and Solution B (LLM) against the reference optimal compositions.
+
+### Metrics Definition
+
+| Metric | Formula | Interpretation |
+|--------|---------|----------------|
+| **Precision** | $\displaystyle P = \frac{\lvert S_{\text{composed}} \cap S_{\text{best}}\rvert}{\lvert S_{\text{composed}}\rvert}$ | Fraction of selected services that are in the optimal composition |
+| **Recall** | $\displaystyle R = \frac{\lvert S_{\text{composed}} \cap S_{\text{best}}\rvert}{\lvert S_{\text{best}}\rvert}$ | Fraction of optimal services that were correctly retrieved |
+| **F1-Score** | $\displaystyle F_1 = \frac{2 \cdot P \cdot R}{P + R}$ | Harmonic mean of precision and recall |
+| **Exact Match** | $\displaystyle EM = \mathbb{1}[S_{\text{composed}} = S_{\text{best}}]$ | 1 if the composition is exactly the optimal set, 0 otherwise |
+| **Utility Ratio** | $\displaystyle UR = \frac{U_{\text{composed}}}{U_{\text{best}}}$ | How close the achieved utility is to the optimal |
+| **Jaccard Similarity** | $\displaystyle J = \frac{\lvert S_{\text{composed}} \cap S_{\text{best}}\rvert}{\lvert S_{\text{composed}} \cup S_{\text{best}}\rvert}$ | Set similarity between composed and optimal |
+
+Where:
+- $S_{\text{composed}}$ = set of service IDs selected by the composer
+- $S_{\text{best}}$ = set of service IDs in the best-known (ground-truth) solution
+- $U_{\text{composed}}$ = utility of the composed solution
+- $U_{\text{best}}$ = utility of the best-known solution
+
+### Aggregated Metrics
+
+Across all requests, the system reports:
+- **macro-Precision / macro-Recall / macro-F1**: average over all requests
+- **Overall Exact Match Rate**: percentage of requests with perfect composition
+- **Mean Utility Ratio**: average proximity to optimal utility
+- **Mean Jaccard Similarity**: average set overlap
+
+These metrics are accessible via the **`GET /api/comparison`** endpoint under the `formal_metrics` key whenever best-known solutions have been uploaded.
+
+### Interpretation Guide
+
+| Scenario | Precision | Recall | Interpretation |
+|----------|-----------|--------|----------------|
+| Perfect composition | 1.0 | 1.0 | Exact match with reference |
+| Superset of optimal | < 1.0 | 1.0 | All optimal services found, but extras included |
+| Subset of optimal | 1.0 | < 1.0 | No wrong services, but some missing |
+| Partial overlap | < 1.0 | < 1.0 | Partially correct composition |
+
+---
+
+## Screenshots
+
+> Add your own screenshots by placing them in a `docs/screenshots/` folder and uncommenting the image references below.
+
+### Tab 1 — Service Management & LLM Training
+<!-- ![Service Management](docs/screenshots/tab1_service_management.png) -->
+*Upload WSDL files, configure training data, and monitor service loading.*
+
+### Tab 2 — Automatic Annotation
+<!-- ![Automatic Annotation](docs/screenshots/tab2_annotation.png) -->
+*Generate MOF-based social annotations (interaction, context, policy) using classic rules or LLM.*
+
+### Tab 3 — Solution A (Classic Composition)
+<!-- ![Classic Composition](docs/screenshots/tab3_classic.png) -->
+*Run Dijkstra, A\*, or Greedy algorithms with step-by-step trace and service graph visualization.*
+
+### Tab 4 — Solution B (LLM-Enhanced Composition)
+<!-- ![LLM Composition](docs/screenshots/tab4_llm.png) -->
+*Intelligent composition using knowledge base, SFT fine-tuned model, and optional RL optimization.*
+
+### Tab 5 — Comparative Analysis
+<!-- ![Comparative Analysis](docs/screenshots/tab5_comparison.png) -->
+*Side-by-side comparison of Solution A vs Solution B with formal metrics (precision, recall, F1).*
+
+---
+
+**Last Updated**: February 28, 2026  
+**Version**: 1.1.0

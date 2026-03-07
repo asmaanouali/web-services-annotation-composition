@@ -1,9 +1,11 @@
 """
-Modèles additionnels pour la composition (fichier optionnel)
-Les modèles principaux sont dans service.py
+Composition models — re-exports from service.py for convenience.
+
+The canonical definitions of CompositionRequest and CompositionResult
+live in models.service.  This module re-exports them so that callers
+can write ``from models.composition import CompositionRequest``.
 """
 
-# Ce fichier peut rester vide ou contenir des extensions futures
-# Les classes CompositionRequest et CompositionResult sont dans service.py
+from models.service import CompositionRequest, CompositionResult
 
-pass
+__all__ = ["CompositionRequest", "CompositionResult"]

@@ -1,5 +1,5 @@
 """
-Modèles de données pour les services web
+Data models for web services.
 """
 
 class QoS:
@@ -13,7 +13,7 @@ class QoS:
             data: Dictionary with QoS values (optional)
             **kwargs: Named parameters (response_time, availability, etc.)
         """
-        # Si des kwargs sont fournis, on les utilise en priorité
+        # If kwargs are provided, use them with priority
         if kwargs:
             self.response_time = float(kwargs.get('response_time', 0))
             self.availability = float(kwargs.get('availability', 0))
@@ -25,7 +25,7 @@ class QoS:
             self.latency = float(kwargs.get('latency', 0))
             self.documentation = float(kwargs.get('documentation', 0))
         else:
-            # Sinon, on utilise le format dict (compatibilité avec l'ancien code)
+            # Otherwise, use the dict format (backward compatibility)
             if data is None:
                 data = {}
             self.response_time = float(data.get('ResponseTime', 0))
@@ -52,7 +52,7 @@ class QoS:
         }
     
     def meets_constraints(self, constraints):
-        """Vérifie si les QoS respectent les contraintes.
+        """Checks if the QoS values meet the constraints.
 
         A constraint value of 0 means 'no constraint' (always passes).
         For 'lower is better' metrics (ResponseTime, Latency): value <= constraint.
@@ -97,19 +97,19 @@ class WebService:
         }
     
     def can_produce(self, parameter):
-        """Vérifie si le service peut produire un paramètre"""
+        """Checks if the service can produce a given parameter."""
         return parameter in self.outputs
     
     def has_required_inputs(self, available_params):
-        """Vérifie si tous les inputs requis sont disponibles"""
+        """Checks if all required inputs are available."""
         return all(inp in available_params for inp in self.inputs)
 
 
 class CompositionRequest:
     def __init__(self, request_id):
         self.id = request_id
-        self.provided = []  # Paramètres d'entrée disponibles
-        self.resultant = None  # Paramètre de sortie désiré
+        self.provided = []  # Available input parameters
+        self.resultant = None  # Desired output parameter
         self.qos_constraints = QoS()
     
     def to_dict(self):

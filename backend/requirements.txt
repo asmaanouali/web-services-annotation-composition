@@ -6,3 +6,17 @@ numpy==1.26.2
 xmltodict==0.13.0
 networkx==3.2.1
 python-dateutil==2.8.2
+
+# === Phase 1 SFT (QSRT) — Real LoRA Fine-Tuning ===
+# Install these to enable actual gradient-based training.
+# Without them the system falls back to Ollama few-shot prompting.
+torch>=2.1.0
+transformers>=4.36.0
+peft>=0.7.0
+datasets>=2.16.0
+accelerate>=0.25.0
+
+# === Phase 3 RL (QSRT) — Optional extras ===
+# The built-in GRPO/PPO trainers use only torch+transformers+peft above.
+# trl is listed for reference/compatibility if you prefer HF's TRL library.
+# trl>=0.7.0

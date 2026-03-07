@@ -1,19 +1,50 @@
 """
 Production-grade LLM-based Web Service Composer.
 
-Uses Ollama for intelligent service selection with:
-- Few-shot learning from training data
+Uses a fine-tuned LoRA model (Phase 1 SFT) for intelligent service selection with:
+- Real Supervised Fine-Tuning via LoRA adapters (QSRT Phase 1)
 - Knowledge base of composition patterns
 - Continuous learning from composition history
-- Fallback to knowledge-based selection when LLM is unavailable
+- Fallback to Ollama / knowledge-based selection when SFT model is unavailable
+
+Part of: QSRT — QoS-Driven Reinforcement Fine-Tuning with Social Trust Rewards
 """
 
+import os
 import time
 import json
 import requests as http_requests
 from collections import defaultdict
 from models.service import CompositionResult, QoS
 from utils.qos_calculator import calculate_utility, aggregate_qos
+
+# SFT components (graceful if missing)
+try:
+    from services.sft_trainer import SFTLoRATrainer
+    from services.sft_dataset import SFTDatasetBuilder
+    _SFT_AVAILABLE = SFTLoRATrainer.is_available()
+except Exception:
+    _SFT_AVAILABLE = False
+
+# Reward Model components (Phase 2 — graceful if missing)
+try:
+    from services.reward_calculator import RewardCalculator, RewardDatasetBuilder
+    _REWARD_CALC_AVAILABLE = True
+except Exception:
+    _REWARD_CALC_AVAILABLE = False
+
+try:
+    from services.reward_model import RewardModelTrainer
+    _REWARD_MODEL_AVAILABLE = RewardModelTrainer.is_available()
+except Exception:
+    _REWARD_MODEL_AVAILABLE = False
+
+# RL Trainer components (Phase 3 — graceful if missing)
+try:
+    from services.rl_trainer import GRPOTrainer, PPOTrainer, build_rl_prompt
+    _RL_AVAILABLE = GRPOTrainer.is_available()
+except Exception:
+    _RL_AVAILABLE = False
 
 
 class LLMComposer:
@@ -28,7 +59,9 @@ class LLMComposer:
     """
 
     def __init__(self, services, training_examples=None,
-                 ollama_url="http://localhost:11434"):
+                 ollama_url="http://localhost:11434",
+                 sft_model_name=None,
+                 sft_output_dir=None):
         self.services = services
         self.service_dict = {s.id: s for s in services}
         self.ollama_url = ollama_url
@@ -56,6 +89,38 @@ class LLMComposer:
             'coverage_rate': 0.0,
         }
 
+        # SFT LoRA trainer (Phase 1 of QSRT)
+        self.sft_trainer = None
+        self.sft_dataset_builder = None
+        self.sft_metrics = {}           # metrics from real SFT training
+        self._sft_model_name = sft_model_name
+        self._sft_output_dir = sft_output_dir
+        self._sft_available = _SFT_AVAILABLE
+        self._sft_trained = False       # True after successful SFT
+
+        # Reward Model (Phase 2 of QSRT)
+        self.reward_calculator = None
+        self.reward_model_trainer = None
+        self.reward_metrics = {}        # metrics from reward model training
+        self._reward_calc_available = _REWARD_CALC_AVAILABLE
+        self._reward_model_available = _REWARD_MODEL_AVAILABLE
+        self._reward_model_trained = False
+
+        if self._reward_calc_available:
+            self.reward_calculator = RewardCalculator()
+
+        # RL Trainer (Phase 3 of QSRT)
+        self.rl_trainer = None          # GRPOTrainer or PPOTrainer instance
+        self.rl_metrics = {}            # metrics from RL training
+        self._rl_available = _RL_AVAILABLE
+        self._rl_trained = False
+        self._rl_algorithm = None       # "GRPO" or "PPO"
+
+        # Try to load previously trained adapters from disk
+        self._try_load_existing_adapter()
+        self._try_load_existing_reward_model()
+        self._try_load_existing_rl_adapter()
+
         # Continuous learning state
         self.composition_history = []
         self.success_patterns = []
@@ -63,6 +128,65 @@ class LLMComposer:
 
         if training_examples:
             self.train(training_examples)
+
+    def _try_load_existing_adapter(self):
+        """Attempt to load a LoRA adapter saved from a previous session."""
+        if not self._sft_available:
+            return
+        try:
+            self.sft_trainer = SFTLoRATrainer(
+                model_name=self._sft_model_name,
+                output_dir=self._sft_output_dir,
+            )
+            if self.sft_trainer.load_adapter():
+                self.sft_dataset_builder = SFTDatasetBuilder(
+                    self.services, self.service_dict
+                )
+                self._sft_trained = True
+                print("[LLMComposer] Loaded existing SFT adapter ✓")
+            else:
+                self.sft_trainer = None
+        except Exception as e:
+            print(f"[LLMComposer] No existing adapter: {e}")
+            self.sft_trainer = None
+
+    def _try_load_existing_reward_model(self):
+        """Attempt to load a reward model saved from a previous session."""
+        if not self._reward_model_available:
+            return
+        try:
+            self.reward_model_trainer = RewardModelTrainer()
+            if self.reward_model_trainer.load():
+                self._reward_model_trained = True
+                print("[LLMComposer] Loaded existing reward model \u2713")
+            else:
+                self.reward_model_trainer = None
+        except Exception as e:
+            print(f"[LLMComposer] No existing reward model: {e}")
+            self.reward_model_trainer = None
+
+    def _try_load_existing_rl_adapter(self):
+        """Attempt to load an RL adapter saved from a previous session."""
+        if not self._rl_available:
+            return
+        # Try GRPO first, then PPO
+        sft_path = None
+        if self.sft_trainer and self._sft_trained:
+            sft_path = self.sft_trainer.output_dir
+            if sft_path:
+                sft_path = os.path.join(sft_path, 'final_adapter')
+        for TrainerCls, algo in [(GRPOTrainer, 'GRPO'), (PPOTrainer, 'PPO')]:
+            try:
+                trainer = TrainerCls(sft_adapter_path=sft_path)
+                if trainer.load_adapter():
+                    self.rl_trainer = trainer
+                    self._rl_trained = True
+                    self._rl_algorithm = algo
+                    print(f"[LLMComposer] Loaded existing RL adapter ({algo}) \u2713")
+                    return
+            except Exception as e:
+                print(f"[LLMComposer] No existing {algo} adapter: {e}")
+        self.rl_trainer = None
 
     # ------------------------------------------------------------------
     # Index building
@@ -87,14 +211,14 @@ class LLMComposer:
 
     def train(self, training_examples):
         """
-        Process training examples to build a knowledge base.
+        Process training examples to build a knowledge base AND, when
+        SFT dependencies are available, perform real Supervised Fine-Tuning
+        with LoRA adapters (Phase 1 of QSRT).
 
-        Extracts:
-        - Composition patterns (request -> service mapping)
-        - Service quality rankings (usage frequency + utility)
-        - I/O chain knowledge (parameter -> known service chains)
+        If torch/transformers/peft are not installed, the method falls back
+        to the knowledge-base-only approach (still useful for scoring).
 
-        Returns training quality metrics.
+        Returns training quality metrics (knowledge-base + SFT combined).
         """
         self.knowledge_base = {
             'patterns': [],
@@ -182,9 +306,337 @@ class LLMComposer:
 
         return self.training_metrics
 
+    # ------------------------------------------------------------------
+    # Phase 1: Real SFT with LoRA
+    # ------------------------------------------------------------------
+
+    def run_sft(self, training_examples, sft_config=None, progress_callback=None):
+        """
+        Run real Supervised Fine-Tuning with LoRA adapters.
+
+        This method:
+        1. Builds an instruction-tuning dataset from training examples.
+        2. Fine-tunes a causal LM with LoRA (only ~0.1% of params trained).
+        3. Saves the adapter to disk for future sessions.
+
+        Args:
+            training_examples: same format as train()
+            sft_config: optional dict with keys:
+                - model_name: HuggingFace model ID (default TinyLlama-1.1B)
+                - lora_config: dict of LoRA hyper-parameters
+                - training_config: dict of training hyper-parameters
+
+        Returns:
+            dict with SFT training metrics (loss, steps, time, etc.)
+
+        Raises:
+            ImportError if SFT dependencies are not installed.
+        """
+        if not self._sft_available:
+            missing = SFTLoRATrainer.missing_packages() if _SFT_AVAILABLE else [
+                'torch', 'transformers', 'peft', 'datasets'
+            ]
+            raise ImportError(
+                f"SFT training requires: {', '.join(missing)}. "
+                f"Install with: pip install {' '.join(missing)}"
+            )
+
+        sft_config = sft_config or {}
+
+        # 1. Build the dataset
+        self.sft_dataset_builder = SFTDatasetBuilder(
+            self.services, self.service_dict
+        )
+        dataset = self.sft_dataset_builder.build_dataset(
+            training_examples, augment=True
+        )
+        dataset_stats = self.sft_dataset_builder.stats(dataset)
+        print(f"[SFT] Dataset built: {dataset_stats}")
+
+        if not dataset:
+            raise ValueError(
+                "Could not build any SFT examples from the training data. "
+                "Ensure training_examples contain 'best_solution' entries."
+            )
+
+        # 2. Initialise the trainer
+        self.sft_trainer = SFTLoRATrainer(
+            model_name=sft_config.get('model_name', self._sft_model_name),
+            output_dir=sft_config.get('output_dir', self._sft_output_dir),
+            lora_config=sft_config.get('lora_config'),
+            training_config=sft_config.get('training_config'),
+        )
+
+        # 3. Train!
+        self.sft_metrics = self.sft_trainer.train(
+            dataset, progress_callback=progress_callback,
+        )
+        self._sft_trained = True
+
+        return {
+            'sft_metrics': self.sft_metrics,
+            'dataset_stats': dataset_stats,
+        }
+
     def get_training_metrics(self):
-        """Return training quality metrics."""
-        return self.training_metrics
+        """Return training quality metrics (knowledge-base + SFT + Reward + RL)."""
+        metrics = dict(self.training_metrics)
+        metrics['sft_available'] = self._sft_available
+        metrics['sft_trained'] = self._sft_trained
+        if self.sft_metrics:
+            metrics['sft'] = self.sft_metrics
+        metrics['reward_calc_available'] = self._reward_calc_available
+        metrics['reward_model_available'] = self._reward_model_available
+        metrics['reward_model_trained'] = self._reward_model_trained
+        if self.reward_metrics:
+            metrics['reward_model'] = self.reward_metrics
+        metrics['rl_available'] = self._rl_available
+        metrics['rl_trained'] = self._rl_trained
+        metrics['rl_algorithm'] = self._rl_algorithm
+        if self.rl_metrics:
+            metrics['rl'] = self.rl_metrics
+        return metrics
+
+    # ------------------------------------------------------------------
+    # Phase 2: Reward Model Training
+    # ------------------------------------------------------------------
+
+    def compute_reward(self, services, request, workflow=None):
+        """
+        Compute the analytical multi-objective reward for a composition.
+
+        R = \u03b1 \u00b7 QoS_utility + \u03b2 \u00b7 Social_trust + \u03b3 \u00b7 Chain_validity
+
+        Returns dict with reward breakdown or None if reward calculator
+        is unavailable.
+        """
+        if not self.reward_calculator:
+            return None
+        return self.reward_calculator.compute_reward(services, request, workflow)
+
+    def run_reward_training(self, training_examples, reward_config=None, progress_callback=None):
+        """
+        Phase 2: Train the neural reward model.
+
+        Steps:
+        1. Generate (chosen, rejected) preference pairs using the
+           analytical RewardCalculator as ground truth.
+        2. Train a neural reward model (LoRA + reward head) with
+           Bradley\u2013Terry preference loss.
+        3. Save the model to disk.
+
+        Args:
+            training_examples: same format as train()
+            reward_config: optional dict with training hyper-params
+
+        Returns:
+            dict with reward model training metrics
+        """
+        if not self._reward_calc_available:
+            raise RuntimeError(
+                "RewardCalculator not available. "
+                "Check services/reward_calculator.py imports."
+            )
+        if not self._reward_model_available:
+            missing = RewardModelTrainer.missing_packages()
+            raise ImportError(
+                f"Reward model training requires: {', '.join(missing)}. "
+                f"Install with: pip install {' '.join(missing)}"
+            )
+
+        reward_config = reward_config or {}
+
+        # 1. Build preference pairs
+        dataset_builder = RewardDatasetBuilder(
+            self.services, self.service_dict, self.reward_calculator,
+        )
+        pairs = dataset_builder.build_preference_pairs(training_examples)
+        pair_stats = dataset_builder.stats(pairs)
+        print(f"[Phase 2] Preference pairs built: {pair_stats}")
+
+        if not pairs:
+            raise ValueError(
+                "No preference pairs could be generated. "
+                "Ensure training_examples contain 'best_solution' entries "
+                "and services are loaded."
+            )
+
+        # 2. Train neural reward model
+        self.reward_model_trainer = RewardModelTrainer(
+            config=reward_config,
+        )
+        self.reward_metrics = self.reward_model_trainer.train(
+            pairs, self.service_dict,
+            progress_callback=progress_callback,
+        )
+        self._reward_model_trained = True
+
+        return {
+            'reward_metrics': self.reward_metrics,
+            'pair_stats': pair_stats,
+        }
+
+    def predict_reward(self, service_ids, request_data):
+        """
+        Predict reward using the trained neural reward model.
+
+        Falls back to the analytical calculator if the neural model
+        is unavailable.
+        """
+        # Try neural model first
+        if self._reward_model_trained and self.reward_model_trainer:
+            try:
+                return self.reward_model_trainer.predict_reward(
+                    service_ids, self.service_dict, request_data,
+                )
+            except Exception as e:
+                print(f"Neural reward fallback: {e}")
+
+        # Fallback: analytical
+        if self.reward_calculator:
+            services = [
+                self.service_dict[sid]
+                for sid in service_ids
+                if sid in self.service_dict
+            ]
+            if not services:
+                return 0.0
+            from models.service import CompositionRequest as CR
+            cr = CR(request_data.get('id', 'tmp'))
+            cr.provided = request_data.get('provided', [])
+            cr.resultant = request_data.get('resultant', '')
+            cr.qos_constraints = QoS(request_data.get('qos_constraints', {}))
+            result = self.reward_calculator.compute_reward(
+                services, cr, service_ids,
+            )
+            return result['reward']
+
+        return 0.0
+
+    # ------------------------------------------------------------------
+    # Phase 3: RL Fine-Tuning (GRPO / PPO)
+    # ------------------------------------------------------------------
+
+    def run_rl_training(self, training_examples, rl_config=None,
+                        algorithm="GRPO", progress_callback=None):
+        """
+        Phase 3: Reinforcement Learning fine-tuning.
+
+        Uses the reward model (Phase 2) to provide reward signals and
+        optimises the policy model via GRPO or PPO.
+
+        Prerequisites:
+            - Knowledge-base training (train()) must be done first.
+            - A reward signal must be available (analytical or neural).
+
+        Args:
+            training_examples: same format as train()
+            rl_config: optional dict with RL hyper-parameters
+            algorithm: "GRPO" (default, recommended) or "PPO"
+
+        Returns:
+            dict with RL training metrics
+        """
+        if not self._rl_available:
+            missing = GRPOTrainer.missing_packages()
+            raise ImportError(
+                f"RL training requires: {', '.join(missing)}. "
+                f"Install with: pip install {' '.join(missing)}"
+            )
+
+        rl_config = rl_config or {}
+        algorithm = algorithm.upper()
+
+        # Determine SFT adapter path for warm start
+        sft_adapter_path = None
+        if self._sft_trained and self.sft_trainer:
+            candidate = os.path.join(
+                self.sft_trainer.output_dir, "final_adapter",
+            )
+            if os.path.exists(candidate):
+                sft_adapter_path = candidate
+
+        # 1. Build RL prompts from training examples
+        prompts = self._build_rl_prompts(training_examples)
+        if not prompts:
+            raise ValueError(
+                "Could not build any RL prompts from the training data. "
+                "Ensure training_examples contain 'best_solution' entries "
+                "and services are loaded."
+            )
+
+        # 2. Initialise the RL trainer
+        TrainerCls = GRPOTrainer if algorithm == "GRPO" else PPOTrainer
+        self.rl_trainer = TrainerCls(
+            config=rl_config,
+            sft_adapter_path=sft_adapter_path,
+        )
+
+        # 3. Train using predict_reward as the reward function
+        self.rl_metrics = self.rl_trainer.train(
+            prompts,
+            reward_fn=self.predict_reward,
+            progress_callback=progress_callback,
+        )
+        self._rl_trained = True
+        self._rl_algorithm = algorithm
+
+        return {
+            'rl_metrics': self.rl_metrics,
+            'algorithm': algorithm,
+            'num_prompts': len(prompts),
+            'sft_warm_start': sft_adapter_path is not None,
+        }
+
+    def _build_rl_prompts(self, training_examples):
+        """Convert training examples into RL prompt dicts.
+
+        Each prompt contains the request data and a subset of candidate
+        services so the RL policy can learn to select among them.
+        """
+        prompts = []
+        for example in training_examples:
+            request_data = example.get('request', {})
+            best_solution = example.get('best_solution')
+            if not best_solution:
+                continue
+
+            # Collect candidate services for this request
+            resultant = request_data.get('resultant', '')
+            provided = request_data.get('provided', [])
+            candidate_ids = set()
+
+            # Services that produce the target
+            for s in self.services:
+                if resultant in s.outputs:
+                    candidate_ids.add(s.id)
+
+            # Services that accept provided inputs
+            for p in provided:
+                for s in self._input_index.get(p, []):
+                    candidate_ids.add(s.id)
+
+            # Include best-solution services
+            solution_ids = best_solution.get('service_ids',
+                                             best_solution.get('workflow', []))
+            for sid in solution_ids:
+                candidate_ids.add(sid)
+
+            # Build candidate dict
+            candidates = {}
+            for sid in list(candidate_ids)[:20]:  # cap at 20
+                if sid in self.service_dict:
+                    candidates[sid] = self.service_dict[sid]
+
+            if not candidates:
+                continue
+
+            prompts.append({
+                'request_data': request_data,
+                'candidate_services': candidates,
+            })
+
+        return prompts
 
     # ------------------------------------------------------------------
     # Composition
@@ -377,10 +829,42 @@ class LLMComposer:
         if len(direct_solutions) == 1 or not enable_reasoning:
             return direct_solutions[0][0]
 
-        # Try LLM-guided selection for top candidates
         top = direct_solutions[:5]
-        prompt = self._build_selection_prompt(request, top)
 
+        # ── Try RL-tuned model first (Phase 3 QSRT — best model) ──
+        if self._rl_trained and self.rl_trainer:
+            try:
+                instruction = self.sft_dataset_builder._format_instruction(
+                    request.to_dict(),
+                    {s.id: s for s, _ in top},
+                ) if self.sft_dataset_builder else str(request.to_dict())
+                raw = self.rl_trainer.generate(instruction)
+                selected_id = self._extract_service_id_from_json(
+                    raw, [s.id for s, _ in top]
+                )
+                if selected_id and selected_id in self.service_dict:
+                    return self.service_dict[selected_id]
+            except Exception as e:
+                print(f"RL selection fallback: {e}")
+
+        # ── Try SFT fine-tuned model (Phase 1 QSRT) ──
+        if self._sft_trained and self.sft_trainer and self.sft_dataset_builder:
+            try:
+                instruction = self.sft_dataset_builder._format_instruction(
+                    request.to_dict(),
+                    {s.id: s for s, _ in top},
+                )
+                raw = self.sft_trainer.generate(instruction)
+                selected_id = self._extract_service_id_from_json(
+                    raw, [s.id for s, _ in top]
+                )
+                if selected_id and selected_id in self.service_dict:
+                    return self.service_dict[selected_id]
+            except Exception as e:
+                print(f"SFT selection fallback: {e}")
+
+        # ── Fallback: Ollama few-shot prompting ──
+        prompt = self._build_selection_prompt(request, top)
         try:
             response = self._call_ollama(prompt)
             selected_id = self._extract_service_id_from_response(
@@ -389,7 +873,7 @@ class LLMComposer:
             if selected_id and selected_id in self.service_dict:
                 return self.service_dict[selected_id]
         except Exception as e:
-            print(f"LLM selection fallback (direct): {e}")
+            print(f"Ollama selection fallback (direct): {e}")
 
         # Fallback: highest scored
         return direct_solutions[0][0]
@@ -600,6 +1084,27 @@ class LLMComposer:
                 return sid
         return None
 
+    def _extract_service_id_from_json(self, response, valid_ids):
+        """Extract a valid service ID from the SFT model's JSON output."""
+        try:
+            data = json.loads(response)
+            # The SFT model is trained to produce {"selected": [...]}
+            selected = data.get('selected', [])
+            if isinstance(selected, list):
+                for sid in selected:
+                    if sid in valid_ids:
+                        return sid
+            # Also check 'workflow'
+            workflow = data.get('workflow', [])
+            if isinstance(workflow, list):
+                for sid in workflow:
+                    if sid in valid_ids:
+                        return sid
+        except (json.JSONDecodeError, AttributeError):
+            pass
+        # Fallback to text matching
+        return self._extract_service_id_from_response(response, valid_ids)
+
     # ------------------------------------------------------------------
     # Explanation
     # ------------------------------------------------------------------
@@ -620,6 +1125,38 @@ class LLMComposer:
 
         lines.append(f"Utility Score: {result.utility_value:.3f}")
         lines.append(f"Candidates Evaluated: {len(scored)}")
+
+        # Indicate which QSRT phases are active
+        phases = []
+        if self._sft_trained:
+            phases.append("Phase 1 (SFT LoRA)")
+        if self._reward_model_trained:
+            phases.append("Phase 2 (Reward Model)")
+        if self._rl_trained:
+            phases.append(f"Phase 3 (RL {self._rl_algorithm or 'GRPO'})")
+        if phases:
+            lines.append(f"QSRT Active: {' + '.join(phases)}")
+            if self._rl_trained:
+                lines.append(f"Inference: RL-optimised model ({self._rl_algorithm})")
+            else:
+                lines.append("Inference: QSRT fine-tuned model")
+        else:
+            lines.append("Inference: Ollama few-shot prompting")
+
+        # Show reward score if reward model is available
+        if self._reward_model_trained and self.reward_model_trainer:
+            try:
+                reward_score = self.predict_reward(
+                    result.workflow,
+                    {
+                        'resultant': request.resultant,
+                        'provided': request.provided,
+                        'qos_constraints': request.qos_constraints.to_dict(),
+                    },
+                )
+                lines.append(f"Reward Score (QSRT): {reward_score:.4f}")
+            except Exception:
+                pass
 
         matched = sum(
             1 for p in self.knowledge_base['patterns']
@@ -683,17 +1220,36 @@ class LLMComposer:
         n_patterns = len(self.knowledge_base['patterns'])
         n_history = len(self.composition_history)
         n_success = len(self.success_patterns)
+        sft_status = "trained ✓" if self._sft_trained else "not trained"
+        reward_status = "trained ✓" if self._reward_model_trained else "not trained"
+        rl_status = f"trained ✓ ({self._rl_algorithm})" if self._rl_trained else "not trained"
 
         context = (
             "You are an AI assistant for a web service composition system.\n"
             f"Current state:\n"
             f"- Total services loaded: {n_services}\n"
             f"- Training patterns learned: {n_patterns}\n"
+            f"- SFT LoRA model (Phase 1): {sft_status}\n"
+            f"- Reward model (Phase 2): {reward_status}\n"
+            f"- RL fine-tuned model (Phase 3): {rl_status}\n"
             f"- Compositions performed: {n_history}\n"
             f"- Successful compositions: {n_success}\n\n"
             f"User question: {message}\n\n"
             "Answer concisely and helpfully."
         )
+
+        # Try RL model first (best quality), then SFT, then Ollama
+        if self._rl_trained and self.rl_trainer:
+            try:
+                return self.rl_trainer.generate(context)
+            except Exception:
+                pass
+
+        if self._sft_trained and self.sft_trainer:
+            try:
+                return self.sft_trainer.generate(context)
+            except Exception:
+                pass  # fallback to Ollama
 
         try:
             return self._call_ollama(context)
@@ -701,5 +1257,7 @@ class LLMComposer:
             return (
                 f"LLM unavailable: {str(e)}. "
                 f"The system has {n_services} services loaded "
-                f"with {n_patterns} learned patterns."
+                f"with {n_patterns} learned patterns. "
+                f"SFT model: {sft_status}. "
+                f"RL model: {rl_status}."
             )

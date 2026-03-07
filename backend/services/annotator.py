@@ -1,7 +1,7 @@
 """
-Module d'annotation automatique des services web
-Basé sur le modèle MOF-based Social Web Services Description Metamodel
-Référence: Benna, A., Maamar, Z., & Nacer, M. A. (2016)
+Automatic web service annotation module.
+Based on the MOF-based Social Web Services Description Metamodel.
+Reference: Benna, A., Maamar, Z., & Nacer, M. A. (2016).
 
 Performance-optimised implementation:
   – Bulk annotation in two global phases (edge computation + per-service assembly)
@@ -13,7 +13,10 @@ Performance-optimised implementation:
 """
 
 import json
+import logging
+import os
 import requests
+import time
 from collections import defaultdict
 from datetime import datetime
 from operator import itemgetter
@@ -30,6 +33,33 @@ from models.annotation import (
 from models.interaction_history import InteractionHistoryStore
 
 # ---------------------------------------------------------------------------
+# Annotation log setup
+# ---------------------------------------------------------------------------
+_LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
+os.makedirs(_LOG_DIR, exist_ok=True)
+
+def _make_annotation_logger():
+    """Create a file logger that writes to logs/annotation_<timestamp>.log."""
+    logger = logging.getLogger("annotation")
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+    # Remove old handlers (e.g. from previous runs in the same process)
+    for h in logger.handlers[:]:
+        logger.removeHandler(h)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    fh = logging.FileHandler(
+        os.path.join(_LOG_DIR, f"annotation_{ts}.txt"), encoding="utf-8"
+    )
+    fh.setLevel(logging.DEBUG)
+    fmt = logging.Formatter(
+        "%(asctime)s.%(msecs)03d | %(levelname)-7s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    fh.setFormatter(fmt)
+    logger.addHandler(fh)
+    return logger
+
+# ---------------------------------------------------------------------------
 # Tunables
 # ---------------------------------------------------------------------------
 MAX_COLLAB_ASSOC = 30        # keep top-K collaboration associations per service
@@ -41,18 +71,30 @@ SUBSTITUTION_OVERLAP = 0.7
 class ServiceAnnotator:
     def __init__(self, services=None, ollama_url="http://localhost:11434",
                  training_examples=None, interaction_store: InteractionHistoryStore = None):
+        self.log = _make_annotation_logger()
         self.services = services or []
         self.service_dict = {s.id: s for s in self.services}
         self.ollama_url = ollama_url
         self.model = "llama3.2:3b"
+        self.log.info("="*80)
+        self.log.info("ServiceAnnotator INITIALISED")
+        self.log.info("  Total services loaded : %d", len(self.services))
+        self.log.info("  Ollama URL            : %s", self.ollama_url)
+        self.log.info("  Model                 : %s", self.model)
 
         # Interaction history store — single source of truth for annotations
         self.history_store = interaction_store or InteractionHistoryStore()
+        self.log.info("  History store provided : %s", bool(interaction_store))
 
         # Import training examples into the history store if provided
         # and the store is still empty (avoid duplicate imports).
         if training_examples and not self.history_store.has_history:
+            self.log.info("  Importing %d training examples into history store", len(training_examples))
             self.history_store.import_from_training(training_examples)
+        elif training_examples:
+            self.log.info("  Training examples provided but history store already has data — skipping import")
+        else:
+            self.log.info("  No training examples provided")
 
         # Pre-computed stats from the history store
         self._history_stats = self.history_store.get_all_stats() if self.history_store.has_history else None
@@ -109,14 +151,22 @@ class ServiceAnnotator:
         self._input_lengths = {sid: len(ins) for sid, ins in self._service_input_sets.items()}
         self._output_lengths = {sid: len(outs) for sid, outs in self._service_output_sets.items()}
 
+        self.log.info("  Has training data     : %s", self._has_training_data)
+        self.log.info("  Unique output params  : %d", len(self._output_index))
+        self.log.info("  Unique input params   : %d", len(self._input_index))
+        self.log.info("  Indexes built successfully")
+        self.log.info("="*80)
+
     # ------------------------------------------------------------------
     #  Refresh stats from the history store (called after new recordings)
     # ------------------------------------------------------------------
     def refresh_history_stats(self):
-        """Recharge les statistiques depuis le store d'historique.
-        Appelé après l'enregistrement de nouvelles compositions."""
+        """Reload statistics from the history store.
+        Called after recording new compositions."""
+        self.log.info("Refreshing history stats from store...")
         self._history_stats = self.history_store.get_all_stats() if self.history_store.has_history else None
         self._has_training_data = self.history_store.has_history
+        self.log.info("  has_history=%s", self._has_training_data)
         if self._has_training_data and self._history_stats:
             hs = self._history_stats
             self._interaction_counts.clear()
@@ -134,6 +184,13 @@ class ServiceAnnotator:
         if annotation_types is None:
             annotation_types = ['interaction', 'context', 'policy']
 
+        self.log.info("="*80)
+        self.log.info("annotate_all() CALLED")
+        self.log.info("  service_ids filter : %s", service_ids if service_ids else "ALL")
+        self.log.info("  use_llm           : %s", use_llm)
+        self.log.info("  annotation_types  : %s", annotation_types)
+        t_start = time.perf_counter()
+
         if service_ids:
             id_set = set(service_ids)
             services_to_annotate = [s for s in self.services if s.id in id_set]
@@ -141,18 +198,25 @@ class ServiceAnnotator:
             services_to_annotate = list(self.services)
 
         total = len(services_to_annotate)
+        self.log.info("  services to annotate: %d / %d total", total, len(self.services))
 
         if use_llm:
+            self.log.info("  Delegating to LLM annotation path")
             return self._annotate_all_llm(services_to_annotate, annotation_types, progress_callback)
 
         # ---------- Classic bulk path ----------
+        self.log.info("-"*60)
+        self.log.info("CLASSIC BULK PATH")
         need_interaction = 'interaction' in annotation_types
         need_context     = 'context'     in annotation_types
         need_policy      = 'policy'      in annotation_types
+        self.log.info("  need_interaction=%s  need_context=%s  need_policy=%s",
+                       need_interaction, need_context, need_policy)
 
         # ---------------------------------------------------------------
         # PHASE 1: Bulk edge computation (one pass over all services)
         # ---------------------------------------------------------------
+        self.log.info("PHASE 1: Computing edges across %d services", total)
         # Results: per-service lightweight edge tuples
         collab_edges  = defaultdict(list)   # sid -> [(target, weight), ...]
         subst_edges   = defaultdict(list)   # sid -> [(target, robustness), ...]
@@ -240,12 +304,26 @@ class ServiceAnnotator:
                         if other_id != sid:
                             dep_buf.add(other_id)
 
+        t_phase1 = time.perf_counter()
+        total_collab = sum(len(v) for v in collab_edges.values())
+        total_subst  = sum(len(v) for v in subst_edges.values())
+        total_deps   = sum(len(v) for v in depend_edges.values())
+        total_cancall = sum(len(v) for v in can_call_map.values())
+        self.log.info("-"*60)
+        self.log.info("PHASE 1 COMPLETE  (%.3f s)", t_phase1 - t_start)
+        self.log.info("  Collaboration edges : %d  (across %d services)", total_collab, len(collab_edges))
+        self.log.info("  Substitution edges  : %d  (across %d services)", total_subst, len(subst_edges))
+        self.log.info("  Dependency edges    : %d  (across %d services)", total_deps, len(depend_edges))
+        self.log.info("  Can-call edges      : %d  (across %d services)", total_cancall, len(can_call_map))
+
         if progress_callback:
             progress_callback(0, total, "edges computed")
 
         # ---------------------------------------------------------------
         # PHASE 2: Assemble annotation objects (tight loop, no method calls)
         # ---------------------------------------------------------------
+        self.log.info("-"*60)
+        self.log.info("PHASE 2: Assembling annotations per service")
         annotated = []
         now_iso = datetime.now().isoformat()
 
@@ -261,7 +339,9 @@ class ServiceAnnotator:
         _hist_success = _hs['success_rates'] if _hs else {}
         _hist_last = _hs['last_used'] if _hs else {}
         _hist_util = _hs['avg_utilities'] if _hs else {}
-        _store = self.history_store
+        _hist_contexts = _hs['observed_contexts'] if _hs else {}
+        _hist_patterns = _hs['usage_patterns'] if _hs else {}
+        _empty_ctx = {"locations": {}, "networks": {}, "device_types": {}, "total_with_context": 0}
 
         # Cache __new__ for zero-init object creation (skip __init__ dispatch)
         _new_assoc   = SNAssociation.__new__
@@ -273,6 +353,7 @@ class ServiceAnnotator:
 
         for idx, service in enumerate(services_to_annotate):
             sid = service.id
+            self.log.debug("[%d/%d] Assembling annotation for %s", idx+1, total, sid)
             ann = ServiceAnnotation(sid)
             ann.social_node.node_type = "WebService"
             ann.social_node.state = "active"
@@ -295,6 +376,8 @@ class ServiceAnnotator:
             sn.reputation.value       = min(max(reputation, 0.0), 1.0)
             sn.cooperativeness.value  = min(max(cooperativeness, 0.0), 1.0)
             sn.add_property("robustness_score", (rel * 0.4 + avl * 0.3 + suc * 0.3) * 0.01)
+            self.log.debug("  Social node: trust=%.4f  reputation=%.4f  cooperativeness=%.4f  QoS(rel=%.1f avl=%.1f suc=%.1f cmp=%.1f rt=%.1f)",
+                           sn.trust_degree.value, sn.reputation.value, sn.cooperativeness.value, rel, avl, suc, cmp, rt)
 
             # ---- Interaction annotation (from pre-computed edges + history) ----
             if need_interaction:
@@ -317,15 +400,17 @@ class ServiceAnnotator:
                     s_id: sid_collab.get(s_id, 0)
                     for s_id in cc[:10]
                 }
+                self.log.debug("  Interaction: role=%s  can_call=%d  collab_assoc=%d  depends_on=%d  substitutes=%d  collab_history_entries=%d",
+                               ia.role, len(cc), len(ia.collaboration_associations), len(dd), len(ia.substitutes), len(ia.collaboration_history))
 
-            # ---- Context annotation (from REAL history) ----
+            # ---- Context annotation (from REAL history, bulk precomputed) ----
             if need_context:
                 ctx = ann.context
                 interaction_count = _hist_interaction.get(sid, 0)
                 success_rate = _hist_success.get(sid, 0.0)
                 last_used = _hist_last.get(sid)
-                observed_ctx = _store.get_observed_contexts(sid)
-                usage_patterns = _store.get_usage_patterns(sid)
+                observed_ctx = _hist_contexts.get(sid, _empty_ctx)
+                usage_patterns = _hist_patterns.get(sid, [])
 
                 # context_aware: true if the service has been invoked with
                 # context metadata at least once
@@ -364,6 +449,10 @@ class ServiceAnnotator:
                 ctx.context_adaptation_score = round(
                     diversity * 0.6 + (success_rate * 0.4), 3
                 )
+                self.log.debug("  Context: aware=%s  loc_sensitive=%s  time_critical=%s  interactions=%d  adaptation_score=%.3f  env_reqs=%s  locations=%d  networks=%d  devices=%d",
+                               ctx.context_aware, ctx.location_sensitive, ctx.time_critical, ctx.interaction_count,
+                               ctx.context_adaptation_score, ctx.environmental_requirements,
+                               n_locs, n_nets, n_devs)
 
             # ---- Policy annotation (deterministic from QoS) ----
             if need_policy:
@@ -390,6 +479,10 @@ class ServiceAnnotator:
                     pol.compliance_standards = ["ISO27001"]
                 pol.data_classification = "confidential" if cmp > 85 else ("internal" if cmp > 70 else "public")
                 pol.encryption_required = pol.security_level == "high"
+                self.log.debug("  Policy: gdpr=%s  security=%s  retention=%dd  encryption=%s  classification=%s  standards=%s",
+                               pol.gdpr_compliant, pol.security_level, pol.data_retention_days,
+                               pol.encryption_required, pol.data_classification,
+                               pol.compliance_standards if hasattr(pol, 'compliance_standards') else [])
 
             # ---- Materialise SNAssociation objects (skip __init__, set slots directly) ----
             assocs = sn.associations
@@ -438,9 +531,17 @@ class ServiceAnnotator:
             service.annotations = ann
             annotated.append(service)
 
+            n_assocs = len(assocs)
+            self.log.debug("  Associations materialised: %d total for %s", n_assocs, sid)
+
             if progress_callback and (idx % max(total // 100, 1) == 0 or idx == total - 1):
                 progress_callback(idx + 1, total, sid)
 
+        t_end = time.perf_counter()
+        self.log.info("-"*60)
+        self.log.info("PHASE 2 COMPLETE  (%.3f s)", t_end - t_phase1)
+        self.log.info("ANNOTATION FINISHED  total_time=%.3f s  services_annotated=%d", t_end - t_start, len(annotated))
+        self.log.info("="*80)
         return annotated
 
     # ====================================================================
@@ -449,12 +550,17 @@ class ServiceAnnotator:
     def _annotate_all_llm(self, services_to_annotate, annotation_types, progress_callback):
         total = len(services_to_annotate)
         annotated = []
-        max_workers = 6  # concurrent Ollama calls
+        max_workers = 10  # concurrent Ollama calls
+        self.log.info("-"*60)
+        self.log.info("LLM BULK ANNOTATION  services=%d  workers=%d", total, max_workers)
+        self.log.info("  annotation_types: %s", annotation_types)
+        t_llm_start = time.perf_counter()
 
         def _do_one(service):
             return self.annotate_service(service, use_llm=True, annotation_types=annotation_types)
 
         completed = 0
+        errors = 0
         with ThreadPoolExecutor(max_workers=max_workers) as pool:
             future_to_svc = {pool.submit(_do_one, s): s for s in services_to_annotate}
             for future in as_completed(future_to_svc):
@@ -462,12 +568,17 @@ class ServiceAnnotator:
                 try:
                     future.result()
                 except Exception as exc:
-                    print(f"LLM annotation error for {svc.id}: {exc}")
+                    errors += 1
+                    self.log.error("LLM annotation EXCEPTION for %s: %s", svc.id, exc)
                 annotated.append(svc)
                 completed += 1
                 if progress_callback and (completed % 10 == 0 or completed == total):
                     progress_callback(completed, total, svc.id)
 
+        t_llm_end = time.perf_counter()
+        self.log.info("LLM BULK ANNOTATION FINISHED  time=%.3f s  annotated=%d  errors=%d",
+                       t_llm_end - t_llm_start, len(annotated), errors)
+        self.log.info("="*80)
         return annotated
 
     # ====================================================================
@@ -476,6 +587,9 @@ class ServiceAnnotator:
     def annotate_service(self, service, use_llm=False, annotation_types=None):
         if annotation_types is None:
             annotation_types = ['interaction', 'context', 'policy']
+
+        self.log.info("annotate_service(%s)  use_llm=%s  types=%s", service.id, use_llm, annotation_types)
+        t0 = time.perf_counter()
 
         annotation = ServiceAnnotation(service.id)
         annotation.social_node.node_type = "WebService"
@@ -495,6 +609,9 @@ class ServiceAnnotator:
         self._build_social_associations(service, annotation)
 
         service.annotations = annotation
+        self.log.info("  annotate_service(%s) DONE in %.3f s  associations=%d",
+                       service.id, time.perf_counter() - t0,
+                       len(annotation.social_node.associations))
         return service
 
     # --------  helpers kept for single-service / LLM fallback  --------
@@ -687,31 +804,13 @@ class ServiceAnnotator:
         return policy
 
     # ====================================================================
-    #  LLM ANNOTATION HELPERS
+    #  LLM ANNOTATION HELPERS — SINGLE COMBINED PROMPT PER SERVICE
     # ====================================================================
     def _annotate_with_llm(self, service, annotation_types):
+        """Annotate using ONE combined LLM call instead of 3 separate calls."""
+        self.log.info("  _annotate_with_llm(%s)  types=%s", service.id, annotation_types)
+        t_llm = time.perf_counter()
         annotation = ServiceAnnotation(service.id)
-        service_context = {
-            'id': service.id,
-            'inputs': service.inputs,
-            'outputs': service.outputs,
-            'qos': {
-                'reliability': service.qos.reliability,
-                'availability': service.qos.availability,
-                'response_time': service.qos.response_time,
-                'compliance': service.qos.compliance,
-            },
-        }
-        if 'interaction' in annotation_types:
-            annotation.interaction = self._llm_generate_interaction(service, service_context)
-        if 'context' in annotation_types:
-            annotation.context = self._llm_generate_context(service, service_context)
-        if 'policy' in annotation_types:
-            annotation.policy = self._llm_generate_policy(service, service_context)
-        return annotation
-
-    def _llm_generate_interaction(self, service, context):
-        interaction = InteractionAnnotation()
 
         # Index-based compatible service lookup (O(degree))
         compatible_services = []
@@ -723,143 +822,154 @@ class ServiceAnnotator:
                     seen.add(oid)
                     other_ins = self._service_input_sets.get(oid, frozenset())
                     compatible_services.append({'id': oid, 'match_score': len(svc_outs & other_ins)})
+        self.log.debug("    Compatible services found: %d", len(compatible_services))
+        if compatible_services:
+            top3 = sorted(compatible_services, key=lambda x: x['match_score'], reverse=True)[:3]
+            self.log.debug("    Top-3 compatible: %s", [(c['id'], c['match_score']) for c in top3])
 
-        prompt = f"""Analyze this web service and determine its role in a service composition:
+        need_interaction = 'interaction' in annotation_types
+        need_context = 'context' in annotation_types
+        need_policy = 'policy' in annotation_types
+
+        # Build a single combined prompt
+        prompt = f"""Analyze this web service and provide ALL annotations in a single JSON response.
 
 Service ID: {service.id}
 Inputs: {len(service.inputs)}
 Outputs: {len(service.outputs)}
-QoS Reliability: {service.qos.reliability}%
-Compatible services: {len(compatible_services)}
-
-Respond ONLY with JSON (no markdown):
-{{
-  "role": "orchestrator" or "worker" or "aggregator",
-  "can_call_count": number (0-{min(len(compatible_services), 5)}),
-  "collaboration_level": "high" or "medium" or "low"
-}}
-"""
-        try:
-            response = self._call_ollama(prompt)
-            data = self._extract_json(response)
-            if data:
-                interaction.role = {'orchestrator': 'orchestrator', 'worker': 'worker', 'aggregator': 'aggregator'}.get(data.get('role', '').lower(), 'worker')
-                n = min(data.get('can_call_count', 3), len(compatible_services))
-                top = sorted(compatible_services, key=lambda x: x['match_score'], reverse=True)
-                interaction.can_call = [s['id'] for s in top[:n]]
-                interaction.collaboration_associations = interaction.can_call.copy()
-                # Use real history for collaboration counts
-                collab_counts = self.history_store.get_collaboration_counts(service.id)
-                interaction.collaboration_history = {
-                    sid: collab_counts.get(sid, 0)
-                    for sid in interaction.can_call[:10]
-                }
-            else:
-                interaction = self._generate_interaction_annotations(service)
-        except Exception as e:
-            print(f"LLM error for interaction: {e}")
-            interaction = self._generate_interaction_annotations(service)
-        return interaction
-
-    def _llm_generate_context(self, service, context):
-        ctx = ContextAnnotation()
-        prompt = f"""Analyze this web service's contextual characteristics:
-
-Service: {service.id}
 QoS:
+- Reliability: {service.qos.reliability}%
 - Availability: {service.qos.availability}%
 - Response Time: {service.qos.response_time}ms
-- Reliability: {service.qos.reliability}%
+- Compliance: {service.qos.compliance}%
+- Best Practices: {service.qos.best_practices}%
+Compatible services: {len(compatible_services)}
 
-Respond ONLY with JSON:
-{{
-  "context_aware": true or false,
-  "location_sensitive": true or false,
-  "time_critical": "high" or "medium" or "low",
-  "usage_frequency": "high" or "medium" or "low"
-}}
-"""
+Respond ONLY with JSON (no markdown, no explanation):
+{{"""
+
+        json_parts = []
+        if need_interaction:
+            json_parts.append(f'"interaction": {{"role": "orchestrator" or "worker" or "aggregator", "can_call_count": number (0-{min(len(compatible_services), 5)}), "collaboration_level": "high" or "medium" or "low"}}')
+        if need_context:
+            json_parts.append('"context": {"context_aware": true or false, "location_sensitive": true or false, "time_critical": "high" or "medium" or "low"}')
+        if need_policy:
+            json_parts.append('"policy": {"gdpr_compliant": true or false, "security_level": "high" or "medium" or "low", "data_retention_days": 30 or 90 or 180 or 365, "encryption_required": true or false, "data_classification": "public" or "internal" or "confidential"}')
+
+        prompt += ', '.join(json_parts) + '}'
+        self.log.debug("    PROMPT (len=%d):\n%s", len(prompt), prompt)
+
         try:
+            t_call = time.perf_counter()
             response = self._call_ollama(prompt)
+            t_resp = time.perf_counter()
+            self.log.info("    Ollama response received in %.3f s  (len=%d)", t_resp - t_call, len(response) if response else 0)
+            self.log.debug("    RAW RESPONSE:\n%s", response)
             data = self._extract_json(response)
+            self.log.debug("    Parsed JSON: %s", json.dumps(data, default=str) if data else "NONE")
             if data:
-                ctx.context_aware = data.get('context_aware', False)
-                ctx.location_sensitive = data.get('location_sensitive', False)
-                ctx.time_critical = data.get('time_critical', 'medium')
-                # Use REAL interaction count from history
-                ctx.interaction_count = self.history_store.get_interaction_count(service.id)
-                ctx.usage_patterns = self.history_store.get_usage_patterns(service.id) or []
-                ctx.last_used = self.history_store.get_last_used(service.id) or datetime.now().isoformat()
-                obs_ctx = self.history_store.get_observed_contexts(service.id)
-                env_reqs = []
-                obs_nets = obs_ctx.get('networks', {})
-                if 'vpn' in obs_nets or service.qos.compliance > 80:
-                    env_reqs.append('vpn')
-                if obs_nets.get('ethernet', 0) > obs_nets.get('wifi', 0) or service.qos.compliance > 85:
-                    env_reqs.append('secure_network')
-                ctx.environmental_requirements = env_reqs
+                # --- Interaction ---
+                if need_interaction:
+                    i_data = data.get('interaction', data)  # fallback to flat if no nesting
+                    interaction = InteractionAnnotation()
+                    interaction.role = {'orchestrator': 'orchestrator', 'worker': 'worker', 'aggregator': 'aggregator'}.get(
+                        str(i_data.get('role', '')).lower(), 'worker'
+                    )
+                    n = min(i_data.get('can_call_count', 3), len(compatible_services))
+                    top = sorted(compatible_services, key=lambda x: x['match_score'], reverse=True)
+                    interaction.can_call = [s['id'] for s in top[:n]]
+                    interaction.collaboration_associations = interaction.can_call.copy()
+                    collab_counts = self.history_store.get_collaboration_counts(service.id)
+                    interaction.collaboration_history = {
+                        sid: collab_counts.get(sid, 0)
+                        for sid in interaction.can_call[:10]
+                    }
+                    annotation.interaction = interaction
+                    self.log.debug("    LLM Interaction: role=%s  can_call=%d  collab_history=%d",
+                                   interaction.role, len(interaction.can_call), len(interaction.collaboration_history))
+
+                # --- Context ---
+                if need_context:
+                    c_data = data.get('context', data)
+                    ctx = ContextAnnotation()
+                    ctx.context_aware = c_data.get('context_aware', False)
+                    ctx.location_sensitive = c_data.get('location_sensitive', False)
+                    ctx.time_critical = c_data.get('time_critical', 'medium')
+                    ctx.interaction_count = self.history_store.get_interaction_count(service.id)
+                    ctx.usage_patterns = self.history_store.get_usage_patterns(service.id) or []
+                    ctx.last_used = self.history_store.get_last_used(service.id) or datetime.now().isoformat()
+                    obs_ctx = self.history_store.get_observed_contexts(service.id)
+                    env_reqs = []
+                    obs_nets = obs_ctx.get('networks', {})
+                    if 'vpn' in obs_nets or service.qos.compliance > 80:
+                        env_reqs.append('vpn')
+                    if obs_nets.get('ethernet', 0) > obs_nets.get('wifi', 0) or service.qos.compliance > 85:
+                        env_reqs.append('secure_network')
+                    ctx.environmental_requirements = env_reqs
+                    annotation.context = ctx
+                    self.log.debug("    LLM Context: aware=%s  loc_sensitive=%s  time_critical=%s  interaction_count=%d  env_reqs=%s",
+                                   ctx.context_aware, ctx.location_sensitive, ctx.time_critical, ctx.interaction_count, env_reqs)
+
+                # --- Policy ---
+                if need_policy:
+                    p_data = data.get('policy', data)
+                    policy = PolicyAnnotation()
+                    policy.gdpr_compliant = p_data.get('gdpr_compliant', True)
+                    policy.security_level = p_data.get('security_level', 'medium')
+                    policy.data_retention_days = p_data.get('data_retention_days', 30)
+                    policy.encryption_required = p_data.get('encryption_required', False)
+                    policy.data_classification = p_data.get('data_classification', 'internal')
+                    policy.privacy_policy = "encrypted" if policy.encryption_required else "standard"
+                    if service.qos.compliance > 85:
+                        policy.compliance_standards = ["ISO27001", "SOC2"]
+                    elif service.qos.compliance > 70:
+                        policy.compliance_standards = ["ISO27001"]
+                    annotation.policy = policy
+                    self.log.debug("    LLM Policy: gdpr=%s  security=%s  retention=%dd  encryption=%s  classification=%s  standards=%s",
+                                   policy.gdpr_compliant, policy.security_level, policy.data_retention_days,
+                                   policy.encryption_required, policy.data_classification,
+                                   policy.compliance_standards if hasattr(policy, 'compliance_standards') else [])
             else:
-                ctx = self._generate_context_annotations(service)
+                raise ValueError("LLM returned no parseable JSON")
+
+            self.log.info("    _annotate_with_llm(%s) SUCCESS in %.3f s", service.id, time.perf_counter() - t_llm)
+
         except Exception as e:
-            print(f"LLM error for context: {e}")
-            ctx = self._generate_context_annotations(service)
-        return ctx
+            self.log.warning("    LLM FALLBACK for %s: %s — reverting to classic annotation", service.id, e)
+            if need_interaction:
+                annotation.interaction = self._generate_interaction_annotations(service)
+                self.log.debug("    Fallback interaction: role=%s  can_call=%d", annotation.interaction.role, len(annotation.interaction.can_call))
+            if need_context:
+                annotation.context = self._generate_context_annotations(service)
+                self.log.debug("    Fallback context: aware=%s  adaptation_score=%.3f", annotation.context.context_aware, annotation.context.context_adaptation_score)
+            if need_policy:
+                annotation.policy = self._generate_policy_annotations(service)
+                self.log.debug("    Fallback policy: gdpr=%s  security=%s", annotation.policy.gdpr_compliant, annotation.policy.security_level)
+            self.log.info("    _annotate_with_llm(%s) FALLBACK COMPLETE in %.3f s", service.id, time.perf_counter() - t_llm)
 
-    def _llm_generate_policy(self, service, context):
-        policy = PolicyAnnotation()
-        prompt = f"""Analyze this web service's policy requirements:
-
-Service: {service.id}
-QoS Compliance: {service.qos.compliance}%
-Best Practices: {service.qos.best_practices}%
-Reliability: {service.qos.reliability}%
-
-Respond ONLY with JSON:
-{{
-  "gdpr_compliant": true or false,
-  "security_level": "high" or "medium" or "low",
-  "data_retention_days": 30 or 60 or 90 or 180 or 365,
-  "encryption_required": true or false,
-  "data_classification": "public" or "internal" or "confidential"
-}}
-"""
-        try:
-            response = self._call_ollama(prompt)
-            data = self._extract_json(response)
-            if data:
-                policy.gdpr_compliant = data.get('gdpr_compliant', True)
-                policy.security_level = data.get('security_level', 'medium')
-                policy.data_retention_days = data.get('data_retention_days', 30)
-                policy.encryption_required = data.get('encryption_required', False)
-                policy.data_classification = data.get('data_classification', 'internal')
-                policy.privacy_policy = "encrypted" if policy.encryption_required else "standard"
-                if service.qos.compliance > 85:
-                    policy.compliance_standards = ["ISO27001", "SOC2"]
-                elif service.qos.compliance > 70:
-                    policy.compliance_standards = ["ISO27001"]
-            else:
-                policy = self._generate_policy_annotations(service)
-        except Exception as e:
-            print(f"LLM error for policy: {e}")
-            policy = self._generate_policy_annotations(service)
-        return policy
+        return annotation
 
     # ====================================================================
     #  OLLAMA HELPERS
     # ====================================================================
     def _call_ollama(self, prompt):
+        self.log.debug("    _call_ollama: POST %s/api/generate  model=%s  prompt_len=%d", self.ollama_url, self.model, len(prompt))
         try:
             response = requests.post(
                 f"{self.ollama_url}/api/generate",
                 json={"model": self.model, "prompt": prompt, "stream": False, "options": {"temperature": 0.3, "top_p": 0.9}},
                 timeout=30,
             )
+            self.log.debug("    _call_ollama: HTTP %d  response_len=%d", response.status_code, len(response.text))
             if response.status_code == 200:
                 return response.json()['response']
+            self.log.error("    _call_ollama: non-200 status %d  body=%s", response.status_code, response.text[:500])
             raise Exception(f"Ollama API error: {response.status_code}")
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError as ce:
+            self.log.error("    _call_ollama: ConnectionError — %s", ce)
             raise Exception("Cannot connect to Ollama. Is it running?")
         except Exception as e:
+            self.log.error("    _call_ollama: Exception — %s", e)
             raise Exception(f"Ollama error: {str(e)}")
 
     def _extract_json(self, text):
@@ -867,7 +977,13 @@ Respond ONLY with JSON:
             start = text.find('{')
             end = text.rfind('}') + 1
             if start != -1 and end > start:
-                return json.loads(text[start:end])
+                json_str = text[start:end]
+                self.log.debug("    _extract_json: extracted chars [%d:%d] (len=%d)", start, end, len(json_str))
+                parsed = json.loads(json_str)
+                self.log.debug("    _extract_json: parsed OK  keys=%s", list(parsed.keys()) if isinstance(parsed, dict) else type(parsed).__name__)
+                return parsed
+            self.log.warning("    _extract_json: no JSON braces found in response (len=%d)", len(text) if text else 0)
             return None
-        except Exception:
+        except Exception as je:
+            self.log.error("    _extract_json: JSON parse error — %s  text_snippet=%s", je, text[:200] if text else '')
             return None

@@ -1,33 +1,34 @@
 """
-Serveur Flask optimisé pour gérer des uploads massifs
+Optimised Flask dev-server runner with generous upload and timeout settings.
 """
 
 from app import app
+from config import FLASK_HOST, FLASK_PORT, FLASK_DEBUG
 from werkzeug.serving import WSGIRequestHandler
 import sys
 
-# Augmenter le timeout de requête à l'infini
+# Use persistent HTTP/1.1 connections
 WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
-# Augmenter la limite de récursion si nécessaire
+# Raise recursion limit for deeply-nested compositions
 sys.setrecursionlimit(10000)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("=" * 60)
-    print("Démarrage du serveur Flask (mode SANS LIMITES)")
+    print("Starting Flask server (development mode)")
     print("=" * 60)
-    print("✓ Limite de taille de fichier : AUCUNE")
-    print("✓ Nombre de fichiers : ILLIMITÉ")
-    print("✓ Timeout : DÉSACTIVÉ")
-    print("✓ Multi-threading : ACTIVÉ")
+    print(f"  Host           : {FLASK_HOST}")
+    print(f"  Port           : {FLASK_PORT}")
+    print(f"  Debug          : {FLASK_DEBUG}")
+    print(f"  Multi-threading: enabled")
     print("=" * 60)
     print()
-    
+
     app.run(
-        host='0.0.0.0',
-        port=5000,
-        debug=True,
-        threaded=True,  # Support multi-threading
-        use_reloader=True,
-        request_handler=WSGIRequestHandler
+        host=FLASK_HOST,
+        port=FLASK_PORT,
+        debug=FLASK_DEBUG,
+        threaded=True,
+        use_reloader=False,
+        request_handler=WSGIRequestHandler,
     )
