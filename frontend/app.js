@@ -652,16 +652,83 @@ function showAnnotationResults(data) {
     el.innerHTML = `
         <div class="result-box result-success"><strong>Annotation completed:</strong> ${data.total_annotated} services annotated using ${data.used_llm?'LLM':'classic'} method.</div>
         ${data.services ? `
-        <div style="margin-top:16px;max-height:350px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                <input type="checkbox" id="ann-select-all" onchange="toggleSelectAllAnnotated(this.checked)" style="width:15px;height:15px">
+                <span id="ann-selection-label">Select all (${data.services.length})</span>
+            </label>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-primary btn-sm" onclick="downloadAllAnnotated()">&#x1F4E6; Download All as ZIP</button>
+                <button class="btn btn-sm" id="ann-download-selected-btn" onclick="downloadSelectedAnnotated()" disabled style="opacity:0.5">&#x1F4E5; Download Selected</button>
+            </div>
+        </div>
+        <div style="max-height:350px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius)">
             ${data.services.map(s => `
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border)">
-                    <div><span class="svc-id">${s.id}</span><span style="margin-left:12px;font-size:12px;color:var(--text-muted)">${s.inputs.length} in / ${s.outputs.length} out ${s.annotations ? '&bull; Annotated' : ''}</span></div>
-                    <button class="btn btn-sm" onclick="downloadAnnotated('${s.id}')">Download</button>
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1;min-width:0">
+                        <input type="checkbox" class="ann-svc-cb" data-id="${escapeHtml(s.id)}" onchange="onAnnotatedCheckChange()" style="width:15px;height:15px;flex-shrink:0">
+                        <span class="svc-id">${escapeHtml(s.id)}</span>
+                        <span style="font-size:12px;color:var(--text-muted)">${s.inputs.length} in / ${s.outputs.length} out ${s.annotations ? '&bull; Annotated' : ''}</span>
+                    </label>
+                    <button class="btn btn-sm" onclick="downloadAnnotated('${escapeHtml(s.id)}')" style="flex-shrink:0;margin-left:8px">Download</button>
                 </div>
             `).join('')}
         </div>` : ''}
     `;
     checkAnnotationForLLM();
+}
+
+function toggleSelectAllAnnotated(checked) {
+    document.querySelectorAll('.ann-svc-cb').forEach(cb => cb.checked = checked);
+    onAnnotatedCheckChange();
+}
+
+function onAnnotatedCheckChange() {
+    const all = document.querySelectorAll('.ann-svc-cb');
+    const checked = document.querySelectorAll('.ann-svc-cb:checked');
+    const selectAllCb = document.getElementById('ann-select-all');
+    const downloadBtn = document.getElementById('ann-download-selected-btn');
+    const label = document.getElementById('ann-selection-label');
+    if (selectAllCb) selectAllCb.indeterminate = checked.length > 0 && checked.length < all.length;
+    if (selectAllCb) selectAllCb.checked = checked.length === all.length && all.length > 0;
+    if (label) label.textContent = checked.length > 0
+        ? `${checked.length} / ${all.length} selected`
+        : `Select all (${all.length})`;
+    if (downloadBtn) {
+        downloadBtn.disabled = checked.length === 0;
+        downloadBtn.style.opacity = checked.length === 0 ? '0.5' : '1';
+    }
+}
+
+async function downloadSelectedAnnotated() {
+    const checked = document.querySelectorAll('.ann-svc-cb:checked');
+    if (!checked.length) return;
+    const ids = Array.from(checked).map(cb => cb.dataset.id).join(',');
+    try {
+        const r = await fetch(`${API}/services/download-all?ids=${encodeURIComponent(ids)}&annotated_only=false`);
+        if (r.ok) {
+            const blob = await r.blob();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = 'selected_annotated_services.zip'; a.click(); URL.revokeObjectURL(a.href);
+        } else {
+            const d = await r.json().catch(() => ({}));
+            showToast(d.error || 'Download failed', 'error', 'Download Failed');
+        }
+    } catch(e) { showToast(e.message, 'error', 'Download Failed'); }
+}
+
+async function downloadAllAnnotated() {
+    try {
+        const r = await fetch(`${API}/services/download-all`);
+        if (r.ok) {
+            const blob = await r.blob();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = 'annotated_services.zip'; a.click(); URL.revokeObjectURL(a.href);
+        } else {
+            const d = await r.json().catch(() => ({}));
+            showToast(d.error || 'Download failed', 'error', 'Download Failed');
+        }
+    } catch(e) { showToast(e.message, 'error', 'Download Failed'); }
 }
 
 async function downloadAnnotated(id) {

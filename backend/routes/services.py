@@ -1,5 +1,7 @@
 """Service management endpoints — upload, list, get, download annotated WSDL."""
 
+import io
+import zipfile
 from flask import Blueprint, request, jsonify, Response
 
 from state import app_state
@@ -121,6 +123,45 @@ def download_annotated_service(service_id):
         response = Response(xml_content, mimetype="application/xml")
         response.headers["Content-Disposition"] = (
             f"attachment; filename={service_id}_enriched.xml"
+        )
+        return response
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@services_bp.route("/api/services/download-all", methods=["GET"])
+@safe_route
+def download_all_annotated():
+    """Download all annotated services as a ZIP archive of enriched WSDL files.
+
+    Query params:
+      - annotated_only=true  (default) — only include services that have annotations
+      - ids=id1,id2,...       — restrict to a comma-separated list of service IDs
+    """
+    try:
+        annotated_only = request.args.get("annotated_only", "true").lower() != "false"
+        ids_param = request.args.get("ids", "")
+        requested_ids = {i.strip() for i in ids_param.split(",") if i.strip()}
+
+        services = app_state["services"]
+        if requested_ids:
+            services = [s for s in services if s.id in requested_ids]
+        if annotated_only:
+            services = [s for s in services if s.annotations]
+
+        if not services:
+            return jsonify({"error": "No annotated services found"}), 404
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for svc in services:
+                xml_content = generate_enriched_wsdl(svc)
+                zf.writestr(f"{svc.id}_enriched.xml", xml_content)
+        buf.seek(0)
+
+        response = Response(buf.read(), mimetype="application/zip")
+        response.headers["Content-Disposition"] = (
+            "attachment; filename=annotated_services.zip"
         )
         return response
     except Exception as e:
