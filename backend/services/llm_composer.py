@@ -13,6 +13,7 @@ Part of: QSRT — QoS-Driven Reinforcement Fine-Tuning with Social Trust Rewards
 import os
 import time
 import json
+import heapq
 import requests as http_requests
 from collections import defaultdict
 from models.service import CompositionResult, QoS
@@ -739,39 +740,62 @@ class LLMComposer:
     # ------------------------------------------------------------------
 
     def _find_candidates(self, request):
-        """Find candidate services using indexes (not brute force)."""
-        candidate_ids = set()
+        """Find candidate services using forward+backward reachability
+        (same strategy as classic composer for fair comparison)."""
 
-        # Services that can accept provided parameters
-        for param in request.provided:
-            for s in self._input_index.get(param, []):
-                candidate_ids.add(s.id)
+        # --- Forward reachability: what params can we produce? ---
+        reachable_params = set(request.provided)
+        forward_ids = set()
+        frontier = set(request.provided)
 
-        # Services that produce the target parameter
-        for s in self._output_index.get(request.resultant, []):
-            candidate_ids.add(s.id)
+        while frontier:
+            next_frontier = set()
+            for param in frontier:
+                for s in self._input_index.get(param, []):
+                    if s.id in forward_ids:
+                        continue
+                    if self._service_input_sets.get(s.id, frozenset()) <= reachable_params:
+                        forward_ids.add(s.id)
+                        new_out = set(s.outputs) - reachable_params
+                        reachable_params |= new_out
+                        next_frontier |= new_out
+            frontier = next_frontier
 
-        # Second-hop chaining: outputs of current candidates -> inputs of
-        # other services that may eventually produce the target
-        chain_ids = set()
-        for sid in list(candidate_ids):
-            s = self.service_dict.get(sid)
-            if not s:
-                continue
-            for out in s.outputs:
-                for s2 in self._input_index.get(out, []):
-                    chain_ids.add(s2.id)
-        candidate_ids |= chain_ids
+        if request.resultant not in reachable_params:
+            return []  # goal unreachable
+
+        # --- Backward reachability: what services lead to the goal? ---
+        needed = {request.resultant}
+        backward_ids = set()
+        frontier = {request.resultant}
+
+        while frontier:
+            next_frontier = set()
+            for param in frontier:
+                for s in self._output_index.get(param, []):
+                    if s.id in backward_ids:
+                        continue
+                    backward_ids.add(s.id)
+                    new_inputs = set(s.inputs) - needed - set(request.provided)
+                    needed |= new_inputs
+                    next_frontier |= new_inputs
+            frontier = next_frontier
+
+        # Intersection = services both reachable and useful
+        relevant_ids = forward_ids & backward_ids
+        if len(relevant_ids) < 3:
+            relevant_ids = forward_ids | backward_ids
 
         return [
             self.service_dict[sid]
-            for sid in candidate_ids
+            for sid in relevant_ids
             if sid in self.service_dict
         ]
 
     def _score_candidates(self, candidates, request):
         """Score and rank candidates using QoS, knowledge base, and
-        annotations."""
+        annotations.  Bonuses are capped so that QoS utility remains
+        the dominant factor (fair comparison with classic approach)."""
         scored = []
 
         for service in candidates:
@@ -782,30 +806,30 @@ class LLMComposer:
                 service.qos, request.qos_constraints, qos_checks
             )
 
-            # Knowledge base bonus (from training patterns)
+            # Knowledge base bonus (capped)
             kb_bonus = 0.0
             ranking = self.knowledge_base['service_rankings'].get(service.id)
             if ranking:
-                kb_bonus = ranking['score'] * 10
+                kb_bonus = min(ranking['score'] * 5, 10.0)
 
-            # Direct producer bonus
-            direct_bonus = 50.0 if request.resultant in service.outputs else 0.0
+            # Direct producer bonus (reduced — was 50, now 10)
+            direct_bonus = 10.0 if request.resultant in service.outputs else 0.0
 
             # Input satisfaction bonus
             input_match = sum(
                 1 for inp in service.inputs if inp in request.provided
             )
             input_ratio = input_match / max(len(service.inputs), 1)
-            input_bonus = input_ratio * 20.0
+            input_bonus = input_ratio * 10.0
 
             # Annotation-based trust/reputation bonus
             annotation_bonus = 0.0
             if hasattr(service, 'annotations') and service.annotations:
                 sn = service.annotations.social_node
                 annotation_bonus = (
-                    sn.trust_degree.value * 10
-                    + sn.reputation.value * 10
-                    + sn.cooperativeness.value * 5
+                    sn.trust_degree.value * 5
+                    + sn.reputation.value * 5
+                    + sn.cooperativeness.value * 2.5
                 )
 
             total_score = (
@@ -879,72 +903,112 @@ class LLMComposer:
         return direct_solutions[0][0]
 
     def _build_chain(self, request, scored):
-        """Build a multi-service chain using greedy knowledge-guided
-        search."""
-        available_params = set(request.provided)
-        path = []
-        path_services = []
-        used = set()
-        max_depth = 30  # allow long chains
+        """Build a multi-service chain using beam search — explores
+        multiple paths in parallel, comparable to classic's Dijkstra."""
+        beam_width = 15
+        max_depth = 30
 
-        for _ in range(max_depth):
-            if request.resultant in available_params:
+        # Beam state: (available_params, path_ids, path_services)
+        initial = (frozenset(request.provided), [], [])
+        # Priority queue: (neg_utility, counter, state)
+        beam = [(0.0, 0, initial)]
+        counter = 1
+
+        best_solution = None
+        best_utility = -float('inf')
+        best_seen = {}  # frozenset(params) -> best running utility
+
+        for _depth in range(max_depth):
+            if not beam:
                 break
 
-            best_service = None
-            best_score = -1.0
+            next_beam = []
 
-            for service, base_score in scored:
-                if service.id in used:
-                    continue
-                if not (self._service_input_sets.get(service.id, frozenset())
-                        <= available_params):
-                    continue
+            for neg_util, _, (available, path_ids, path_services) in beam:
+                current_utility = -neg_util
 
-                # Goal proximity bonus
-                goal_bonus = (
-                    100.0 if request.resultant in service.outputs else 0.0
-                )
+                # Goal check
+                if request.resultant in available and path_services:
+                    chain_qos = aggregate_qos(path_services)
+                    qos_checks = chain_qos.meets_constraints(
+                        request.qos_constraints
+                    )
+                    real_utility = calculate_utility(
+                        chain_qos, request.qos_constraints, qos_checks
+                    )
+                    if real_utility > best_utility:
+                        best_utility = real_utility
+                        best_solution = {
+                            'services': list(path_services),
+                            'workflow': list(path_ids),
+                            'utility': real_utility,
+                            'qos': chain_qos,
+                            'explored': len(scored),
+                        }
+                    continue  # don't expand completed paths
 
-                # Does this service enable reaching the goal?
-                chain_bonus = 0.0
-                for out in service.outputs:
-                    for s2 in self._output_index.get(
-                            request.resultant, []):
-                        if out in s2.inputs:
-                            chain_bonus += 30.0
-                            break  # one bonus per output
+                # Expand with each feasible service
+                used = set(path_ids)
+                for service, _base_score in scored:
+                    if service.id in used:
+                        continue
+                    svc_inputs = self._service_input_sets.get(
+                        service.id, frozenset()
+                    )
+                    if not (svc_inputs <= available):
+                        continue
 
-                adjusted = base_score + goal_bonus + chain_bonus
-                if adjusted > best_score:
-                    best_score = adjusted
-                    best_service = service
+                    new_available = available | frozenset(service.outputs)
+                    new_path_ids = path_ids + [service.id]
+                    new_path_services = path_services + [service]
 
-            if not best_service:
-                break
+                    # Running average utility (same as classic Dijkstra)
+                    svc_checks = service.qos.meets_constraints(
+                        request.qos_constraints
+                    )
+                    svc_utility = calculate_utility(
+                        service.qos, request.qos_constraints, svc_checks
+                    )
+                    if path_services:
+                        new_utility = (
+                            current_utility * len(path_services)
+                            + svc_utility
+                        ) / (len(path_services) + 1)
+                    else:
+                        new_utility = svc_utility
 
-            path.append(best_service.id)
-            path_services.append(best_service)
-            used.add(best_service.id)
-            available_params.update(best_service.outputs)
+                    # Prune dominated states
+                    params_key = new_available
+                    if (params_key in best_seen
+                            and best_seen[params_key] >= new_utility):
+                        continue
+                    best_seen[params_key] = new_utility
 
-        if request.resultant in available_params and path_services:
-            chain_qos = aggregate_qos(path_services)
-            qos_checks = chain_qos.meets_constraints(
-                request.qos_constraints
-            )
-            chain_utility = calculate_utility(
-                chain_qos, request.qos_constraints, qos_checks
-            )
-            return {
-                'services': path_services,
-                'workflow': path,
-                'utility': chain_utility,
-                'qos': chain_qos,
-                'explored': len(scored),
-            }
+                    # Goal proximity heuristic for beam ordering
+                    goal_bonus = (
+                        30.0 if request.resultant in service.outputs
+                        else 0.0
+                    )
+                    progress_bonus = 0.0
+                    for out in service.outputs:
+                        if out not in available:
+                            for s2 in self._output_index.get(
+                                    request.resultant, []):
+                                if out in s2.inputs:
+                                    progress_bonus += 10.0
+                                    break
 
-        return None
+                    priority = -(new_utility + goal_bonus + progress_bonus)
+                    counter += 1
+                    next_beam.append((
+                        priority, counter,
+                        (new_available, new_path_ids, new_path_services),
+                    ))
+
+            # Keep top beam_width states
+            beam = heapq.nsmallest(beam_width, next_beam)
+
+        return best_solution
 
     def _try_adapt(self, request, result):
         """Try to improve the result using historical successes."""

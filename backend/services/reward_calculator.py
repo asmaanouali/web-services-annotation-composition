@@ -246,10 +246,11 @@ class RewardCalculator:
                 collab_density += n_assoc
                 annotated_count += 1
             else:
-                # Neutral defaults when not annotated
-                trust_vals.append(0.5)
-                rep_vals.append(0.5)
-                coop_vals.append(0.5)
+                # Below-average defaults for unannotated services to avoid
+                # bias towards unknown services appearing "average"
+                trust_vals.append(0.35)
+                rep_vals.append(0.35)
+                coop_vals.append(0.35)
 
         avg_trust = sum(trust_vals) / len(trust_vals)
         avg_rep   = sum(rep_vals)   / len(rep_vals)

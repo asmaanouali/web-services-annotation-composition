@@ -311,10 +311,14 @@ class ClassicComposer:
                 new_params = available_params | set(service.outputs)
                 new_params_key = frozenset(new_params)
                 
-                # Bottleneck utility model: path utility = min utility among all services
-                # in the chain. This ensures the weakest link determines overall quality.
-                # For the first service (empty path), we use its utility directly.
-                new_utility = min(current_utility, service_utility) if path else service_utility
+                # Weighted average utility: path utility is a running harmonic mean
+                # of all service utilities in the chain. This balances quality
+                # without letting a single weak service dominate the score.
+                path_len = len(path)
+                if path:
+                    new_utility = (current_utility * path_len + service_utility) / (path_len + 1)
+                else:
+                    new_utility = service_utility
                 
                 if new_params_key in best_utilities and best_utilities[new_params_key] >= new_utility:
                     continue
@@ -483,8 +487,9 @@ class ClassicComposer:
                 new_params = available_params | set(service.outputs)
                 new_params_key = frozenset(new_params)
                 
-                # Bottleneck utility model (same as Dijkstra): weakest service determines path quality
-                new_g = min(g_score, service_utility) if path else service_utility
+                # Weighted average utility (same as Dijkstra): running average of chain
+                path_len = len(path)
+                new_g = (g_score * path_len + service_utility) / (path_len + 1) if path else service_utility
                 new_h = calculate_heuristic(service, new_params)
                 new_f = new_g + new_h
                 
@@ -655,7 +660,7 @@ class ClassicComposer:
                     'action': 'goal_found',
                     'description': f'Goal reached after {steps} greedy steps!',
                     'path': path.copy(),
-                    'utility': round(min(utilities), 3),
+                    'utility': round(sum(utilities) / len(utilities), 3),
                     'service_id': best_service.id
                 })
                 break
@@ -664,7 +669,7 @@ class ClassicComposer:
         if request.resultant in available_params:
             result.services = [self.service_dict[sid] for sid in path]
             result.workflow = path
-            result.utility_value = min(utilities) if utilities else 0
+            result.utility_value = sum(utilities) / len(utilities) if utilities else 0
             result.success = True
             result.states_explored = steps
             

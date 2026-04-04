@@ -1,0 +1,594 @@
+2026-04-04 14:23:01.789 | INFO    | ================================================================================
+2026-04-04 14:23:01.790 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.790 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.790 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.790 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.792 | INFO    |   History store provided : False
+2026-04-04 14:23:01.792 | INFO    |   No training examples provided
+2026-04-04 14:23:01.793 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.794 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.794 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.794 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.794 | INFO    | ================================================================================
+2026-04-04 14:23:01.797 | INFO    | ================================================================================
+2026-04-04 14:23:01.797 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.797 | INFO    |   Total services loaded : 0
+2026-04-04 14:23:01.797 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.798 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.799 | INFO    |   History store provided : False
+2026-04-04 14:23:01.799 | INFO    |   No training examples provided
+2026-04-04 14:23:01.799 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.800 | INFO    |   Unique output params  : 0
+2026-04-04 14:23:01.800 | INFO    |   Unique input params   : 0
+2026-04-04 14:23:01.800 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.800 | INFO    | ================================================================================
+2026-04-04 14:23:01.803 | INFO    | ================================================================================
+2026-04-04 14:23:01.804 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.804 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.804 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.804 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.805 | INFO    |   History store provided : False
+2026-04-04 14:23:01.806 | INFO    |   No training examples provided
+2026-04-04 14:23:01.808 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.808 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.808 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.808 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.808 | INFO    | ================================================================================
+2026-04-04 14:23:01.811 | INFO    | ================================================================================
+2026-04-04 14:23:01.811 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.811 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.812 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.812 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.813 | INFO    |   History store provided : False
+2026-04-04 14:23:01.813 | INFO    |   No training examples provided
+2026-04-04 14:23:01.814 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.814 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.814 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.814 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.814 | INFO    | ================================================================================
+2026-04-04 14:23:01.817 | INFO    | ================================================================================
+2026-04-04 14:23:01.817 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.817 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.818 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.818 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.819 | INFO    |   History store provided : False
+2026-04-04 14:23:01.819 | INFO    |   No training examples provided
+2026-04-04 14:23:01.820 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.820 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.820 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.820 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.820 | INFO    | ================================================================================
+2026-04-04 14:23:01.825 | INFO    | ================================================================================
+2026-04-04 14:23:01.825 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.825 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.825 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.825 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.826 | INFO    |   History store provided : False
+2026-04-04 14:23:01.826 | INFO    |   No training examples provided
+2026-04-04 14:23:01.827 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.827 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.827 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.827 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.827 | INFO    | ================================================================================
+2026-04-04 14:23:01.832 | INFO    | ================================================================================
+2026-04-04 14:23:01.832 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.832 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.832 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.832 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.833 | INFO    |   History store provided : False
+2026-04-04 14:23:01.833 | INFO    |   No training examples provided
+2026-04-04 14:23:01.835 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.835 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.835 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.835 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.835 | INFO    | ================================================================================
+2026-04-04 14:23:01.836 | INFO    | ================================================================================
+2026-04-04 14:23:01.836 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.837 | INFO    |   Total services loaded : 7
+2026-04-04 14:23:01.837 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.837 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.838 | INFO    |   History store provided : False
+2026-04-04 14:23:01.838 | INFO    |   No training examples provided
+2026-04-04 14:23:01.840 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.840 | INFO    |   Unique output params  : 5
+2026-04-04 14:23:01.840 | INFO    |   Unique input params   : 4
+2026-04-04 14:23:01.840 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.840 | INFO    | ================================================================================
+2026-04-04 14:23:01.845 | INFO    | ================================================================================
+2026-04-04 14:23:01.845 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.845 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.845 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.845 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.846 | INFO    |   History store provided : False
+2026-04-04 14:23:01.846 | INFO    |   No training examples provided
+2026-04-04 14:23:01.847 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.847 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.847 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.847 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.847 | INFO    | ================================================================================
+2026-04-04 14:23:01.851 | INFO    | ================================================================================
+2026-04-04 14:23:01.851 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.851 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.851 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.851 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.852 | INFO    |   History store provided : False
+2026-04-04 14:23:01.853 | INFO    |   No training examples provided
+2026-04-04 14:23:01.854 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.854 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.854 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.854 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.854 | INFO    | ================================================================================
+2026-04-04 14:23:01.859 | INFO    | ================================================================================
+2026-04-04 14:23:01.859 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.860 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.860 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.860 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.860 | INFO    |   History store provided : False
+2026-04-04 14:23:01.861 | INFO    |   No training examples provided
+2026-04-04 14:23:01.861 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.862 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.862 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.862 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.862 | INFO    | ================================================================================
+2026-04-04 14:23:01.863 | INFO    | ================================================================================
+2026-04-04 14:23:01.863 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.863 | INFO    |   Total services loaded : 1
+2026-04-04 14:23:01.863 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.864 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.864 | INFO    |   History store provided : False
+2026-04-04 14:23:01.865 | INFO    |   No training examples provided
+2026-04-04 14:23:01.866 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.866 | INFO    |   Unique output params  : 1
+2026-04-04 14:23:01.866 | INFO    |   Unique input params   : 1
+2026-04-04 14:23:01.866 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.866 | INFO    | ================================================================================
+2026-04-04 14:23:01.869 | INFO    | ================================================================================
+2026-04-04 14:23:01.869 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.870 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.870 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.870 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.871 | INFO    |   History store provided : False
+2026-04-04 14:23:01.871 | INFO    |   No training examples provided
+2026-04-04 14:23:01.872 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.872 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.872 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.872 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.872 | INFO    | ================================================================================
+2026-04-04 14:23:01.875 | INFO    | ================================================================================
+2026-04-04 14:23:01.876 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.876 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.876 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.876 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.876 | INFO    |   History store provided : False
+2026-04-04 14:23:01.877 | INFO    |   No training examples provided
+2026-04-04 14:23:01.878 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.878 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.878 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.878 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.878 | INFO    | ================================================================================
+2026-04-04 14:23:01.881 | INFO    | ================================================================================
+2026-04-04 14:23:01.882 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.882 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.882 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.882 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.883 | INFO    |   History store provided : False
+2026-04-04 14:23:01.883 | INFO    |   No training examples provided
+2026-04-04 14:23:01.884 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.884 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.884 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.884 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.884 | INFO    | ================================================================================
+2026-04-04 14:23:01.885 | INFO    | ================================================================================
+2026-04-04 14:23:01.885 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.886 | INFO    |   Total services loaded : 1
+2026-04-04 14:23:01.886 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.886 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.887 | INFO    |   History store provided : False
+2026-04-04 14:23:01.887 | INFO    |   No training examples provided
+2026-04-04 14:23:01.888 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.889 | INFO    |   Unique output params  : 1
+2026-04-04 14:23:01.889 | INFO    |   Unique input params   : 1
+2026-04-04 14:23:01.889 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.889 | INFO    | ================================================================================
+2026-04-04 14:23:01.893 | INFO    | ================================================================================
+2026-04-04 14:23:01.895 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.895 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.895 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.895 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.896 | INFO    |   History store provided : False
+2026-04-04 14:23:01.896 | INFO    |   No training examples provided
+2026-04-04 14:23:01.897 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.897 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.897 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.897 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.897 | INFO    | ================================================================================
+2026-04-04 14:23:01.898 | INFO    | ================================================================================
+2026-04-04 14:23:01.898 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.898 | INFO    |   Total services loaded : 1
+2026-04-04 14:23:01.899 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.899 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.900 | INFO    |   History store provided : False
+2026-04-04 14:23:01.900 | INFO    |   No training examples provided
+2026-04-04 14:23:01.901 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.901 | INFO    |   Unique output params  : 1
+2026-04-04 14:23:01.901 | INFO    |   Unique input params   : 1
+2026-04-04 14:23:01.901 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.901 | INFO    | ================================================================================
+2026-04-04 14:23:01.906 | INFO    | ================================================================================
+2026-04-04 14:23:01.907 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.907 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.907 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.907 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.908 | INFO    |   History store provided : False
+2026-04-04 14:23:01.908 | INFO    |   No training examples provided
+2026-04-04 14:23:01.909 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.909 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.909 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.909 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.909 | INFO    | ================================================================================
+2026-04-04 14:23:01.913 | INFO    | ================================================================================
+2026-04-04 14:23:01.913 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.913 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.913 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.913 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.914 | INFO    |   History store provided : False
+2026-04-04 14:23:01.914 | INFO    |   No training examples provided
+2026-04-04 14:23:01.915 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.915 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.916 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.916 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.916 | INFO    | ================================================================================
+2026-04-04 14:23:01.916 | INFO    | ================================================================================
+2026-04-04 14:23:01.917 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.917 | INFO    |   Total services loaded : 1
+2026-04-04 14:23:01.917 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.917 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.918 | INFO    |   History store provided : False
+2026-04-04 14:23:01.918 | INFO    |   No training examples provided
+2026-04-04 14:23:01.919 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.919 | INFO    |   Unique output params  : 1
+2026-04-04 14:23:01.919 | INFO    |   Unique input params   : 1
+2026-04-04 14:23:01.919 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.920 | INFO    | ================================================================================
+2026-04-04 14:23:01.925 | INFO    | ================================================================================
+2026-04-04 14:23:01.925 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.926 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.926 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.926 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.927 | INFO    |   History store provided : False
+2026-04-04 14:23:01.927 | INFO    |   No training examples provided
+2026-04-04 14:23:01.928 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.928 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.928 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.928 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.928 | INFO    | ================================================================================
+2026-04-04 14:23:01.929 | INFO    | ================================================================================
+2026-04-04 14:23:01.929 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.929 | INFO    |   Total services loaded : 1
+2026-04-04 14:23:01.929 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.930 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.931 | INFO    |   History store provided : False
+2026-04-04 14:23:01.931 | INFO    |   No training examples provided
+2026-04-04 14:23:01.931 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.932 | INFO    |   Unique output params  : 1
+2026-04-04 14:23:01.932 | INFO    |   Unique input params   : 1
+2026-04-04 14:23:01.932 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.932 | INFO    | ================================================================================
+2026-04-04 14:23:01.937 | INFO    | ================================================================================
+2026-04-04 14:23:01.937 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.937 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.937 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.937 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.938 | INFO    |   History store provided : False
+2026-04-04 14:23:01.938 | INFO    |   No training examples provided
+2026-04-04 14:23:01.940 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.940 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.940 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.940 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.940 | INFO    | ================================================================================
+2026-04-04 14:23:01.944 | INFO    | ================================================================================
+2026-04-04 14:23:01.944 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.944 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.944 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.944 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.944 | INFO    |   History store provided : False
+2026-04-04 14:23:01.944 | INFO    |   No training examples provided
+2026-04-04 14:23:01.944 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.944 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.947 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.947 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.947 | INFO    | ================================================================================
+2026-04-04 14:23:01.947 | INFO    | ================================================================================
+2026-04-04 14:23:01.947 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.947 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.947 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.947 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.947 | INFO    |   History store provided : False
+2026-04-04 14:23:01.947 | INFO    |   No training examples provided
+2026-04-04 14:23:01.947 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.947 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.947 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.947 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.947 | INFO    | ================================================================================
+2026-04-04 14:23:01.947 | INFO    | ================================================================================
+2026-04-04 14:23:01.947 | INFO    | annotate_all() CALLED
+2026-04-04 14:23:01.947 | INFO    |   service_ids filter : ALL
+2026-04-04 14:23:01.947 | INFO    |   use_llm           : False
+2026-04-04 14:23:01.947 | INFO    |   annotation_types  : ['interaction', 'context', 'policy']
+2026-04-04 14:23:01.954 | INFO    |   services to annotate: 6 / 6 total
+2026-04-04 14:23:01.954 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.954 | INFO    | CLASSIC BULK PATH
+2026-04-04 14:23:01.954 | INFO    |   need_interaction=True  need_context=True  need_policy=True
+2026-04-04 14:23:01.954 | INFO    | PHASE 1: Computing edges across 6 services
+2026-04-04 14:23:01.954 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.954 | INFO    | PHASE 1 COMPLETE  (0.001 s)
+2026-04-04 14:23:01.954 | INFO    |   Collaboration edges : 8  (across 6 services)
+2026-04-04 14:23:01.954 | INFO    |   Substitution edges  : 4  (across 6 services)
+2026-04-04 14:23:01.954 | INFO    |   Dependency edges    : 8  (across 6 services)
+2026-04-04 14:23:01.954 | INFO    |   Can-call edges      : 8  (across 6 services)
+2026-04-04 14:23:01.954 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.954 | INFO    | PHASE 2: Assembling annotations per service
+2026-04-04 14:23:01.954 | DEBUG   | [1/6] Assembling annotation for S1
+2026-04-04 14:23:01.956 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:01.956 | DEBUG   |   Interaction: role=worker  can_call=2  collab_assoc=2  depends_on=0  substitutes=1  collab_history_entries=2
+2026-04-04 14:23:01.956 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:01.956 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:01.956 | DEBUG   |   Associations materialised: 3 total for S1
+2026-04-04 14:23:01.956 | DEBUG   | [2/6] Assembling annotation for S2
+2026-04-04 14:23:01.956 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:01.956 | DEBUG   |   Interaction: role=worker  can_call=2  collab_assoc=2  depends_on=2  substitutes=1  collab_history_entries=2
+2026-04-04 14:23:01.956 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:01.956 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:01.956 | DEBUG   |   Associations materialised: 3 total for S2
+2026-04-04 14:23:01.957 | DEBUG   | [3/6] Assembling annotation for S3
+2026-04-04 14:23:01.957 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:01.957 | DEBUG   |   Interaction: role=worker  can_call=0  collab_assoc=0  depends_on=2  substitutes=0  collab_history_entries=0
+2026-04-04 14:23:01.957 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:01.957 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:01.957 | DEBUG   |   Associations materialised: 0 total for S3
+2026-04-04 14:23:01.957 | DEBUG   | [4/6] Assembling annotation for S4
+2026-04-04 14:23:01.957 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:01.957 | DEBUG   |   Interaction: role=worker  can_call=2  collab_assoc=2  depends_on=0  substitutes=1  collab_history_entries=2
+2026-04-04 14:23:01.957 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:01.957 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:01.958 | DEBUG   |   Associations materialised: 3 total for S4
+2026-04-04 14:23:01.958 | DEBUG   | [5/6] Assembling annotation for S5
+2026-04-04 14:23:01.958 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:01.958 | DEBUG   |   Interaction: role=aggregator  can_call=0  collab_assoc=0  depends_on=4  substitutes=0  collab_history_entries=0
+2026-04-04 14:23:01.958 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:01.958 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:01.958 | DEBUG   |   Associations materialised: 0 total for S5
+2026-04-04 14:23:01.958 | DEBUG   | [6/6] Assembling annotation for S6
+2026-04-04 14:23:01.958 | DEBUG   |   Social node: trust=0.6550  reputation=0.4200  cooperativeness=0.6500  QoS(rel=40.0 avl=90.0 suc=85.0 cmp=50.0 rt=50.0)
+2026-04-04 14:23:01.958 | DEBUG   |   Interaction: role=worker  can_call=2  collab_assoc=2  depends_on=0  substitutes=1  collab_history_entries=2
+2026-04-04 14:23:01.958 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:01.958 | DEBUG   |   Policy: gdpr=False  security=low  retention=30d  encryption=False  classification=public  standards=[]
+2026-04-04 14:23:01.958 | DEBUG   |   Associations materialised: 3 total for S6
+2026-04-04 14:23:01.958 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.959 | INFO    | PHASE 2 COMPLETE  (0.004 s)
+2026-04-04 14:23:01.959 | INFO    | ANNOTATION FINISHED  total_time=0.005 s  services_annotated=6
+2026-04-04 14:23:01.959 | INFO    | ================================================================================
+2026-04-04 14:23:01.963 | INFO    | ================================================================================
+2026-04-04 14:23:01.963 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.964 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.964 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.964 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.965 | INFO    |   History store provided : False
+2026-04-04 14:23:01.965 | INFO    |   No training examples provided
+2026-04-04 14:23:01.966 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.966 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.966 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.966 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.966 | INFO    | ================================================================================
+2026-04-04 14:23:01.966 | INFO    | ================================================================================
+2026-04-04 14:23:01.966 | INFO    | annotate_all() CALLED
+2026-04-04 14:23:01.966 | INFO    |   service_ids filter : ['S1']
+2026-04-04 14:23:01.966 | INFO    |   use_llm           : False
+2026-04-04 14:23:01.966 | INFO    |   annotation_types  : ['interaction']
+2026-04-04 14:23:01.967 | INFO    |   services to annotate: 1 / 6 total
+2026-04-04 14:23:01.967 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.967 | INFO    | CLASSIC BULK PATH
+2026-04-04 14:23:01.967 | INFO    |   need_interaction=True  need_context=False  need_policy=False
+2026-04-04 14:23:01.967 | INFO    | PHASE 1: Computing edges across 1 services
+2026-04-04 14:23:01.967 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.967 | INFO    | PHASE 1 COMPLETE  (0.000 s)
+2026-04-04 14:23:01.967 | INFO    |   Collaboration edges : 2  (across 1 services)
+2026-04-04 14:23:01.967 | INFO    |   Substitution edges  : 1  (across 1 services)
+2026-04-04 14:23:01.967 | INFO    |   Dependency edges    : 0  (across 1 services)
+2026-04-04 14:23:01.967 | INFO    |   Can-call edges      : 2  (across 1 services)
+2026-04-04 14:23:01.967 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.967 | INFO    | PHASE 2: Assembling annotations per service
+2026-04-04 14:23:01.967 | DEBUG   | [1/1] Assembling annotation for S1
+2026-04-04 14:23:01.967 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:01.968 | DEBUG   |   Interaction: role=worker  can_call=2  collab_assoc=2  depends_on=0  substitutes=1  collab_history_entries=2
+2026-04-04 14:23:01.968 | DEBUG   |   Associations materialised: 3 total for S1
+2026-04-04 14:23:01.968 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.968 | INFO    | PHASE 2 COMPLETE  (0.001 s)
+2026-04-04 14:23:01.968 | INFO    | ANNOTATION FINISHED  total_time=0.001 s  services_annotated=1
+2026-04-04 14:23:01.968 | INFO    | ================================================================================
+2026-04-04 14:23:01.973 | INFO    | ================================================================================
+2026-04-04 14:23:01.973 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.973 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.973 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.973 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.974 | INFO    |   History store provided : False
+2026-04-04 14:23:01.975 | INFO    |   No training examples provided
+2026-04-04 14:23:01.976 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.976 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.976 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.976 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.976 | INFO    | ================================================================================
+2026-04-04 14:23:01.976 | INFO    | ================================================================================
+2026-04-04 14:23:01.977 | INFO    | annotate_all() CALLED
+2026-04-04 14:23:01.977 | INFO    |   service_ids filter : ['S1', 'S2']
+2026-04-04 14:23:01.977 | INFO    |   use_llm           : False
+2026-04-04 14:23:01.977 | INFO    |   annotation_types  : ['interaction', 'context', 'policy']
+2026-04-04 14:23:01.977 | INFO    |   services to annotate: 2 / 6 total
+2026-04-04 14:23:01.977 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.977 | INFO    | CLASSIC BULK PATH
+2026-04-04 14:23:01.977 | INFO    |   need_interaction=True  need_context=True  need_policy=True
+2026-04-04 14:23:01.978 | INFO    | PHASE 1: Computing edges across 2 services
+2026-04-04 14:23:01.978 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.978 | INFO    | PHASE 1 COMPLETE  (0.001 s)
+2026-04-04 14:23:01.978 | INFO    |   Collaboration edges : 4  (across 2 services)
+2026-04-04 14:23:01.978 | INFO    |   Substitution edges  : 2  (across 2 services)
+2026-04-04 14:23:01.978 | INFO    |   Dependency edges    : 2  (across 2 services)
+2026-04-04 14:23:01.978 | INFO    |   Can-call edges      : 4  (across 2 services)
+2026-04-04 14:23:01.978 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.979 | INFO    | PHASE 2: Assembling annotations per service
+2026-04-04 14:23:01.979 | DEBUG   | [1/2] Assembling annotation for S1
+2026-04-04 14:23:01.979 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:01.979 | DEBUG   |   Interaction: role=worker  can_call=2  collab_assoc=2  depends_on=0  substitutes=1  collab_history_entries=2
+2026-04-04 14:23:01.979 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:01.979 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:01.979 | DEBUG   |   Associations materialised: 3 total for S1
+2026-04-04 14:23:01.979 | DEBUG   | [2/2] Assembling annotation for S2
+2026-04-04 14:23:01.980 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:01.980 | DEBUG   |   Interaction: role=worker  can_call=2  collab_assoc=2  depends_on=2  substitutes=1  collab_history_entries=2
+2026-04-04 14:23:01.980 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:01.980 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:01.980 | DEBUG   |   Associations materialised: 3 total for S2
+2026-04-04 14:23:01.980 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.980 | INFO    | PHASE 2 COMPLETE  (0.003 s)
+2026-04-04 14:23:01.980 | INFO    | ANNOTATION FINISHED  total_time=0.003 s  services_annotated=2
+2026-04-04 14:23:01.981 | INFO    | ================================================================================
+2026-04-04 14:23:01.984 | INFO    | ================================================================================
+2026-04-04 14:23:01.984 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:01.984 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:01.985 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:01.985 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:01.986 | INFO    |   History store provided : False
+2026-04-04 14:23:01.986 | INFO    |   No training examples provided
+2026-04-04 14:23:01.987 | INFO    |   Has training data     : True
+2026-04-04 14:23:01.987 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:01.987 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:01.987 | INFO    |   Indexes built successfully
+2026-04-04 14:23:01.988 | INFO    | ================================================================================
+2026-04-04 14:23:01.988 | INFO    | ================================================================================
+2026-04-04 14:23:01.988 | INFO    | annotate_all() CALLED
+2026-04-04 14:23:01.988 | INFO    |   service_ids filter : ALL
+2026-04-04 14:23:01.988 | INFO    |   use_llm           : False
+2026-04-04 14:23:01.988 | INFO    |   annotation_types  : ['interaction', 'context', 'policy']
+2026-04-04 14:23:01.988 | INFO    |   services to annotate: 6 / 6 total
+2026-04-04 14:23:01.988 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.988 | INFO    | CLASSIC BULK PATH
+2026-04-04 14:23:01.988 | INFO    |   need_interaction=True  need_context=True  need_policy=True
+2026-04-04 14:23:01.988 | INFO    | PHASE 1: Computing edges across 6 services
+2026-04-04 14:23:01.989 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.989 | INFO    | PHASE 1 COMPLETE  (0.001 s)
+2026-04-04 14:23:01.989 | INFO    |   Collaboration edges : 8  (across 6 services)
+2026-04-04 14:23:01.989 | INFO    |   Substitution edges  : 4  (across 6 services)
+2026-04-04 14:23:01.989 | INFO    |   Dependency edges    : 8  (across 6 services)
+2026-04-04 14:23:01.989 | INFO    |   Can-call edges      : 8  (across 6 services)
+2026-04-04 14:23:01.989 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.989 | INFO    | PHASE 2: Assembling annotations per service
+2026-04-04 14:23:01.990 | DEBUG   | [1/6] Assembling annotation for S1
+2026-04-04 14:23:01.990 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:01.990 | DEBUG   |   Interaction: role=worker  can_call=2  collab_assoc=2  depends_on=0  substitutes=1  collab_history_entries=2
+2026-04-04 14:23:01.990 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:01.990 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:01.990 | DEBUG   |   Associations materialised: 3 total for S1
+2026-04-04 14:23:01.990 | DEBUG   | [2/6] Assembling annotation for S2
+2026-04-04 14:23:01.990 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:01.991 | DEBUG   |   Interaction: role=worker  can_call=2  collab_assoc=2  depends_on=2  substitutes=1  collab_history_entries=2
+2026-04-04 14:23:01.991 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:01.991 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:01.991 | DEBUG   |   Associations materialised: 3 total for S2
+2026-04-04 14:23:01.991 | DEBUG   | [3/6] Assembling annotation for S3
+2026-04-04 14:23:01.991 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:01.991 | DEBUG   |   Interaction: role=worker  can_call=0  collab_assoc=0  depends_on=2  substitutes=0  collab_history_entries=0
+2026-04-04 14:23:01.991 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:01.991 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:01.991 | DEBUG   |   Associations materialised: 0 total for S3
+2026-04-04 14:23:01.991 | DEBUG   | [4/6] Assembling annotation for S4
+2026-04-04 14:23:01.992 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:01.992 | DEBUG   |   Interaction: role=worker  can_call=2  collab_assoc=2  depends_on=0  substitutes=1  collab_history_entries=2
+2026-04-04 14:23:01.992 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:01.992 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:01.992 | DEBUG   |   Associations materialised: 3 total for S4
+2026-04-04 14:23:01.992 | DEBUG   | [5/6] Assembling annotation for S5
+2026-04-04 14:23:01.992 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:01.992 | DEBUG   |   Interaction: role=aggregator  can_call=0  collab_assoc=0  depends_on=4  substitutes=0  collab_history_entries=0
+2026-04-04 14:23:01.993 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:01.993 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:01.993 | DEBUG   |   Associations materialised: 0 total for S5
+2026-04-04 14:23:01.993 | DEBUG   | [6/6] Assembling annotation for S6
+2026-04-04 14:23:01.993 | DEBUG   |   Social node: trust=0.6550  reputation=0.4200  cooperativeness=0.6500  QoS(rel=40.0 avl=90.0 suc=85.0 cmp=50.0 rt=50.0)
+2026-04-04 14:23:01.993 | DEBUG   |   Interaction: role=worker  can_call=2  collab_assoc=2  depends_on=0  substitutes=1  collab_history_entries=2
+2026-04-04 14:23:01.993 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:01.993 | DEBUG   |   Policy: gdpr=False  security=low  retention=30d  encryption=False  classification=public  standards=[]
+2026-04-04 14:23:01.993 | DEBUG   |   Associations materialised: 3 total for S6
+2026-04-04 14:23:01.995 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:01.995 | INFO    | PHASE 2 COMPLETE  (0.005 s)
+2026-04-04 14:23:01.995 | INFO    | ANNOTATION FINISHED  total_time=0.006 s  services_annotated=6
+2026-04-04 14:23:01.995 | INFO    | ================================================================================
+2026-04-04 14:23:02.000 | INFO    | ================================================================================
+2026-04-04 14:23:02.000 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 14:23:02.000 | INFO    |   Total services loaded : 6
+2026-04-04 14:23:02.000 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 14:23:02.000 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 14:23:02.001 | INFO    |   History store provided : False
+2026-04-04 14:23:02.001 | INFO    |   No training examples provided
+2026-04-04 14:23:02.002 | INFO    |   Has training data     : True
+2026-04-04 14:23:02.002 | INFO    |   Unique output params  : 4
+2026-04-04 14:23:02.002 | INFO    |   Unique input params   : 3
+2026-04-04 14:23:02.002 | INFO    |   Indexes built successfully
+2026-04-04 14:23:02.002 | INFO    | ================================================================================
+2026-04-04 14:23:02.003 | INFO    | ================================================================================
+2026-04-04 14:23:02.003 | INFO    | annotate_all() CALLED
+2026-04-04 14:23:02.003 | INFO    |   service_ids filter : ALL
+2026-04-04 14:23:02.003 | INFO    |   use_llm           : False
+2026-04-04 14:23:02.003 | INFO    |   annotation_types  : ['interaction', 'context', 'policy']
+2026-04-04 14:23:02.003 | INFO    |   services to annotate: 6 / 6 total
+2026-04-04 14:23:02.003 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:02.003 | INFO    | CLASSIC BULK PATH
+2026-04-04 14:23:02.003 | INFO    |   need_interaction=True  need_context=True  need_policy=True
+2026-04-04 14:23:02.003 | INFO    | PHASE 1: Computing edges across 6 services
+2026-04-04 14:23:02.003 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:02.003 | INFO    | PHASE 1 COMPLETE  (0.000 s)
+2026-04-04 14:23:02.004 | INFO    |   Collaboration edges : 8  (across 6 services)
+2026-04-04 14:23:02.004 | INFO    |   Substitution edges  : 4  (across 6 services)
+2026-04-04 14:23:02.004 | INFO    |   Dependency edges    : 8  (across 6 services)
+2026-04-04 14:23:02.004 | INFO    |   Can-call edges      : 8  (across 6 services)
+2026-04-04 14:23:02.004 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:02.004 | INFO    | PHASE 2: Assembling annotations per service
+2026-04-04 14:23:02.004 | DEBUG   | [1/6] Assembling annotation for S1
+2026-04-04 14:23:02.004 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:02.005 | DEBUG   |   Interaction: role=worker  can_call=2  collab_assoc=2  depends_on=0  substitutes=1  collab_history_entries=2
+2026-04-04 14:23:02.005 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:02.005 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:02.005 | DEBUG   |   Associations materialised: 3 total for S1
+2026-04-04 14:23:02.005 | DEBUG   | [2/6] Assembling annotation for S2
+2026-04-04 14:23:02.005 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:02.005 | DEBUG   |   Interaction: role=worker  can_call=2  collab_assoc=2  depends_on=2  substitutes=1  collab_history_entries=2
+2026-04-04 14:23:02.006 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:02.006 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:02.006 | DEBUG   |   Associations materialised: 3 total for S2
+2026-04-04 14:23:02.006 | DEBUG   | [3/6] Assembling annotation for S3
+2026-04-04 14:23:02.006 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:02.006 | DEBUG   |   Interaction: role=worker  can_call=0  collab_assoc=0  depends_on=2  substitutes=0  collab_history_entries=0
+2026-04-04 14:23:02.006 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:02.006 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:02.006 | DEBUG   |   Associations materialised: 0 total for S3
+2026-04-04 14:23:02.006 | DEBUG   | [4/6] Assembling annotation for S4
+2026-04-04 14:23:02.006 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:02.007 | DEBUG   |   Interaction: role=worker  can_call=2  collab_assoc=2  depends_on=0  substitutes=1  collab_history_entries=2
+2026-04-04 14:23:02.007 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:02.007 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:02.007 | DEBUG   |   Associations materialised: 3 total for S4
+2026-04-04 14:23:02.007 | DEBUG   | [5/6] Assembling annotation for S5
+2026-04-04 14:23:02.007 | DEBUG   |   Social node: trust=0.8550  reputation=0.6150  cooperativeness=0.9000  QoS(rel=90.0 avl=90.0 suc=85.0 cmp=75.0 rt=50.0)
+2026-04-04 14:23:02.007 | DEBUG   |   Interaction: role=aggregator  can_call=0  collab_assoc=0  depends_on=4  substitutes=0  collab_history_entries=0
+2026-04-04 14:23:02.007 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:02.007 | DEBUG   |   Policy: gdpr=True  security=medium  retention=90d  encryption=False  classification=internal  standards=['ISO27001']
+2026-04-04 14:23:02.007 | DEBUG   |   Associations materialised: 0 total for S5
+2026-04-04 14:23:02.007 | DEBUG   | [6/6] Assembling annotation for S6
+2026-04-04 14:23:02.007 | DEBUG   |   Social node: trust=0.6550  reputation=0.4200  cooperativeness=0.6500  QoS(rel=40.0 avl=90.0 suc=85.0 cmp=50.0 rt=50.0)
+2026-04-04 14:23:02.007 | DEBUG   |   Interaction: role=worker  can_call=2  collab_assoc=2  depends_on=0  substitutes=1  collab_history_entries=2
+2026-04-04 14:23:02.007 | DEBUG   |   Context: aware=False  loc_sensitive=False  time_critical=medium  interactions=0  adaptation_score=0.000  env_reqs=[]  locations=0  networks=0  devices=0
+2026-04-04 14:23:02.007 | DEBUG   |   Policy: gdpr=False  security=low  retention=30d  encryption=False  classification=public  standards=[]
+2026-04-04 14:23:02.007 | DEBUG   |   Associations materialised: 3 total for S6
+2026-04-04 14:23:02.007 | INFO    | ------------------------------------------------------------
+2026-04-04 14:23:02.007 | INFO    | PHASE 2 COMPLETE  (0.004 s)
+2026-04-04 14:23:02.008 | INFO    | ANNOTATION FINISHED  total_time=0.005 s  services_annotated=6
+2026-04-04 14:23:02.008 | INFO    | ================================================================================

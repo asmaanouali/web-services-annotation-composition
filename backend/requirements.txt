@@ -6,6 +6,7 @@ numpy==1.26.2
 xmltodict==0.13.0
 networkx==3.2.1
 python-dateutil==2.8.2
+gunicorn>=21.2.0
 
 # === Phase 1 SFT (QSRT) — Real LoRA Fine-Tuning ===
 # Install these to enable actual gradient-based training.

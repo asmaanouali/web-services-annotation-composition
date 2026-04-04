@@ -17,7 +17,7 @@ def get_current_context():
     return jsonify(exec_ctx.to_dict())
 
 
-@context_bp.route("/api/context/score/<service_id>", methods=["POST"])
+@context_bp.route("/api/context/score/<service_id>", methods=["GET"])
 @safe_route
 def get_context_score(service_id):
     """Compute context compatibility score for a service vs current context."""

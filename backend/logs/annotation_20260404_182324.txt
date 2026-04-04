@@ -1,0 +1,204 @@
+2026-04-04 18:23:24.798 | INFO    | ================================================================================
+2026-04-04 18:23:24.798 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.798 | INFO    |   Total services loaded : 6
+2026-04-04 18:23:24.800 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.800 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.802 | INFO    |   History store provided : False
+2026-04-04 18:23:24.804 | INFO    |   No training examples provided
+2026-04-04 18:23:24.804 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.816 | INFO    |   Unique output params  : 4
+2026-04-04 18:23:24.816 | INFO    |   Unique input params   : 3
+2026-04-04 18:23:24.817 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.817 | INFO    | ================================================================================
+2026-04-04 18:23:24.826 | INFO    | ================================================================================
+2026-04-04 18:23:24.826 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.826 | INFO    |   Total services loaded : 0
+2026-04-04 18:23:24.826 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.826 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.828 | INFO    |   History store provided : False
+2026-04-04 18:23:24.828 | INFO    |   No training examples provided
+2026-04-04 18:23:24.828 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.828 | INFO    |   Unique output params  : 0
+2026-04-04 18:23:24.828 | INFO    |   Unique input params   : 0
+2026-04-04 18:23:24.828 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.828 | INFO    | ================================================================================
+2026-04-04 18:23:24.833 | INFO    | ================================================================================
+2026-04-04 18:23:24.833 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.839 | INFO    |   Total services loaded : 6
+2026-04-04 18:23:24.839 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.839 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.839 | INFO    |   History store provided : False
+2026-04-04 18:23:24.839 | INFO    |   No training examples provided
+2026-04-04 18:23:24.843 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.843 | INFO    |   Unique output params  : 4
+2026-04-04 18:23:24.843 | INFO    |   Unique input params   : 3
+2026-04-04 18:23:24.843 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.843 | INFO    | ================================================================================
+2026-04-04 18:23:24.848 | INFO    | ================================================================================
+2026-04-04 18:23:24.853 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.853 | INFO    |   Total services loaded : 6
+2026-04-04 18:23:24.853 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.853 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.853 | INFO    |   History store provided : False
+2026-04-04 18:23:24.853 | INFO    |   No training examples provided
+2026-04-04 18:23:24.856 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.856 | INFO    |   Unique output params  : 4
+2026-04-04 18:23:24.856 | INFO    |   Unique input params   : 3
+2026-04-04 18:23:24.856 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.856 | INFO    | ================================================================================
+2026-04-04 18:23:24.862 | INFO    | ================================================================================
+2026-04-04 18:23:24.864 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.864 | INFO    |   Total services loaded : 6
+2026-04-04 18:23:24.864 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.864 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.866 | INFO    |   History store provided : False
+2026-04-04 18:23:24.866 | INFO    |   No training examples provided
+2026-04-04 18:23:24.866 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.866 | INFO    |   Unique output params  : 4
+2026-04-04 18:23:24.866 | INFO    |   Unique input params   : 3
+2026-04-04 18:23:24.866 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.866 | INFO    | ================================================================================
+2026-04-04 18:23:24.869 | INFO    | ================================================================================
+2026-04-04 18:23:24.869 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.869 | INFO    |   Total services loaded : 6
+2026-04-04 18:23:24.869 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.869 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.877 | INFO    |   History store provided : False
+2026-04-04 18:23:24.877 | INFO    |   No training examples provided
+2026-04-04 18:23:24.877 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.878 | INFO    |   Unique output params  : 4
+2026-04-04 18:23:24.878 | INFO    |   Unique input params   : 3
+2026-04-04 18:23:24.879 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.879 | INFO    | ================================================================================
+2026-04-04 18:23:24.885 | INFO    | ================================================================================
+2026-04-04 18:23:24.886 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.886 | INFO    |   Total services loaded : 6
+2026-04-04 18:23:24.886 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.886 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.889 | INFO    |   History store provided : False
+2026-04-04 18:23:24.891 | INFO    |   No training examples provided
+2026-04-04 18:23:24.891 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.891 | INFO    |   Unique output params  : 4
+2026-04-04 18:23:24.891 | INFO    |   Unique input params   : 3
+2026-04-04 18:23:24.891 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.891 | INFO    | ================================================================================
+2026-04-04 18:23:24.891 | INFO    | ================================================================================
+2026-04-04 18:23:24.895 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.895 | INFO    |   Total services loaded : 7
+2026-04-04 18:23:24.895 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.895 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.895 | INFO    |   History store provided : False
+2026-04-04 18:23:24.895 | INFO    |   No training examples provided
+2026-04-04 18:23:24.895 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.895 | INFO    |   Unique output params  : 5
+2026-04-04 18:23:24.895 | INFO    |   Unique input params   : 4
+2026-04-04 18:23:24.895 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.895 | INFO    | ================================================================================
+2026-04-04 18:23:24.903 | INFO    | ================================================================================
+2026-04-04 18:23:24.903 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.903 | INFO    |   Total services loaded : 6
+2026-04-04 18:23:24.903 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.903 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.903 | INFO    |   History store provided : False
+2026-04-04 18:23:24.903 | INFO    |   No training examples provided
+2026-04-04 18:23:24.903 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.903 | INFO    |   Unique output params  : 4
+2026-04-04 18:23:24.903 | INFO    |   Unique input params   : 3
+2026-04-04 18:23:24.903 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.903 | INFO    | ================================================================================
+2026-04-04 18:23:24.913 | INFO    | ================================================================================
+2026-04-04 18:23:24.913 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.913 | INFO    |   Total services loaded : 6
+2026-04-04 18:23:24.913 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.913 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.913 | INFO    |   History store provided : False
+2026-04-04 18:23:24.913 | INFO    |   No training examples provided
+2026-04-04 18:23:24.913 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.913 | INFO    |   Unique output params  : 4
+2026-04-04 18:23:24.913 | INFO    |   Unique input params   : 3
+2026-04-04 18:23:24.913 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.913 | INFO    | ================================================================================
+2026-04-04 18:23:24.931 | INFO    | ================================================================================
+2026-04-04 18:23:24.931 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.931 | INFO    |   Total services loaded : 6
+2026-04-04 18:23:24.931 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.931 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.931 | INFO    |   History store provided : False
+2026-04-04 18:23:24.931 | INFO    |   No training examples provided
+2026-04-04 18:23:24.931 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.931 | INFO    |   Unique output params  : 4
+2026-04-04 18:23:24.931 | INFO    |   Unique input params   : 3
+2026-04-04 18:23:24.931 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.931 | INFO    | ================================================================================
+2026-04-04 18:23:24.931 | INFO    | ================================================================================
+2026-04-04 18:23:24.931 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.931 | INFO    |   Total services loaded : 1
+2026-04-04 18:23:24.931 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.931 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.943 | INFO    |   History store provided : False
+2026-04-04 18:23:24.943 | INFO    |   No training examples provided
+2026-04-04 18:23:24.943 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.943 | INFO    |   Unique output params  : 1
+2026-04-04 18:23:24.945 | INFO    |   Unique input params   : 1
+2026-04-04 18:23:24.945 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.945 | INFO    | ================================================================================
+2026-04-04 18:23:24.951 | INFO    | ================================================================================
+2026-04-04 18:23:24.951 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.951 | INFO    |   Total services loaded : 6
+2026-04-04 18:23:24.951 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.953 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.953 | INFO    |   History store provided : False
+2026-04-04 18:23:24.953 | INFO    |   No training examples provided
+2026-04-04 18:23:24.953 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.955 | INFO    |   Unique output params  : 4
+2026-04-04 18:23:24.955 | INFO    |   Unique input params   : 3
+2026-04-04 18:23:24.955 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.955 | INFO    | ================================================================================
+2026-04-04 18:23:24.961 | INFO    | ================================================================================
+2026-04-04 18:23:24.961 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.961 | INFO    |   Total services loaded : 6
+2026-04-04 18:23:24.961 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.966 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.967 | INFO    |   History store provided : False
+2026-04-04 18:23:24.967 | INFO    |   No training examples provided
+2026-04-04 18:23:24.967 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.967 | INFO    |   Unique output params  : 4
+2026-04-04 18:23:24.967 | INFO    |   Unique input params   : 3
+2026-04-04 18:23:24.969 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.969 | INFO    | ================================================================================
+2026-04-04 18:23:24.979 | INFO    | ================================================================================
+2026-04-04 18:23:24.979 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.979 | INFO    |   Total services loaded : 6
+2026-04-04 18:23:24.979 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.979 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.979 | INFO    |   History store provided : False
+2026-04-04 18:23:24.979 | INFO    |   No training examples provided
+2026-04-04 18:23:24.979 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.979 | INFO    |   Unique output params  : 4
+2026-04-04 18:23:24.979 | INFO    |   Unique input params   : 3
+2026-04-04 18:23:24.979 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.979 | INFO    | ================================================================================
+2026-04-04 18:23:24.984 | INFO    | ================================================================================
+2026-04-04 18:23:24.984 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.984 | INFO    |   Total services loaded : 1
+2026-04-04 18:23:24.984 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.984 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.986 | INFO    |   History store provided : False
+2026-04-04 18:23:24.986 | INFO    |   No training examples provided
+2026-04-04 18:23:24.986 | INFO    |   Has training data     : True
+2026-04-04 18:23:24.986 | INFO    |   Unique output params  : 1
+2026-04-04 18:23:24.986 | INFO    |   Unique input params   : 1
+2026-04-04 18:23:24.986 | INFO    |   Indexes built successfully
+2026-04-04 18:23:24.986 | INFO    | ================================================================================
+2026-04-04 18:23:24.995 | INFO    | ================================================================================
+2026-04-04 18:23:24.995 | INFO    | ServiceAnnotator INITIALISED
+2026-04-04 18:23:24.995 | INFO    |   Total services loaded : 6
+2026-04-04 18:23:24.995 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-04 18:23:24.995 | INFO    |   Model                 : llama3.2:3b
+2026-04-04 18:23:24.995 | INFO    |   History store provided : False
+2026-04-04 18:23:24.995 | INFO    |   No training examples provided
+2026-04-04 18:23:25.000 | INFO    |   Has training data     : True
+2026-04-04 18:23:25.000 | INFO    |   Unique output params  : 4
+2026-04-04 18:23:25.000 | INFO    |   Unique input params   : 3
+2026-04-04 18:23:25.000 | INFO    |   Indexes built successfully
+2026-04-04 18:23:25.000 | INFO    | ================================================================================

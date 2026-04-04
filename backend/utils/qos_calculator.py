@@ -79,8 +79,8 @@ def calculate_utility(qos_achieved, qos_constraints, qos_checks):
     # Instead of: utility = quality_score * satisfaction_ratio - (1 - satisfaction_ratio) * 100
     # We use a weighted combination
     
-    # Base utility = weighted average of quality + conformity
-    base_utility = (quality_score * 0.4) + (conformity_score * 0.6)
+    # Base utility = balanced weighted average of quality + conformity
+    base_utility = (quality_score * 0.5) + (conformity_score * 0.5)
     
     # Bonus for complete satisfaction (all constraints met)
     if satisfaction_ratio == 1.0:
@@ -294,7 +294,7 @@ def calculate_utility_detailed(qos_achieved, qos_constraints, qos_checks):
     else:
         penalty_factor = 1.0
     
-    base_utility = (quality_score * 0.4) + (conformity_score * 0.6)
+    base_utility = (quality_score * 0.5) + (conformity_score * 0.5)
     utility = (base_utility * penalty_factor) + bonus
     utility = max(utility, 0)
     

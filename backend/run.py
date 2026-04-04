@@ -5,13 +5,9 @@ Optimised Flask dev-server runner with generous upload and timeout settings.
 from app import app
 from config import FLASK_HOST, FLASK_PORT, FLASK_DEBUG
 from werkzeug.serving import WSGIRequestHandler
-import sys
 
 # Use persistent HTTP/1.1 connections
 WSGIRequestHandler.protocol_version = "HTTP/1.1"
-
-# Raise recursion limit for deeply-nested compositions
-sys.setrecursionlimit(10000)
 
 if __name__ == "__main__":
     print("=" * 60)

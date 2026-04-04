@@ -21,7 +21,7 @@ training_bp = Blueprint("training", __name__)
 
 def _ensure_llm_composer():
     if not app_state["llm_composer"]:
-        services = app_state["annotated_services"] or app_state["services"]
+        services = app_state["annotated_services"] if app_state["annotated_services"] else app_state["services"]
         app_state["llm_composer"] = LLMComposer(services)
 
 
@@ -173,7 +173,7 @@ def start_training():
             return jsonify({"error": "No training data available"}), 400
 
         # (Re)create LLM composer with current services
-        services = app_state["annotated_services"] or app_state["services"]
+        services = app_state["annotated_services"] if app_state["annotated_services"] else app_state["services"]
         app_state["llm_composer"] = LLMComposer(services)
 
         # Build training examples from training data
@@ -315,7 +315,11 @@ def start_sft_training():
                 import traceback; traceback.print_exc()
                 with state_lock:
                     app_state["sft_state"]["is_training"] = False
+                    app_state["sft_state"]["is_trained"] = False
                     app_state["sft_state"]["error"] = str(exc)
+                    app_state["sft_state"]["progress"] = {
+                        "step": 0, "total": 0, "loss": 0, "epoch": 0
+                    }
 
         t = threading.Thread(target=_sft_worker, daemon=True)
         app_state["sft_state"]["thread"] = t
@@ -410,7 +414,11 @@ def start_reward_training():
                 import traceback; traceback.print_exc()
                 with state_lock:
                     app_state["reward_state"]["is_training"] = False
+                    app_state["reward_state"]["is_trained"] = False
                     app_state["reward_state"]["error"] = str(exc)
+                    app_state["reward_state"]["progress"] = {
+                        "step": 0, "total": 0, "loss": 0, "epoch": 0
+                    }
 
         t = threading.Thread(target=_reward_worker, daemon=True)
         app_state["reward_state"]["thread"] = t
@@ -567,7 +575,11 @@ def start_rl_training():
                 import traceback; traceback.print_exc()
                 with state_lock:
                     app_state["rl_state"]["is_training"] = False
+                    app_state["rl_state"]["is_trained"] = False
                     app_state["rl_state"]["error"] = str(exc)
+                    app_state["rl_state"]["progress"] = {
+                        "step": 0, "total": 0, "loss": 0, "episode": 0, "mean_reward": 0
+                    }
 
         t = threading.Thread(target=_rl_worker, daemon=True)
         app_state["rl_state"]["thread"] = t

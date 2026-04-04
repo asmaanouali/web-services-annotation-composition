@@ -82,7 +82,7 @@ def compose_classic():
         comp_request.qos_constraints = adapted_constraints
 
         if not app_state["classic_composer"]:
-            services = app_state["annotated_services"] or app_state["services"]
+            services = app_state["annotated_services"] if app_state["annotated_services"] else app_state["services"]
             app_state["classic_composer"] = ClassicComposer(services)
 
         result = app_state["classic_composer"].compose(comp_request, algorithm)
@@ -160,7 +160,7 @@ def compose_llm():
         comp_request.qos_constraints = adapted_constraints
 
         if not app_state["llm_composer"]:
-            services = app_state["annotated_services"] or app_state["services"]
+            services = app_state["annotated_services"] if app_state["annotated_services"] else app_state["services"]
             app_state["llm_composer"] = LLMComposer(
                 services,
                 training_examples=app_state["learning_state"]["training_examples"],
@@ -245,7 +245,7 @@ def llm_chat():
         message = data.get("message", "")
 
         if not app_state["llm_composer"]:
-            services = app_state["annotated_services"] or app_state["services"]
+            services = app_state["annotated_services"] if app_state["annotated_services"] else app_state["services"]
             app_state["llm_composer"] = LLMComposer(services)
 
         response = app_state["llm_composer"].chat(message)
@@ -294,6 +294,14 @@ def compose_compare():
         if not comp_request:
             return jsonify({"error": "Request not found"}), 404
 
+        # Context adaptation (same treatment for both approaches)
+        exec_ctx = ExecutionContext.from_request(request)
+        adapted_constraints = adapt_qos_constraints_for_context(
+            comp_request.qos_constraints, exec_ctx
+        )
+        original_constraints = comp_request.qos_constraints
+        comp_request.qos_constraints = adapted_constraints
+
         results = {}
 
         # Classic algorithms
@@ -331,6 +339,10 @@ def compose_compare():
                 "utility_value": 0, "computation_time": 0,
             }
 
+        # Restore original constraints
+        comp_request.qos_constraints = original_constraints
+
+        results["context_used"] = exec_ctx.to_dict()
         return jsonify(results)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

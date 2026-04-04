@@ -282,7 +282,10 @@ class SFTDatasetBuilder:
         augmented.append(self._to_text(instruction, response))
 
         # Variation 2: reduced candidate set (makes the task harder)
-        if len(original_candidates) > 4:
+        # Ensure at least as many distractors as solution services remain
+        n_solution = sum(1 for sid in solution_ids if sid in original_candidates)
+        min_distractors = max(2, n_solution)
+        if len(original_candidates) > n_solution + min_distractors:
             reduced = {}
             for sid in solution_ids:
                 if sid in original_candidates:
@@ -292,7 +295,7 @@ class SFTDatasetBuilder:
                 if k not in solution_ids
             ]
             random.shuffle(distractors)
-            for k, v in distractors[:2]:
+            for k, v in distractors[:min_distractors]:
                 reduced[k] = v
 
             instruction = self._format_instruction(request_data, reduced)

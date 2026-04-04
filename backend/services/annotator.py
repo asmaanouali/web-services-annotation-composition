@@ -180,7 +180,8 @@ class ServiceAnnotator:
     # ====================================================================
     #  BULK CLASSIC ANNOTATION  (two-phase: edges → assembly)
     # ====================================================================
-    def annotate_all(self, service_ids=None, use_llm=False, annotation_types=None, progress_callback=None):
+    def annotate_all(self, service_ids=None, use_llm=False, annotation_types=None,
+                     progress_callback=None, max_workers=10, batch_size=5, skip_annotated=False):
         if annotation_types is None:
             annotation_types = ['interaction', 'context', 'policy']
 
@@ -202,7 +203,9 @@ class ServiceAnnotator:
 
         if use_llm:
             self.log.info("  Delegating to LLM annotation path")
-            return self._annotate_all_llm(services_to_annotate, annotation_types, progress_callback)
+            return self._annotate_all_llm(services_to_annotate, annotation_types, progress_callback,
+                                          max_workers=max_workers, batch_size=batch_size,
+                                          skip_annotated=skip_annotated)
 
         # ---------- Classic bulk path ----------
         self.log.info("-"*60)
@@ -545,41 +548,244 @@ class ServiceAnnotator:
         return annotated
 
     # ====================================================================
-    #  LLM ANNOTATION  (parallel I/O via ThreadPoolExecutor)
+    #  LLM ANNOTATION  (parallel I/O via ThreadPoolExecutor + batching)
     # ====================================================================
-    def _annotate_all_llm(self, services_to_annotate, annotation_types, progress_callback):
+    def _annotate_all_llm(self, services_to_annotate, annotation_types, progress_callback,
+                          max_workers=10, batch_size=5, skip_annotated=False):
+        # Optionally skip services that already have annotations
+        if skip_annotated:
+            original_count = len(services_to_annotate)
+            services_to_annotate = [
+                s for s in services_to_annotate
+                if not getattr(s, 'annotations', None)
+                or not getattr(s.annotations, 'interaction', None)
+            ]
+            skipped = original_count - len(services_to_annotate)
+            if skipped > 0:
+                self.log.info("  Skipped %d already-annotated services", skipped)
+
         total = len(services_to_annotate)
+        if total == 0:
+            self.log.info("  All services already annotated — nothing to do")
+            return services_to_annotate
+
         annotated = []
-        max_workers = 10  # concurrent Ollama calls
         self.log.info("-"*60)
-        self.log.info("LLM BULK ANNOTATION  services=%d  workers=%d", total, max_workers)
+        self.log.info("LLM BULK ANNOTATION  services=%d  workers=%d  batch_size=%d",
+                       total, max_workers, batch_size)
         self.log.info("  annotation_types: %s", annotation_types)
         t_llm_start = time.perf_counter()
 
-        def _do_one(service):
-            return self.annotate_service(service, use_llm=True, annotation_types=annotation_types)
+        # Split services into batches for fewer LLM calls
+        batches = []
+        for i in range(0, total, batch_size):
+            batches.append(services_to_annotate[i:i + batch_size])
+        self.log.info("  Created %d batches of up to %d services each", len(batches), batch_size)
+
+        def _do_batch(batch):
+            """Annotate a batch of services with a single LLM call."""
+            if len(batch) == 1:
+                return [self.annotate_service(batch[0], use_llm=True, annotation_types=annotation_types)]
+            return self._annotate_batch_llm(batch, annotation_types)
 
         completed = 0
         errors = 0
         with ThreadPoolExecutor(max_workers=max_workers) as pool:
-            future_to_svc = {pool.submit(_do_one, s): s for s in services_to_annotate}
-            for future in as_completed(future_to_svc):
-                svc = future_to_svc[future]
+            future_to_batch = {pool.submit(_do_batch, b): b for b in batches}
+            for future in as_completed(future_to_batch):
+                batch = future_to_batch[future]
                 try:
-                    future.result()
+                    results = future.result()
+                    annotated.extend(results)
                 except Exception as exc:
                     errors += 1
-                    self.log.error("LLM annotation EXCEPTION for %s: %s", svc.id, exc)
-                annotated.append(svc)
-                completed += 1
-                if progress_callback and (completed % 10 == 0 or completed == total):
-                    progress_callback(completed, total, svc.id)
+                    self.log.error("LLM batch annotation EXCEPTION: %s", exc)
+                    # Fallback: annotate each service in the batch individually with classic
+                    for svc in batch:
+                        try:
+                            self.annotate_service(svc, use_llm=False, annotation_types=annotation_types)
+                        except Exception:
+                            pass
+                        annotated.append(svc)
+                completed += len(batch)
+                if progress_callback:
+                    progress_callback(min(completed, total), total, batch[-1].id)
 
         t_llm_end = time.perf_counter()
-        self.log.info("LLM BULK ANNOTATION FINISHED  time=%.3f s  annotated=%d  errors=%d",
-                       t_llm_end - t_llm_start, len(annotated), errors)
+        self.log.info("LLM BULK ANNOTATION FINISHED  time=%.3f s  annotated=%d  errors=%d  batches=%d",
+                       t_llm_end - t_llm_start, len(annotated), errors, len(batches))
         self.log.info("="*80)
         return annotated
+
+    # ====================================================================
+    #  BATCH LLM ANNOTATION — multiple services in one prompt
+    # ====================================================================
+    def _annotate_batch_llm(self, services, annotation_types):
+        """Annotate multiple services in a single LLM call."""
+        self.log.info("  _annotate_batch_llm: %d services", len(services))
+        t0 = time.perf_counter()
+
+        need_interaction = 'interaction' in annotation_types
+        need_context = 'context' in annotation_types
+        need_policy = 'policy' in annotation_types
+
+        # Build a combined prompt for all services in the batch
+        svc_descriptions = []
+        for svc in services:
+            compatible_count = 0
+            svc_outs = self._service_output_sets.get(svc.id, frozenset())
+            for o in svc_outs:
+                compatible_count += len(self._input_index.get(o, set())) - (1 if svc.id in self._input_index.get(o, set()) else 0)
+            svc_descriptions.append(
+                f'  "{svc.id}": {{"inputs": {len(svc.inputs)}, "outputs": {len(svc.outputs)}, '
+                f'"reliability": {svc.qos.reliability}, "availability": {svc.qos.availability}, '
+                f'"response_time": {svc.qos.response_time}, "compliance": {svc.qos.compliance}, '
+                f'"best_practices": {svc.qos.best_practices}, "compatible_services": {compatible_count}}}'
+            )
+
+        svc_block = ',\n'.join(svc_descriptions)
+
+        json_schema_parts = []
+        if need_interaction:
+            json_schema_parts.append('"interaction": {"role": "orchestrator"|"worker"|"aggregator", "collaboration_level": "high"|"medium"|"low"}')
+        if need_context:
+            json_schema_parts.append('"context": {"context_aware": bool, "location_sensitive": bool, "time_critical": "high"|"medium"|"low"}')
+        if need_policy:
+            json_schema_parts.append('"policy": {"gdpr_compliant": bool, "security_level": "high"|"medium"|"low", "data_retention_days": 30|90|180|365, "encryption_required": bool, "data_classification": "public"|"internal"|"confidential"}')
+
+        schema = ', '.join(json_schema_parts)
+
+        prompt = f"""Analyze these {len(services)} web services and provide annotations for each.
+
+Services:
+{{
+{svc_block}
+}}
+
+For EACH service, provide: {schema}
+
+Respond ONLY with a JSON object mapping service IDs to their annotations. Example format:
+{{"service_id_1": {{{schema}}}, "service_id_2": {{{schema}}}}}"""
+
+        self.log.debug("    BATCH PROMPT (len=%d)", len(prompt))
+
+        results = []
+        try:
+            t_call = time.perf_counter()
+            response = self._call_ollama(prompt)
+            t_resp = time.perf_counter()
+            self.log.info("    Batch Ollama response in %.3f s", t_resp - t_call)
+            data = self._extract_json(response)
+
+            if data:
+                for svc in services:
+                    svc_data = data.get(svc.id, {})
+                    if svc_data:
+                        annotation = self._parse_llm_annotation(svc, svc_data, annotation_types)
+                    else:
+                        # This service wasn't in the response — use classic fallback
+                        self.log.warning("    Service %s missing from batch response, using classic", svc.id)
+                        annotation = ServiceAnnotation(svc.id)
+                        if need_interaction:
+                            annotation.interaction = self._generate_interaction_annotations(svc)
+                        if need_context:
+                            annotation.context = self._generate_context_annotations(svc)
+                        if need_policy:
+                            annotation.policy = self._generate_policy_annotations(svc)
+
+                    self._calculate_social_properties(svc, annotation)
+                    self._build_social_associations(svc, annotation)
+                    svc.annotations = annotation
+                    results.append(svc)
+            else:
+                raise ValueError("Batch LLM returned no parseable JSON")
+
+        except Exception as e:
+            self.log.warning("    Batch LLM FALLBACK: %s — reverting to classic for %d services", e, len(services))
+            for svc in services:
+                annotation = ServiceAnnotation(svc.id)
+                if need_interaction:
+                    annotation.interaction = self._generate_interaction_annotations(svc)
+                if need_context:
+                    annotation.context = self._generate_context_annotations(svc)
+                if need_policy:
+                    annotation.policy = self._generate_policy_annotations(svc)
+                self._calculate_social_properties(svc, annotation)
+                self._build_social_associations(svc, annotation)
+                svc.annotations = annotation
+                results.append(svc)
+
+        self.log.info("    _annotate_batch_llm DONE in %.3f s  results=%d", time.perf_counter() - t0, len(results))
+        return results
+
+    def _parse_llm_annotation(self, service, svc_data, annotation_types):
+        """Parse LLM annotation data for a single service from a batch response."""
+        annotation = ServiceAnnotation(service.id)
+        need_interaction = 'interaction' in annotation_types
+        need_context = 'context' in annotation_types
+        need_policy = 'policy' in annotation_types
+
+        compatible_services = []
+        seen = set()
+        svc_outs = self._service_output_sets.get(service.id, frozenset())
+        for o in svc_outs:
+            for oid in self._input_index.get(o, set()):
+                if oid != service.id and oid not in seen:
+                    seen.add(oid)
+                    other_ins = self._service_input_sets.get(oid, frozenset())
+                    compatible_services.append({'id': oid, 'match_score': len(svc_outs & other_ins)})
+
+        if need_interaction:
+            i_data = svc_data.get('interaction', svc_data)
+            interaction = InteractionAnnotation()
+            interaction.role = {'orchestrator': 'orchestrator', 'worker': 'worker', 'aggregator': 'aggregator'}.get(
+                str(i_data.get('role', '')).lower(), 'worker'
+            )
+            n = min(i_data.get('can_call_count', 3), len(compatible_services))
+            top = sorted(compatible_services, key=lambda x: x['match_score'], reverse=True)
+            interaction.can_call = [s['id'] for s in top[:n]]
+            interaction.collaboration_associations = interaction.can_call.copy()
+            collab_counts = self.history_store.get_collaboration_counts(service.id)
+            interaction.collaboration_history = {
+                sid: collab_counts.get(sid, 0) for sid in interaction.can_call[:10]
+            }
+            annotation.interaction = interaction
+
+        if need_context:
+            c_data = svc_data.get('context', svc_data)
+            ctx = ContextAnnotation()
+            ctx.context_aware = c_data.get('context_aware', False)
+            ctx.location_sensitive = c_data.get('location_sensitive', False)
+            ctx.time_critical = c_data.get('time_critical', 'medium')
+            ctx.interaction_count = self.history_store.get_interaction_count(service.id)
+            ctx.usage_patterns = self.history_store.get_usage_patterns(service.id) or []
+            ctx.last_used = self.history_store.get_last_used(service.id) or datetime.now().isoformat()
+            obs_ctx = self.history_store.get_observed_contexts(service.id)
+            env_reqs = []
+            obs_nets = obs_ctx.get('networks', {})
+            if 'vpn' in obs_nets or service.qos.compliance > 80:
+                env_reqs.append('vpn')
+            if obs_nets.get('ethernet', 0) > obs_nets.get('wifi', 0) or service.qos.compliance > 85:
+                env_reqs.append('secure_network')
+            ctx.environmental_requirements = env_reqs
+            annotation.context = ctx
+
+        if need_policy:
+            p_data = svc_data.get('policy', svc_data)
+            policy = PolicyAnnotation()
+            policy.gdpr_compliant = p_data.get('gdpr_compliant', True)
+            policy.security_level = p_data.get('security_level', 'medium')
+            policy.data_retention_days = p_data.get('data_retention_days', 30)
+            policy.encryption_required = p_data.get('encryption_required', False)
+            policy.data_classification = p_data.get('data_classification', 'internal')
+            policy.privacy_policy = "encrypted" if policy.encryption_required else "standard"
+            if service.qos.compliance > 85:
+                policy.compliance_standards = ["ISO27001", "SOC2"]
+            elif service.qos.compliance > 70:
+                policy.compliance_standards = ["ISO27001"]
+            annotation.policy = policy
+
+        return annotation
 
     # ====================================================================
     #  SINGLE-SERVICE ANNOTATION (used by LLM path & individual calls)

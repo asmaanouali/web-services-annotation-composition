@@ -1,7 +1,9 @@
 """Annotation endpoints — estimate, start (background), progress polling."""
 
 import logging
+import math
 import threading
+import requests as http_requests
 from flask import Blueprint, request, jsonify
 
 from state import app_state, state_lock, compute_annotation_status
@@ -47,77 +49,95 @@ def estimate_annotation_time():
 
         breakdown = {}
 
-        # 1. Base processing
-        base_time_per_service = 0.005
-        breakdown["base_processing"] = {
-            "label": "Base Processing",
-            "time": num_services * base_time_per_service,
-            "detail": f"{num_services} services x {base_time_per_service*1000:.0f}ms",
-        }
-
-        # 2. Annotation generation
         if use_llm:
-            llm_latency = 5.0
-            max_workers = 10
-            sequential_time = num_services * llm_latency
-            annotation_time = sequential_time / max_workers
+            max_workers = int(data.get("max_workers", 10))
+            batch_size = int(data.get("batch_size", 5))
+            num_batches = -(-num_services // batch_size)  # ceiling division
+            num_waves = math.ceil(num_batches / max_workers)
+
+            # Probe Ollama availability with a quick HEAD-style request
+            ollama_url = app_state.get("ollama_url", "http://localhost:11434")
+            ollama_reachable = False
+            try:
+                probe = http_requests.get(
+                    f"{ollama_url}/api/tags", timeout=2
+                )
+                ollama_reachable = probe.status_code == 200
+            except Exception:
+                pass
+
+            if ollama_reachable:
+                # LLM is available: estimate based on model inference time
+                # Empirical: ~3-8s per batch depending on batch_size
+                per_batch_latency = 2.0 + batch_size * 0.8
+            else:
+                # Ollama unreachable: each batch will hit connection timeout
+                # then fall back to classic (urllib3 retries take ~4s)
+                per_batch_latency = 4.0
+
+            # 1. LLM annotation time = waves × per-batch latency + overhead
+            wave_overhead = 0.3  # threading dispatch overhead per wave
+            annotation_time = num_waves * (per_batch_latency + wave_overhead)
+            status_note = "Ollama connected" if ollama_reachable else "Ollama offline — will use classic fallback"
             breakdown["annotation_generation"] = {
-                "label": "LLM Annotation Generation",
+                "label": "LLM Annotation Generation" if ollama_reachable else "Annotation (Ollama offline → fallback)",
                 "time": annotation_time,
                 "detail": (
-                    f"{num_services} services x ~{llm_latency}s per call "
-                    f"/ {max_workers} workers"
-                ),
-            }
-        else:
-            classic_time_per_type = 0.005
-            annotation_time = (
-                num_services * num_types * classic_time_per_type * complexity_factor
-            )
-            breakdown["annotation_generation"] = {
-                "label": "Classic Annotation Generation",
-                "time": annotation_time,
-                "detail": (
-                    f"{num_services} x {num_types} types x "
-                    f"{classic_time_per_type*1000:.0f}ms x {complexity_factor:.1f}x"
+                    f"{num_batches} batches ÷ {max_workers} workers = "
+                    f"{num_waves} waves × ~{per_batch_latency:.1f}s"
                 ),
             }
 
-        # 3. Social association building
+            # 2. Network overhead (only when Ollama is reachable)
+            if ollama_reachable:
+                network_overhead = num_waves * 0.2
+                breakdown["network_overhead"] = {
+                    "label": "Network Overhead (Ollama)",
+                    "time": network_overhead,
+                    "detail": f"{num_waves} waves × ~200ms",
+                }
+        else:
+            # Classic bulk annotation — highly optimized, sub-second for thousands
+            # Phase 1 (edge computation): ~0.5ms per service
+            phase1_time = num_services * 0.0005 * complexity_factor
+            # Phase 2 (assembly): ~1ms per service
+            phase2_time = num_services * 0.001 * complexity_factor
+            annotation_time = phase1_time + phase2_time
+            status_note = None
+            breakdown["annotation_generation"] = {
+                "label": "Classic Annotation (bulk)",
+                "time": annotation_time,
+                "detail": (
+                    f"{num_services} services × {complexity_factor:.1f}x complexity"
+                ),
+            }
+
+        # Social association building (same for both modes)
         avg_degree = min(
             avg_io * max(int(total_services ** 0.4), 1), total_services
         )
         estimated_lookups = num_services * avg_degree
-        association_time_per_lookup = 0.00005
+        association_time_per_lookup = 0.000005  # 5µs per lookup (optimized indexes)
         association_time = estimated_lookups * association_time_per_lookup
         breakdown["association_building"] = {
             "label": "Social Association Building",
             "time": association_time,
-            "detail": f"{num_services} x ~{int(avg_degree)} avg connections x 50us",
+            "detail": f"{num_services} × ~{int(avg_degree)} avg connections × 5µs",
         }
 
-        # 4. Social node property calculation
-        property_time = num_services * 0.002
+        # Social node property calculation
+        property_time = num_services * 0.0002  # 0.2ms per service (inlined QoS)
         breakdown["property_calculation"] = {
             "label": "Social Node Properties",
             "time": property_time,
-            "detail": f"{num_services} services x 2ms",
+            "detail": f"{num_services} services × 0.2ms",
         }
 
-        # 5. Network overhead (LLM only)
-        if use_llm:
-            max_workers = 10
-            network_overhead = (num_services * 0.3) / max_workers
-            breakdown["network_overhead"] = {
-                "label": "Network Overhead (Ollama)",
-                "time": network_overhead,
-                "detail": f"{num_services} API calls x ~300ms / {max_workers} workers",
-            }
-
         total_time = sum(item["time"] for item in breakdown.values())
-        total_time_with_margin = total_time * 1.1
+        # Add 15% safety margin
+        total_time_with_margin = total_time * 1.15
 
-        return jsonify({
+        result = {
             "estimated_time_seconds": total_time_with_margin,
             "num_services": num_services,
             "num_annotation_types": num_types,
@@ -129,8 +149,11 @@ def estimate_annotation_time():
             "avg_outputs": round(avg_outputs, 1),
             "total_services_in_repo": total_services,
             "breakdown": breakdown,
-            "safety_margin": "10%",
-        })
+            "safety_margin": "15%",
+        }
+        if status_note:
+            result["status_note"] = status_note
+        return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -147,18 +170,24 @@ def start_annotation():
         annotation_types = data.get(
             "annotation_types", ["interaction", "context", "policy"]
         )
+        max_workers = min(int(data.get("max_workers", 10)), 20)  # cap at 20
+        batch_size = min(int(data.get("batch_size", 5)), 10)     # cap at 10
+        skip_annotated = data.get("skip_annotated", False)
 
-        _log.info("POST /api/annotate/start  use_llm=%s  service_ids=%s  annotation_types=%s",
-                   use_llm, service_ids if service_ids else "ALL", annotation_types)
+        _log.info("POST /api/annotate/start  use_llm=%s  service_ids=%s  annotation_types=%s  workers=%d  batch=%d  skip=%s",
+                   use_llm, service_ids if service_ids else "ALL", annotation_types, max_workers, batch_size, skip_annotated)
 
         if not app_state["services"]:
             _log.warning("Annotation start rejected — no services loaded")
             return jsonify({"error": "No services loaded"}), 400
 
-        thread = app_state.get("annotation_thread")
-        if thread and thread.is_alive():
-            _log.warning("Annotation start rejected — already in progress")
-            return jsonify({"error": "Annotation already in progress"}), 409
+        with state_lock:
+            thread = app_state.get("annotation_thread")
+            if thread and thread.is_alive():
+                _log.warning("Annotation start rejected — already in progress")
+                return jsonify({"error": "Annotation already in progress"}), 409
+            # Mark as occupied immediately to prevent races
+            app_state["annotation_thread"] = threading.current_thread()
 
         if not app_state["annotator"]:
             app_state["annotator"] = ServiceAnnotator(
@@ -198,6 +227,9 @@ def start_annotation():
                     use_llm=use_llm,
                     annotation_types=annotation_types,
                     progress_callback=progress_callback,
+                    max_workers=max_workers,
+                    batch_size=batch_size,
+                    skip_annotated=skip_annotated,
                 )
 
                 # Update services list
@@ -206,7 +238,7 @@ def start_annotation():
                     if s.id in svc_by_id:
                         app_state["services"][i] = svc_by_id[s.id]
 
-                app_state["annotated_services"] = app_state["services"]
+                app_state["annotated_services"] = list(app_state["services"])
 
                 # Rebuild composers
                 app_state["classic_composer"] = ClassicComposer(app_state["services"])

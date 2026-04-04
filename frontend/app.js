@@ -19,6 +19,60 @@ function escapeHtml(str) {
 }
 
 // ============================================================
+// TOAST NOTIFICATION SYSTEM
+// ============================================================
+function showToast(message, type = 'info', title = '', duration = 4000) {
+    const container = document.getElementById('toast-container');
+    const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+    const titles = { success: 'Success', error: 'Error', warning: 'Warning', info: 'Info' };
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon">${icons[type] || icons.info}</span>
+        <div class="toast-body">
+            <div class="toast-title">${escapeHtml(title || titles[type])}</div>
+            <div class="toast-msg">${escapeHtml(message)}</div>
+        </div>
+        <button class="toast-close" onclick="dismissToast(this.parentElement)">&times;</button>
+    `;
+    container.appendChild(toast);
+    if (duration > 0) {
+        setTimeout(() => dismissToast(toast), duration);
+    }
+    return toast;
+}
+function dismissToast(toast) {
+    if (!toast || toast.classList.contains('removing')) return;
+    toast.classList.add('removing');
+    setTimeout(() => toast.remove(), 300);
+}
+
+// ============================================================
+// BUTTON LOADING HELPERS
+// ============================================================
+function btnLoading(btn, text) {
+    if (!btn) return;
+    btn._origHTML = btn.innerHTML;
+    btn.classList.add('loading');
+    btn.disabled = true;
+    if (text) btn.innerHTML = text;
+}
+function btnReset(btn) {
+    if (!btn) return;
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    if (btn._origHTML) btn.innerHTML = btn._origHTML;
+}
+
+// ============================================================
+// SMOOTH SCROLL HELPER
+// ============================================================
+function scrollToEl(el) {
+    if (!el) return;
+    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+// ============================================================
 // GLOBAL STATE
 // ============================================================
 const API = window.location.hostname === 'localhost' && window.location.port !== '80'
@@ -45,8 +99,19 @@ function showTab(idx) {
     document.querySelectorAll('.tab-content').forEach((c,i) => {
         c.classList.toggle('active', i === idx);
     });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     if (idx === 1) updateSelectionList();
     if (idx === 3) checkAnnotationForLLM();
+}
+
+// Tab completion badges
+function markTabDone(idx) {
+    const btn = document.querySelectorAll('.tab-btn')[idx];
+    if (!btn || btn.querySelector('.tab-badge')) return;
+    const badge = document.createElement('span');
+    badge.className = 'tab-badge';
+    badge.textContent = '✓';
+    btn.appendChild(badge);
 }
 
 // ============================================================
@@ -91,9 +156,11 @@ async function uploadAndTrainLLM() {
     const solFile = document.getElementById('training-solutions-file').files[0];
     const bestFile = document.getElementById('training-best-solutions-file').files[0];
 
-    if (wsdlFiles.length === 0) { alert('Please select training WSDL files.'); return; }
-    if (!reqFile) { alert('Please select a training requests file.'); return; }
+    if (wsdlFiles.length === 0) { showToast('Please select training WSDL files.', 'warning'); return; }
+    if (!reqFile) { showToast('Please select a training requests file.', 'warning'); return; }
 
+    const trainBtn = document.querySelector('[onclick="uploadAndTrainLLM()"]');
+    btnLoading(trainBtn, '&#x23F3; Training...');
     const sec = document.getElementById('training-progress-section');
     const bar = document.getElementById('training-progress');
     const txt = document.getElementById('training-progress-text');
@@ -159,13 +226,16 @@ async function uploadAndTrainLLM() {
         bar.classList.add('success');
         txt.textContent = `Training complete! ${totalServicesUploaded} services, ${xmlData.training_requests} requests, ${trData.training_examples_count} examples learned.`;
         updateTrainingBadge(true, trData.training_examples_count);
+        showToast(`${trData.training_examples_count} examples learned successfully`, 'success', 'Training Complete');
         loadMetrics();
+        btnReset(trainBtn);
 
     } catch (e) {
         bar.style.width = '100%'; bar.textContent = 'Error';
         bar.classList.add('error');
         txt.textContent = `Error: ${e.message}`;
-        alert(`Training failed: ${e.message}`);
+        showToast(e.message, 'error', 'Training Failed');
+        btnReset(trainBtn);
     }
 }
 
@@ -272,6 +342,8 @@ async function uploadServices() {
             document.getElementById('hdr-svc-count').textContent = `${all.length} services`;
             displayServices(all);
             all.forEach(s => selectedServiceIds.add(s.id));
+            showToast(`${total} services loaded successfully`, 'success');
+            markTabDone(0);
         } else {
             bar.classList.add('error'); stat.textContent = 'No services loaded.';
         }
@@ -331,7 +403,12 @@ function deselectAllServices() { selectedServiceIds.clear(); updateSelectionList
 function updateCount() { document.getElementById('selected-count').textContent = `${selectedServiceIds.size} selected`; }
 
 // Dynamic time estimation
-async function updateEstimation() {
+let _estimationTimer = null;
+function updateEstimation() {
+    clearTimeout(_estimationTimer);
+    _estimationTimer = setTimeout(_doUpdateEstimation, 250);
+}
+async function _doUpdateEstimation() {
     if (!currentServices.length || !selectedServiceIds.size) {
         document.getElementById('estimation-panel').innerHTML = '';
         return;
@@ -339,15 +416,30 @@ async function updateEstimation() {
     const types = getAnnotationTypes();
     if (!types.length) return;
     const useLLM = document.getElementById('use-llm-annotation').checked;
+    const maxWorkers = parseInt(document.getElementById('ann-workers')?.value || '10');
+    const batchSize = parseInt(document.getElementById('ann-batch-size')?.value || '5');
     try {
         const r = await fetch(`${API}/annotate/estimate`, {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ use_llm: useLLM, service_ids: Array.from(selectedServiceIds), annotation_types: types })
+            body: JSON.stringify({
+                use_llm: useLLM,
+                service_ids: Array.from(selectedServiceIds),
+                annotation_types: types,
+                max_workers: maxWorkers,
+                batch_size: batchSize
+            })
         });
+        if (!r.ok) throw new Error('API error');
         const d = await r.json();
         renderEstimation(d);
-    } catch(e) { /* offline */ }
+    } catch(e) {
+        const panel = document.getElementById('estimation-panel');
+        if (panel.innerHTML) {
+            panel.querySelectorAll('.est-total span:last-child')
+                .forEach(el => el.textContent = '~…');
+        }
+    }
 }
 
 function renderEstimation(d) {
@@ -358,13 +450,20 @@ function renderEstimation(d) {
     let breakdownHTML = '';
     if (d.breakdown) {
         breakdownHTML = Object.values(d.breakdown).map(b =>
-            `<div class="est-row"><span class="est-label">${b.label}</span><span class="est-value">${b.time < 1 ? (b.time*1000).toFixed(0)+'ms' : b.time.toFixed(1)+'s'}</span></div>`
+            `<div class="est-row"><span class="est-label">${escapeHtml(b.label)}</span><span class="est-value">${b.time < 1 ? (b.time*1000).toFixed(0)+'ms' : b.time.toFixed(1)+'s'}</span></div>`
         ).join('');
+    }
+
+    let statusHTML = '';
+    if (d.status_note) {
+        const isWarning = d.status_note.toLowerCase().includes('offline');
+        statusHTML = `<div class="est-row" style="color:${isWarning ? 'var(--warning,#e67e22)' : 'var(--success,#27ae60)'};font-size:11px;font-style:italic"><span>${escapeHtml(d.status_note)}</span></div>`;
     }
 
     document.getElementById('estimation-panel').innerHTML = `
         <div class="estimation-panel">
             <h4>&#x23F1;&#xFE0F; Estimated Duration</h4>
+            ${statusHTML}
             ${breakdownHTML}
             <div class="est-row"><span class="est-label">Complexity Factor</span><span class="est-value">${d.complexity_factor}x</span></div>
             <div class="est-row"><span class="est-label">Avg I/O per service</span><span class="est-value">${d.avg_io_per_service}</span></div>
@@ -382,15 +481,24 @@ function getAnnotationTypes() {
 }
 
 // Auto-update estimation when config changes
-['ann-interaction','ann-context','ann-policy','use-llm-annotation'].forEach(id => {
+['ann-interaction','ann-context','ann-policy','use-llm-annotation','ann-skip-annotated'].forEach(id => {
     document.getElementById(id).addEventListener('change', updateEstimation);
+});
+['ann-workers','ann-batch-size'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateEstimation);
+});
+
+// Show/hide performance controls based on LLM toggle
+document.getElementById('use-llm-annotation').addEventListener('change', function() {
+    const controls = document.getElementById('llm-perf-controls');
+    if (controls) controls.style.display = this.checked ? 'block' : 'none';
 });
 
 async function showAnnotationModal() {
-    if (!currentServices.length) { alert('Load services first in Tab 1.'); return; }
-    if (!selectedServiceIds.size) { alert('Select at least one service.'); return; }
+    if (!currentServices.length) { showToast('Load services first in Tab 1.', 'warning'); return; }
+    if (!selectedServiceIds.size) { showToast('Select at least one service.', 'warning'); return; }
     const types = getAnnotationTypes();
-    if (!types.length) { alert('Select at least one annotation type.'); return; }
+    if (!types.length) { showToast('Select at least one annotation type.', 'warning'); return; }
     const useLLM = document.getElementById('use-llm-annotation').checked;
 
     document.getElementById('mod-svc-count').textContent = selectedServiceIds.size;
@@ -400,7 +508,13 @@ async function showAnnotationModal() {
     try {
         const r = await fetch(`${API}/annotate/estimate`, {
             method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ use_llm: useLLM, service_ids: Array.from(selectedServiceIds), annotation_types: types })
+            body: JSON.stringify({
+                use_llm: useLLM,
+                service_ids: Array.from(selectedServiceIds),
+                annotation_types: types,
+                max_workers: parseInt(document.getElementById('ann-workers')?.value || '10'),
+                batch_size: parseInt(document.getElementById('ann-batch-size')?.value || '5')
+            })
         });
         const d = await r.json();
         const mins = Math.floor(d.estimated_time_seconds/60);
@@ -430,6 +544,9 @@ async function confirmAnnotation() {
     const types = getAnnotationTypes();
     const useLLM = document.getElementById('use-llm-annotation').checked;
     const ids = Array.from(selectedServiceIds);
+    const maxWorkers = parseInt(document.getElementById('ann-workers')?.value || '10');
+    const batchSize = parseInt(document.getElementById('ann-batch-size')?.value || '5');
+    const skipAnnotated = document.getElementById('ann-skip-annotated')?.checked || false;
 
     document.getElementById('ann-progress-card').style.display = 'block';
     document.getElementById('ann-results-card').style.display = 'none';
@@ -438,12 +555,22 @@ async function confirmAnnotation() {
     const log = document.getElementById('ann-log');
     bar.style.width = '0%'; bar.textContent = '0%'; bar.className = 'progress-fill';
     stat.textContent = 'Initializing...'; log.innerHTML = '';
-    log.innerHTML += `<div class="log-item">Starting annotation: ${ids.length} services, ${types.join(', ')}, method: ${useLLM?'LLM':'Classic'}</div>`;
+    // Clear any previous polling interval to prevent leaks
+    if (annInterval) { clearTimeout(annInterval); annInterval = null; }
+    const batchInfo = useLLM ? ` | ${maxWorkers} workers, batch=${batchSize}${skipAnnotated ? ', skip annotated' : ''}` : '';
+    log.innerHTML += `<div class="log-item">Starting annotation: ${ids.length} services, ${types.join(', ')}, method: ${useLLM?'LLM':'Classic'}${batchInfo}</div>`;
 
     try {
         const startResp = await fetch(`${API}/annotate/start`, {
             method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ use_llm: useLLM, service_ids: ids, annotation_types: types })
+            body: JSON.stringify({
+                use_llm: useLLM,
+                service_ids: ids,
+                annotation_types: types,
+                max_workers: maxWorkers,
+                batch_size: batchSize,
+                skip_annotated: skipAnnotated
+            })
         });
 
         if (!startResp.ok) {
@@ -494,6 +621,9 @@ async function confirmAnnotation() {
                         bar.classList.add('success');
                         stat.textContent = `Annotation complete: ${pd.result.total_annotated} services annotated.`;
                         showAnnotationResults(pd.result);
+                        showToast(`${pd.result.total_annotated} services annotated`, 'success', 'Annotation Complete');
+                        markTabDone(1);
+                        scrollToEl(document.getElementById('ann-results-card'));
                     }
                     return;
                 }
@@ -542,7 +672,7 @@ async function downloadAnnotated(id) {
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
             a.download = `${id}_enriched.xml`; a.click(); URL.revokeObjectURL(a.href);
         }
-    } catch(e) { alert(`Download error: ${e.message}`); }
+    } catch(e) { showToast(e.message, 'error', 'Download Failed'); }
 }
 
 // ============================================================
@@ -555,12 +685,12 @@ async function uploadRequests() {
         const r = await fetch(`${API}/requests/upload`, {method:'POST',body:fd});
         const d = await r.json();
         if (r.ok) {
-            currentRequests = d.requests;
+            currentRequests = d.requests || [];
             document.getElementById('requests-count').innerHTML = `Requests loaded: <span style="font-size:20px">${d.requests.length}</span>`;
             populateSelects(d.requests);
-            alert(`${d.message}`);
-        } else { alert(`Error: ${d.error}`); }
-    } catch(e) { alert(`Error: ${e.message}`); }
+            showToast(d.message, 'success');
+        } else { showToast(d.error, 'error'); }
+    } catch(e) { showToast(e.message, 'error'); }
 }
 
 function populateSelects(reqs) {
@@ -593,8 +723,10 @@ function showReqDetails(type) {
 async function composeClassic() {
     const reqId = document.getElementById('req-select-classic').value;
     const algo = document.getElementById('algo-select').value;
-    if (!reqId) { alert('Select a request first.'); return; }
+    if (!reqId) { showToast('Select a request first.', 'warning'); return; }
 
+    const compBtn = document.querySelector('[onclick="composeClassic()"]');
+    btnLoading(compBtn, '&#x23F3; Computing...');
     document.getElementById('classic-viz-card').style.display = 'block';
     document.getElementById('classic-result-card').style.display = 'block';
     document.getElementById('algo-trace').innerHTML = '<div style="padding:20px;text-align:center"><div class="spinner"></div> Running algorithm...</div>';
@@ -612,13 +744,17 @@ async function composeClassic() {
             renderAlgoTrace(d.algorithm_trace || []);
             renderGraph(d.graph_data, d.workflow || []);
             renderClassicResult(d);
+            markTabDone(2);
+            scrollToEl(document.getElementById('classic-result-card'));
         } else {
             document.getElementById('classic-result').innerHTML = `<div class="result-box result-error"><strong>Error:</strong> ${escapeHtml(d.error)}</div>`;
             document.getElementById('algo-trace').innerHTML = '';
             document.getElementById('algo-graph').innerHTML = '';
         }
+        btnReset(compBtn);
     } catch(e) {
         document.getElementById('classic-result').innerHTML = `<div class="result-box result-error"><strong>Error:</strong> ${escapeHtml(e.message)}</div>`;
+        btnReset(compBtn);
     }
 }
 
@@ -783,14 +919,16 @@ async function composeLLM() {
     try {
         const sr = await fetch(`${API}/annotation/status`);
         const sd = await sr.json();
-        if (!sd.services_annotated) { alert('Annotate services first (Tab 2).'); return; }
+        if (!sd.services_annotated) { showToast('Annotate services first (Tab 2).', 'warning'); return; }
     } catch(e) { return; }
 
     const reqId = document.getElementById('req-select-llm').value;
-    if (!reqId) { alert('Select a request first.'); return; }
+    if (!reqId) { showToast('Select a request first.', 'warning'); return; }
 
     document.getElementById('llm-reasoning-card').style.display = 'block';
     document.getElementById('llm-result-card').style.display = 'block';
+    const llmBtn = document.getElementById('llm-compose-btn');
+    btnLoading(llmBtn, '&#x1F916; Processing...');
     const reasonEl = document.getElementById('llm-reasoning');
     reasonEl.innerHTML = '<div class="trace-step explore"><div class="trace-num">1</div><div class="trace-desc">Initializing reasoning...</div></div>';
     document.getElementById('llm-result').innerHTML = '<div style="padding:20px;text-align:center"><div class="spinner"></div> Processing...</div>';
@@ -831,13 +969,17 @@ async function composeLLM() {
             llmResults[reqId] = d;
             reasonEl.innerHTML += '<div class="trace-step complete"><div class="trace-num">&#x2713;</div><div class="trace-desc"><strong>Composition completed successfully</strong></div></div>';
             renderLLMResult(d);
+            markTabDone(3);
+            scrollToEl(document.getElementById('llm-result-card'));
         } else {
             reasonEl.innerHTML += `<div class="trace-step failed"><div class="trace-num">!</div><div class="trace-desc">${escapeHtml(d.error || d.message)}</div></div>`;
             document.getElementById('llm-result').innerHTML = `<div class="result-box result-error"><strong>Error:</strong> ${escapeHtml(d.error || d.message)}</div>`;
         }
+        btnReset(llmBtn);
     } catch(e) {
         clearInterval(iv);
         document.getElementById('llm-result').innerHTML = `<div class="result-box result-error"><strong>Error:</strong> ${escapeHtml(e.message)}</div>`;
+        btnReset(llmBtn);
     }
 }
 
@@ -896,15 +1038,15 @@ async function uploadBestSolutions() {
     try {
         const r = await fetch(`${API}/best-solutions/upload`, {method:'POST',body:fd});
         const d = await r.json();
-        alert(r.ok ? d.message : `Error: ${d.error}`);
-    } catch(e) { alert(`Error: ${e.message}`); }
+        showToast(d.message, r.ok ? 'success' : 'error');
+    } catch(e) { showToast(e.message, 'error'); }
 }
 
 // ============================================================
 // COMPARATIVE ANALYSIS
 // ============================================================
 async function loadComparison() {
-    if (!currentRequests.length) { alert('Please load composition requests first (use the Requests tab).'); return; }
+    if (!currentRequests.length) { showToast('Load composition requests first (Tab 3).', 'warning'); return; }
 
     const btn = document.querySelector('#tab-4 .btn-primary');
     const origText = btn.innerHTML;
@@ -942,8 +1084,10 @@ async function loadComparison() {
         const d = await r.json();
         if (r.ok) {
             renderComparison(d);
-        } else { alert(`Error: ${d.error}`); }
-    } catch(e) { alert(`Error: ${e.message}`); }
+            markTabDone(4);
+            scrollToEl(document.getElementById('comparison-kpis'));
+        } else { showToast(d.error, 'error'); }
+    } catch(e) { showToast(e.message, 'error'); }
     finally {
         btn.innerHTML = origText;
         btn.disabled = false;
@@ -1116,6 +1260,56 @@ function renderDiscussion(discussion) {
 }
 
 // ============================================================
+// DRAG-AND-DROP SUPPORT
+// ============================================================
+function setupDragDrop() {
+    document.querySelectorAll('.upload-area').forEach(area => {
+        const fileInput = area.querySelector('input[type="file"]');
+        if (!fileInput) return;
+
+        area.addEventListener('dragover', e => {
+            e.preventDefault();
+            area.classList.add('drag-over');
+        });
+        area.addEventListener('dragleave', e => {
+            e.preventDefault();
+            area.classList.remove('drag-over');
+        });
+        area.addEventListener('drop', e => {
+            e.preventDefault();
+            area.classList.remove('drag-over');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+}
+
+// ============================================================
+// SERVICE SEARCH/FILTER
+// ============================================================
+function filterServices() {
+    const query = (document.getElementById('service-search-input')?.value || '').toLowerCase().trim();
+    const countEl = document.getElementById('service-search-count');
+    if (!currentServices.length) return;
+
+    if (!query) {
+        displayServices(currentServices);
+        if (countEl) countEl.textContent = '';
+        return;
+    }
+
+    const filtered = currentServices.filter(s =>
+        s.id.toLowerCase().includes(query) ||
+        s.inputs.some(inp => inp.toLowerCase().includes(query)) ||
+        s.outputs.some(out => out.toLowerCase().includes(query))
+    );
+    displayServices(filtered);
+    if (countEl) countEl.textContent = `${filtered.length} / ${currentServices.length}`;
+}
+
+// ============================================================
 // INITIALIZATION
 // ============================================================
 async function init() {
@@ -1137,6 +1331,7 @@ async function init() {
         document.getElementById('hdr-server-text').textContent = 'Offline';
     }
     loadMetrics();
+    setupDragDrop();
 }
 
 init();
