@@ -576,6 +576,28 @@ class ServiceAnnotator:
         self.log.info("  annotation_types: %s", annotation_types)
         t_llm_start = time.perf_counter()
 
+        # ── Verify Ollama is reachable before starting ──────────────────
+        self.log.info("  Checking Ollama connectivity at %s ...", self.ollama_url)
+        try:
+            probe = requests.get(f"{self.ollama_url}/api/tags", timeout=3)
+            if probe.status_code != 200:
+                raise RuntimeError(
+                    f"Ollama is not available (HTTP {probe.status_code}) at {self.ollama_url}. "
+                    "Start Ollama before using LLM annotation mode."
+                )
+            self.log.info("  Ollama reachable — model=%s", self.model)
+        except requests.exceptions.ConnectionError:
+            raise RuntimeError(
+                f"Ollama is offline — cannot connect to {self.ollama_url}. "
+                "Start Ollama or switch to Classic annotation mode."
+            )
+        except requests.exceptions.Timeout:
+            raise RuntimeError(
+                f"Ollama at {self.ollama_url} did not respond within 3 s. "
+                "Start Ollama or switch to Classic annotation mode."
+            )
+        # ────────────────────────────────────────────────────────────────
+
         # Split services into batches for fewer LLM calls
         batches = []
         for i in range(0, total, batch_size):
