@@ -442,15 +442,22 @@ async function _doUpdateEstimation() {
     }
 }
 
+function formatTime(seconds) {
+    if (seconds < 0.001) return '<1ms';
+    if (seconds < 1) return (seconds * 1000).toFixed(0) + 'ms';
+    if (seconds < 60) return seconds.toFixed(1) + 's';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.round(seconds % 60);
+    return `${mins}m ${secs}s`;
+}
+
 function renderEstimation(d) {
-    const mins = Math.floor(d.estimated_time_seconds / 60);
-    const secs = Math.round(d.estimated_time_seconds % 60);
-    const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+    const timeStr = formatTime(d.estimated_time_seconds);
 
     let breakdownHTML = '';
     if (d.breakdown) {
         breakdownHTML = Object.values(d.breakdown).map(b =>
-            `<div class="est-row"><span class="est-label">${escapeHtml(b.label)}</span><span class="est-value">${b.time < 1 ? (b.time*1000).toFixed(0)+'ms' : b.time.toFixed(1)+'s'}</span></div>`
+            `<div class="est-row"><span class="est-label">${escapeHtml(b.label)}</span><span class="est-value">${formatTime(b.time)}</span></div>`
         ).join('');
     }
 
@@ -494,53 +501,16 @@ document.getElementById('use-llm-annotation').addEventListener('change', functio
     if (controls) controls.style.display = this.checked ? 'block' : 'none';
 });
 
-async function showAnnotationModal() {
+async function startAnnotation() {
     if (!currentServices.length) { showToast('Load services first in Tab 1.', 'warning'); return; }
     if (!selectedServiceIds.size) { showToast('Select at least one service.', 'warning'); return; }
     const types = getAnnotationTypes();
     if (!types.length) { showToast('Select at least one annotation type.', 'warning'); return; }
-    const useLLM = document.getElementById('use-llm-annotation').checked;
-
-    document.getElementById('mod-svc-count').textContent = selectedServiceIds.size;
-    document.getElementById('mod-method').textContent = useLLM ? 'LLM' : 'Classic';
-    document.getElementById('mod-types').textContent = types.length;
-
-    try {
-        const r = await fetch(`${API}/annotate/estimate`, {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({
-                use_llm: useLLM,
-                service_ids: Array.from(selectedServiceIds),
-                annotation_types: types,
-                max_workers: parseInt(document.getElementById('ann-workers')?.value || '10'),
-                batch_size: parseInt(document.getElementById('ann-batch-size')?.value || '5')
-            })
-        });
-        const d = await r.json();
-        const mins = Math.floor(d.estimated_time_seconds/60);
-        const secs = Math.round(d.estimated_time_seconds%60);
-        document.getElementById('mod-time').textContent = mins>0 ? `~${mins}m ${secs}s` : `~${secs}s`;
-
-        let bk = '';
-        if (d.breakdown) {
-            bk = '<div style="margin-top:12px;font-size:12px;color:var(--text-muted)">';
-            for (const b of Object.values(d.breakdown)) {
-                bk += `<div style="display:flex;justify-content:space-between;padding:4px 0">${b.label}: <strong>${b.time<1?(b.time*1000).toFixed(0)+'ms':b.time.toFixed(1)+'s'}</strong></div>`;
-            }
-            bk += `<div style="display:flex;justify-content:space-between;padding:4px 0">Complexity: <strong>${d.complexity_factor}x</strong></div>`;
-            bk += '</div>';
-        }
-        document.getElementById('mod-estimation-breakdown').innerHTML = bk;
-    } catch(e) {
-        document.getElementById('mod-time').textContent = '~unknown';
-    }
-
-    document.getElementById('ann-modal').classList.add('show');
+    confirmAnnotation();
 }
 function closeModal() { document.getElementById('ann-modal').classList.remove('show'); }
 
 async function confirmAnnotation() {
-    closeModal();
     const types = getAnnotationTypes();
     const useLLM = document.getElementById('use-llm-annotation').checked;
     const ids = Array.from(selectedServiceIds);
@@ -1388,6 +1358,18 @@ async function init() {
             document.getElementById('hdr-server-text').textContent = 'Online';
             if (d.services_loaded > 0) {
                 document.getElementById('hdr-svc-count').textContent = `${d.services_loaded} services`;
+                // Restore services from backend so all tabs have access
+                try {
+                    const sr = await fetch(`${API}/services`);
+                    if (sr.ok) {
+                        const sd = await sr.json();
+                        currentServices = sd.services || [];
+                        selectedServiceIds = new Set(currentServices.map(s => s.id));
+                        document.getElementById('service-count').innerHTML = `Services loaded: <span style="font-size:20px;color:var(--success)">${currentServices.length}</span>`;
+                        displayServices(currentServices);
+                        markTabDone(0);
+                    }
+                } catch(e) { /* services fetch failed, not critical */ }
             }
             if (d.is_trained) {
                 updateTrainingBadge(true, d.training_examples);

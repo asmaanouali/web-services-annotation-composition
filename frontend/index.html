@@ -144,10 +144,6 @@
     <!-- SERVICE LIST -->
     <div class="card">
         <div class="card-title"><div class="icon">&#x1F5C2;&#xFE0F;</div> Web Services Repository</div>
-        <div class="service-search">
-            <input type="text" id="service-search-input" placeholder="Search services by ID, inputs, outputs..." oninput="filterServices()">
-            <span class="search-count" id="service-search-count"></span>
-        </div>
         <div class="service-list" id="services-list">
             <p style="text-align:center;color:var(--text-muted);padding:50px;font-style:italic">No services loaded. Upload WSDL files above to get started.</p>
         </div>
@@ -197,34 +193,26 @@
                 <div class="check-label-desc">GDPR compliance, security level, data classification, encryption</div></div></label>
         </div>
 
-        <!-- Performance Tuning (LLM) -->
-        <div id="llm-perf-controls" style="margin:20px 0;padding:16px 20px;background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-lg)">
-            <div style="font-weight:600;font-size:14px;color:var(--primary);margin-bottom:14px">&#x26A1; Performance Tuning</div>
-            <div class="card-grid">
-                <div>
-                    <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600">
-                        Concurrent Workers: <span id="workers-val">10</span>
-                    </label>
-                    <input type="range" id="ann-workers" min="2" max="20" value="10" oninput="document.getElementById('workers-val').textContent=this.value;updateEstimation()" style="width:100%">
-                    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted)"><span>2 (safe)</span><span>20 (fast)</span></div>
-                </div>
-                <div>
-                    <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600">
-                        Batch Size: <span id="batch-val">5</span> services/call
-                    </label>
-                    <input type="range" id="ann-batch-size" min="1" max="10" value="5" oninput="document.getElementById('batch-val').textContent=this.value;updateEstimation()" style="width:100%">
-                    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted)"><span>1 (precise)</span><span>10 (fast)</span></div>
-                </div>
-            </div>
-            <div class="check-group" style="margin-top:12px">
-                <label><input type="checkbox" id="ann-skip-annotated">
-                    <div><div class="check-label-title">Skip Already Annotated</div>
-                    <div class="check-label-desc">Don't re-annotate services that already have annotations — saves time on re-runs</div></div></label>
+        <div id="llm-perf-controls" style="margin-top:16px">
+            <div style="font-weight:600;font-size:14px;color:var(--primary);margin-bottom:10px">Performance Settings</div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+                    Workers:
+                    <input type="number" id="ann-workers" value="10" min="1" max="50" style="width:70px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px">
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+                    Batch size:
+                    <input type="number" id="ann-batch-size" value="50" min="1" max="5000" style="width:70px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px">
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                    <input type="checkbox" id="ann-skip-annotated" style="width:15px;height:15px">
+                    Skip already annotated
+                </label>
             </div>
         </div>
 
         <div style="display:flex;gap:16px;margin-top:20px;align-items:flex-start">
-            <button class="btn btn-primary" onclick="showAnnotationModal()" style="flex-shrink:0">&#x1F680; Start Annotation</button>
+            <button class="btn btn-primary" onclick="startAnnotation()" style="flex-shrink:0">&#x1F680; Start Annotation</button>
             <div id="estimation-panel" style="flex:1"></div>
         </div>
     </div>
@@ -503,7 +491,8 @@
     </div>
 </div>
 
+<div id="toast-container" aria-live="polite"></div>
+
 <script src="app.js"></script>
-<div class="toast-container" id="toast-container"></div>
 </body>
 </html>

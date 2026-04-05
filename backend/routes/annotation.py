@@ -50,12 +50,14 @@ def estimate_annotation_time():
         breakdown = {}
 
         if use_llm:
-            max_workers = int(data.get("max_workers", 10))
-            batch_size = int(data.get("batch_size", 5))
-            num_batches = -(-num_services // batch_size)  # ceiling division
-            num_waves = math.ceil(num_batches / max_workers)
+            max_workers = max(1, int(data.get("max_workers", 10)))
+            batch_size = max(1, int(data.get("batch_size", 50)))
 
-            # Probe Ollama availability with a quick HEAD-style request
+            # Each service = 1 Ollama call. max_workers run concurrently.
+            # A "wave" = one round of max_workers concurrent calls.
+            num_waves = math.ceil(num_services / max_workers)
+
+            # Probe Ollama availability
             ollama_url = app_state.get("ollama_url", "http://localhost:11434")
             ollama_reachable = False
             try:
@@ -67,34 +69,31 @@ def estimate_annotation_time():
                 pass
 
             if ollama_reachable:
-                # LLM is available: estimate based on model inference time
-                # Empirical: ~3-8s per batch depending on batch_size
-                per_batch_latency = 2.0 + batch_size * 0.8
+                # Empirical: ~3-5s per individual Ollama call
+                per_call_latency = 3.5
             else:
-                # Ollama unreachable: each batch will hit connection timeout
-                # then fall back to classic (urllib3 retries take ~4s)
-                per_batch_latency = 4.0
+                # Ollama unreachable: connection timeout + classic fallback
+                per_call_latency = 0.5
 
-            # 1. LLM annotation time = waves × per-batch latency + overhead
-            wave_overhead = 0.3  # threading dispatch overhead per wave
-            annotation_time = num_waves * (per_batch_latency + wave_overhead)
+            # Time = waves × per-call latency (workers run in parallel)
+            annotation_time = num_waves * per_call_latency
             status_note = "Ollama connected" if ollama_reachable else "Ollama offline — will use classic fallback"
             breakdown["annotation_generation"] = {
-                "label": "LLM Annotation Generation" if ollama_reachable else "Annotation (Ollama offline → fallback)",
+                "label": "LLM Annotation" if ollama_reachable else "Annotation (Ollama offline → fallback)",
                 "time": annotation_time,
                 "detail": (
-                    f"{num_batches} batches ÷ {max_workers} workers = "
-                    f"{num_waves} waves × ~{per_batch_latency:.1f}s"
+                    f"{num_services} services ÷ {max_workers} workers = "
+                    f"{num_waves} waves × ~{per_call_latency:.1f}s/call"
                 ),
             }
 
-            # 2. Network overhead (only when Ollama is reachable)
+            # Network overhead (only when Ollama is reachable)
             if ollama_reachable:
-                network_overhead = num_waves * 0.2
+                network_overhead = num_waves * 0.15
                 breakdown["network_overhead"] = {
                     "label": "Network Overhead (Ollama)",
                     "time": network_overhead,
-                    "detail": f"{num_waves} waves × ~200ms",
+                    "detail": f"{num_waves} waves × ~150ms",
                 }
         else:
             # Classic bulk annotation — highly optimized, sub-second for thousands
@@ -170,8 +169,8 @@ def start_annotation():
         annotation_types = data.get(
             "annotation_types", ["interaction", "context", "policy"]
         )
-        max_workers = min(int(data.get("max_workers", 10)), 20)  # cap at 20
-        batch_size = min(int(data.get("batch_size", 5)), 10)     # cap at 10
+        max_workers = max(1, min(int(data.get("max_workers", 10)), 50))
+        batch_size = max(1, int(data.get("batch_size", 50)))
         skip_annotated = data.get("skip_annotated", False)
 
         _log.info("POST /api/annotate/start  use_llm=%s  service_ids=%s  annotation_types=%s  workers=%d  batch=%d  skip=%s",
