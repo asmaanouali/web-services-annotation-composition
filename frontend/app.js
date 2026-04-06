@@ -177,6 +177,8 @@ async function uploadAndTrainLLM() {
         const BATCH = 200;
         const totalBatches = Math.ceil(wsdlFiles.length / BATCH);
         let totalServicesUploaded = 0;
+        let totalErrors = 0;
+        let lastErrorSamples = null;
 
         for (let i = 0; i < wsdlFiles.length; i += BATCH) {
             const batch = wsdlFiles.slice(i, i + BATCH);
@@ -195,7 +197,20 @@ async function uploadAndTrainLLM() {
 
             if (!r.ok) throw new Error(d.error || `Batch ${batchNum} failed`);
             totalServicesUploaded = d.total_training_services;
-            txt.textContent = `Batch ${batchNum}/${totalBatches} done — ${totalServicesUploaded} services total`;
+            totalErrors += d.batch_errors || 0;
+            if (d.error_samples && d.error_samples.length > 0) lastErrorSamples = d.error_samples;
+            txt.textContent = `Batch ${batchNum}/${totalBatches} done — ${totalServicesUploaded} services parsed${totalErrors ? ` (${totalErrors} errors)` : ''}`;
+        }
+
+        // Verify services were actually uploaded
+        if (totalServicesUploaded === 0) {
+            let detail = `${wsdlFiles.length} files sent, ${totalErrors} parse errors.`;
+            if (lastErrorSamples && lastErrorSamples.length > 0) {
+                detail += '\nSample errors:\n' + lastErrorSamples.map(s =>
+                    `  ${s.file}: ${s.error || '(parse returned null)'}\n  Preview: ${(s.preview || '').substring(0, 150)}`
+                ).join('\n');
+            }
+            throw new Error(`No WSDL files could be parsed.\n${detail}`);
         }
 
         // Step 3: Upload XML files (requests, solutions)

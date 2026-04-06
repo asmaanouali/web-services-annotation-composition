@@ -47,7 +47,15 @@ def upload_training_data():
             for file in wsdl_files:
                 if file.filename.endswith((".wsdl", ".xml")):
                     try:
-                        content = file.read().decode("utf-8")
+                        raw = file.read()
+                        for enc in ("utf-8", "utf-8-sig", "latin-1"):
+                            try:
+                                content = raw.decode(enc)
+                                break
+                            except UnicodeDecodeError:
+                                continue
+                        else:
+                            content = raw.decode("utf-8", errors="replace")
                         service = app_state["parser"].parse_content(content, file.filename)
                         if service:
                             training_services.append(service)
@@ -91,24 +99,65 @@ def upload_training_wsdl_batch():
         batch_num = request.form.get("batch_num", 0)
 
         services = []
+        errors = 0
+        error_samples = []
+        skipped = 0
         for file in wsdl_files:
-            if file.filename.endswith((".wsdl", ".xml")):
-                try:
-                    content = file.read().decode("utf-8")
-                    service = app_state["parser"].parse_content(content, file.filename)
-                    if service:
-                        services.append(service)
-                except Exception as e:
-                    print(f"Error parsing {file.filename}: {e}")
+            if not file.filename.endswith((".wsdl", ".xml")):
+                skipped += 1
+                continue
+            try:
+                raw = file.read()
+                if not raw:
+                    errors += 1
+                    if len(error_samples) < 3:
+                        error_samples.append({"file": file.filename, "error": f"Empty file (0 bytes)", "preview": "", "content_len": 0})
+                    continue
+                # Try utf-8, then utf-8-sig (handles BOM), then latin-1
+                for enc in ("utf-8", "utf-8-sig", "latin-1"):
+                    try:
+                        content = raw.decode(enc)
+                        break
+                    except UnicodeDecodeError:
+                        continue
+                else:
+                    content = raw.decode("utf-8", errors="replace")
+
+                service = app_state["parser"].parse_content(content, file.filename)
+                if service:
+                    services.append(service)
+                else:
+                    errors += 1
+                    if len(error_samples) < 3:
+                        # Re-parse to capture the actual error
+                        parse_err = ""
+                        try:
+                            import xml.etree.ElementTree as _ET
+                            _ET.fromstring(content.lstrip())
+                        except Exception as ex:
+                            parse_err = f"XML: {ex}"
+                        preview = content[:300] if content else "(empty)"
+                        error_samples.append({"file": file.filename, "error": parse_err or "(parser returned None after successful XML parse)", "preview": preview, "content_len": len(content)})
+            except Exception as e:
+                errors += 1
+                if len(error_samples) < 3:
+                    error_samples.append({"file": file.filename, "error": str(e)})
 
         app_state["training_data"]["services"].extend(services)
         total = len(app_state["training_data"]["services"])
-        print(f"Batch {batch_num}: {len(services)} training services (total: {total})")
+        print(f"Batch {batch_num}: received={len(wsdl_files)} parsed={len(services)} errors={errors} skipped={skipped} (total: {total})")
+        if error_samples:
+            for s in error_samples:
+                print(f"  Error sample: {s}")
 
         return jsonify({
             "message": f"Batch {batch_num}: {len(services)} services added",
             "batch_services": len(services),
+            "batch_errors": errors,
+            "batch_skipped": skipped,
+            "batch_received": len(wsdl_files),
             "total_training_services": total,
+            "error_samples": error_samples,
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -24,9 +24,55 @@ class WSDLParser:
             print(f"Error while parsing {filepath}: {e}")
             return None
     
+    @staticmethod
+    def _fix_unbound_prefixes(content):
+        """Inject missing xmlns declarations for prefixes used in the XML.
+
+        Enriched WSDL files often use namespace prefixes (e.g. ``semExt:``,
+        ``qos:``, ``sawsdl:``) without declaring them, which causes
+        ``ET.fromstring`` to raise *unbound prefix* errors.  This helper
+        finds every ``prefix:`` usage inside tags and adds a dummy
+        ``xmlns:prefix`` to the root element if it is missing.
+        """
+        # Collect all prefixes already declared
+        declared = set(_re.findall(r'xmlns:(\w+)\s*=', content))
+
+        # Collect all prefixes actually used in element/attribute names
+        # Matches <prefix:tag or prefix:attr= but not xmlns:prefix=
+        used = set(_re.findall(r'<(\w+):', content))
+        used |= set(_re.findall(r'(?<!xmlns)\s(\w+):\w+\s*=', content))
+        used -= declared
+        used.discard('xml')    # xml is always implicitly declared
+        used.discard('xmlns')  # xmlns is reserved, never needs declaration
+
+        if not used:
+            return content
+
+        # Build the extra xmlns declarations
+        extra = " ".join(
+            f'xmlns:{p}="urn:x-auto:{p}"' for p in sorted(used)
+        )
+
+        # Insert right after the first opening tag (e.g. <definitions ...)
+        content = _re.sub(
+            r'(<\w[\w:]*)([\s>])',   # first opening tag
+            rf'\1 {extra}\2',
+            content,
+            count=1,
+        )
+        return content
+
     def parse_content(self, content, filename="unknown"):
         """Parse WSDL content"""
         try:
+            # Strip BOM (Byte Order Mark) that breaks ET.fromstring
+            if content.startswith('\ufeff'):
+                content = content[1:]
+            content = content.lstrip()
+
+            # Fix unbound namespace prefixes (common in enriched WSDL)
+            content = self._fix_unbound_prefixes(content)
+
             # Extract the service ID from the filename
             service_id = self._extract_service_id(filename)
             
@@ -43,8 +89,12 @@ class WSDLParser:
             service.qos = self._extract_qos(root, content)
             
             return service
+        except ET.ParseError as e:
+            print(f"XML parse error in {filename}: {e}")
+            print(f"  Content preview: {repr(content[:200])}")
+            return None
         except Exception as e:
-            print(f"Error while parsing content: {e}")
+            print(f"Error while parsing content of {filename}: {type(e).__name__}: {e}")
             return None
     
     def _extract_service_id(self, filename):

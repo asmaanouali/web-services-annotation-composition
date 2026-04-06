@@ -1,0 +1,12 @@
+2026-04-06 00:12:23.601 | INFO    | ================================================================================
+2026-04-06 00:12:23.612 | INFO    | ServiceAnnotator INITIALISED
+2026-04-06 00:12:23.612 | INFO    |   Total services loaded : 1500
+2026-04-06 00:12:23.612 | INFO    |   Ollama URL            : http://localhost:11434
+2026-04-06 00:12:23.612 | INFO    |   Model                 : llama3.2:3b
+2026-04-06 00:12:23.612 | INFO    |   History store provided : True
+2026-04-06 00:12:23.612 | INFO    |   No training examples provided
+2026-04-06 00:12:23.650 | INFO    |   Has training data     : True
+2026-04-06 00:12:23.650 | INFO    |   Unique output params  : 1184
+2026-04-06 00:12:23.650 | INFO    |   Unique input params   : 1173
+2026-04-06 00:12:23.650 | INFO    |   Indexes built successfully
+2026-04-06 00:12:23.650 | INFO    | ================================================================================

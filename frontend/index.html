@@ -46,78 +46,6 @@
 <!-- ============================================================ -->
 <section class="tab-content active" id="tab-0" role="tabpanel" aria-label="Service Management">
 
-    <!-- TRAINING -->
-    <div class="card">
-        <div class="card-title"><div class="icon">&#x1F9E0;</div> LLM Training (Optional)</div>
-        <div class="info-box warning">
-            <strong>Train for Better Results:</strong> Upload training data (WSDL + Requests + Solutions + Best Solutions) to teach the LLM about successful composition patterns. This improves accuracy when the LLM is used for composition.
-        </div>
-
-        <div id="training-status-badge" style="text-align:center;padding:14px;border-radius:var(--radius);background:var(--surface-alt);border:1px solid var(--border);margin:16px 0">
-            <span id="training-status-text" style="font-weight:600;color:var(--text-muted)">&#x26A0;&#xFE0F; LLM Not Trained &mdash; Upload training data below</span>
-        </div>
-
-        <div class="card-grid">
-            <div>
-                <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:600">Training WSDL Files:</label>
-                <div class="upload-area" onclick="document.getElementById('training-wsdl-files').click()" style="padding:18px">
-                    <input type="file" id="training-wsdl-files" multiple accept=".wsdl,.xml" onchange="updateTrainingFile('wsdl')">
-                    <div class="upload-icon">&#x1F4DA;</div>
-                    <div class="upload-text">Training Services</div>
-                </div>
-                <p id="training-wsdl-count" style="margin-top:6px;font-size:12px;color:var(--text-muted)">0 files selected</p>
-            </div>
-            <div>
-                <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:600">Training Requests:</label>
-                <div class="upload-area" onclick="document.getElementById('training-requests-file').click()" style="padding:18px">
-                    <input type="file" id="training-requests-file" accept=".xml" onchange="updateTrainingFile('requests')">
-                    <div class="upload-icon">&#x1F4CB;</div>
-                    <div class="upload-text">Requests.xml</div>
-                </div>
-                <p id="training-requests-name" style="margin-top:6px;font-size:12px;color:var(--text-muted)">No file selected</p>
-            </div>
-            <div>
-                <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:600">Training Solutions:</label>
-                <div class="upload-area" onclick="document.getElementById('training-solutions-file').click()" style="padding:18px">
-                    <input type="file" id="training-solutions-file" accept=".xml" onchange="updateTrainingFile('solutions')">
-                    <div class="upload-icon">&#x2705;</div>
-                    <div class="upload-text">Solutions.xml</div>
-                </div>
-                <p id="training-solutions-name" style="margin-top:6px;font-size:12px;color:var(--text-muted)">No file selected</p>
-            </div>
-            <div>
-                <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:600">Best Solutions:</label>
-                <div class="upload-area" onclick="document.getElementById('training-best-solutions-file').click()" style="padding:18px">
-                    <input type="file" id="training-best-solutions-file" accept=".xml" onchange="updateTrainingFile('best')">
-                    <div class="upload-icon">&#x1F3C6;</div>
-                    <div class="upload-text">BestSolutions.xml</div>
-                </div>
-                <p id="training-best-name" style="margin-top:6px;font-size:12px;color:var(--text-muted)">No file selected</p>
-            </div>
-        </div>
-
-        <div style="margin-top:20px">
-            <button class="btn btn-accent" onclick="uploadAndTrainLLM()">&#x1F680; Upload Training Data &amp; Train LLM</button>
-        </div>
-
-        <div id="training-progress-section" style="display:none;margin-top:20px">
-            <div class="progress-bar">
-                <div class="progress-fill" id="training-progress" style="width:0%">0%</div>
-            </div>
-            <p id="training-progress-text" style="margin-top:8px;font-size:13px;color:var(--text-muted)"></p>
-        </div>
-
-        <div id="learning-metrics" style="display:none;margin-top:20px">
-            <div class="card-grid-4">
-                <div class="kpi-box"><div class="kpi-label">Training Examples</div><div class="kpi-value" id="m-total-comps">0</div></div>
-                <div class="kpi-box"><div class="kpi-label">Coverage</div><div class="kpi-value" id="m-success-rate">0%</div></div>
-                <div class="kpi-box"><div class="kpi-label">Avg Utility</div><div class="kpi-value" id="m-avg-utility">0</div></div>
-                <div class="kpi-box"><div class="kpi-label">Solution Rate</div><div class="kpi-value" id="m-learning-rate">0%</div></div>
-            </div>
-            <div id="training-quality-details" style="display:none;margin-top:12px;padding:12px 16px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--text-muted)"></div>
-        </div>
-    </div>
-
     <!-- TEST DATA UPLOAD -->
     <div class="card">
         <div class="card-title"><div class="icon">&#x1F4C2;</div> Test Data &mdash; Service Repository</div>
@@ -306,6 +234,78 @@
         <strong>&#x26A0;&#xFE0F; Services Not Annotated</strong><br>
         Intelligent composition requires annotated services. <span id="llm-warning-detail"></span><br>
         <button class="btn btn-sm" onclick="showTab(1)" style="margin-top:10px">Go to Annotation (Tab 2)</button>
+    </div>
+
+    <!-- TRAINING -->
+    <div class="card">
+        <div class="card-title"><div class="icon">&#x1F9E0;</div> LLM Training (Optional)</div>
+        <div class="info-box warning">
+            <strong>Train for Better Results:</strong> Upload training data (WSDL + Requests + Solutions + Best Solutions) to teach the LLM about successful composition patterns. This improves accuracy when the LLM is used for composition.
+        </div>
+
+        <div id="training-status-badge" style="text-align:center;padding:14px;border-radius:var(--radius);background:var(--surface-alt);border:1px solid var(--border);margin:16px 0">
+            <span id="training-status-text" style="font-weight:600;color:var(--text-muted)">&#x26A0;&#xFE0F; LLM Not Trained &mdash; Upload training data below</span>
+        </div>
+
+        <div class="card-grid">
+            <div>
+                <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:600">Training WSDL Files:</label>
+                <div class="upload-area" onclick="document.getElementById('training-wsdl-files').click()" style="padding:18px">
+                    <input type="file" id="training-wsdl-files" multiple accept=".wsdl,.xml" onchange="updateTrainingFile('wsdl')">
+                    <div class="upload-icon">&#x1F4DA;</div>
+                    <div class="upload-text">Training Services</div>
+                </div>
+                <p id="training-wsdl-count" style="margin-top:6px;font-size:12px;color:var(--text-muted)">0 files selected</p>
+            </div>
+            <div>
+                <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:600">Training Requests:</label>
+                <div class="upload-area" onclick="document.getElementById('training-requests-file').click()" style="padding:18px">
+                    <input type="file" id="training-requests-file" accept=".xml" onchange="updateTrainingFile('requests')">
+                    <div class="upload-icon">&#x1F4CB;</div>
+                    <div class="upload-text">Requests.xml</div>
+                </div>
+                <p id="training-requests-name" style="margin-top:6px;font-size:12px;color:var(--text-muted)">No file selected</p>
+            </div>
+            <div>
+                <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:600">Training Solutions:</label>
+                <div class="upload-area" onclick="document.getElementById('training-solutions-file').click()" style="padding:18px">
+                    <input type="file" id="training-solutions-file" accept=".xml" onchange="updateTrainingFile('solutions')">
+                    <div class="upload-icon">&#x2705;</div>
+                    <div class="upload-text">Solutions.xml</div>
+                </div>
+                <p id="training-solutions-name" style="margin-top:6px;font-size:12px;color:var(--text-muted)">No file selected</p>
+            </div>
+            <div>
+                <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:600">Best Solutions:</label>
+                <div class="upload-area" onclick="document.getElementById('training-best-solutions-file').click()" style="padding:18px">
+                    <input type="file" id="training-best-solutions-file" accept=".xml" onchange="updateTrainingFile('best')">
+                    <div class="upload-icon">&#x1F3C6;</div>
+                    <div class="upload-text">BestSolutions.xml</div>
+                </div>
+                <p id="training-best-name" style="margin-top:6px;font-size:12px;color:var(--text-muted)">No file selected</p>
+            </div>
+        </div>
+
+        <div style="margin-top:20px">
+            <button class="btn btn-accent" onclick="uploadAndTrainLLM()">&#x1F680; Upload Training Data &amp; Train LLM</button>
+        </div>
+
+        <div id="training-progress-section" style="display:none;margin-top:20px">
+            <div class="progress-bar">
+                <div class="progress-fill" id="training-progress" style="width:0%">0%</div>
+            </div>
+            <p id="training-progress-text" style="margin-top:8px;font-size:13px;color:var(--text-muted)"></p>
+        </div>
+
+        <div id="learning-metrics" style="display:none;margin-top:20px">
+            <div class="card-grid-4">
+                <div class="kpi-box"><div class="kpi-label">Training Examples</div><div class="kpi-value" id="m-total-comps">0</div></div>
+                <div class="kpi-box"><div class="kpi-label">Coverage</div><div class="kpi-value" id="m-success-rate">0%</div></div>
+                <div class="kpi-box"><div class="kpi-label">Avg Utility</div><div class="kpi-value" id="m-avg-utility">0</div></div>
+                <div class="kpi-box"><div class="kpi-label">Solution Rate</div><div class="kpi-value" id="m-learning-rate">0%</div></div>
+            </div>
+            <div id="training-quality-details" style="display:none;margin-top:12px;padding:12px 16px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--text-muted)"></div>
+        </div>
     </div>
 
     <div class="card">

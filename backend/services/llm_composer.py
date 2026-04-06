@@ -806,36 +806,23 @@ class LLMComposer:
                 service.qos, request.qos_constraints, qos_checks
             )
 
-            # Knowledge base bonus (capped)
+            # Knowledge base bonus (small — should not dominate utility)
             kb_bonus = 0.0
             ranking = self.knowledge_base['service_rankings'].get(service.id)
             if ranking:
-                kb_bonus = min(ranking['score'] * 5, 10.0)
+                kb_bonus = min(ranking['score'] * 0.5, 1.0)
 
-            # Direct producer bonus (reduced — was 50, now 10)
-            direct_bonus = 10.0 if request.resultant in service.outputs else 0.0
-
-            # Input satisfaction bonus
-            input_match = sum(
-                1 for inp in service.inputs if inp in request.provided
-            )
-            input_ratio = input_match / max(len(service.inputs), 1)
-            input_bonus = input_ratio * 10.0
-
-            # Annotation-based trust/reputation bonus
+            # Annotation-based trust bonus (small)
             annotation_bonus = 0.0
             if hasattr(service, 'annotations') and service.annotations:
                 sn = service.annotations.social_node
                 annotation_bonus = (
-                    sn.trust_degree.value * 5
-                    + sn.reputation.value * 5
-                    + sn.cooperativeness.value * 2.5
+                    sn.trust_degree.value * 0.3
+                    + sn.reputation.value * 0.3
+                    + sn.cooperativeness.value * 0.15
                 )
 
-            total_score = (
-                utility + kb_bonus + direct_bonus
-                + input_bonus + annotation_bonus
-            )
+            total_score = utility + kb_bonus + annotation_bonus
             scored.append((service, total_score))
 
         scored.sort(key=lambda x: x[1], reverse=True)
@@ -899,14 +886,19 @@ class LLMComposer:
         except Exception as e:
             print(f"Ollama selection fallback (direct): {e}")
 
-        # Fallback: highest scored
-        return direct_solutions[0][0]
+        # Fallback: highest utility (not composite score)
+        best_direct = max(direct_solutions, key=lambda x: calculate_utility(
+            x[0].qos, request.qos_constraints,
+            x[0].qos.meets_constraints(request.qos_constraints)
+        ))
+        return best_direct[0]
 
     def _build_chain(self, request, scored):
         """Build a multi-service chain using beam search — explores
         multiple paths in parallel, comparable to classic's Dijkstra."""
-        beam_width = 15
+        beam_width = 200
         max_depth = 30
+        max_states = 500000
 
         # Beam state: (available_params, path_ids, path_services)
         initial = (frozenset(request.provided), [], [])
@@ -917,9 +909,10 @@ class LLMComposer:
         best_solution = None
         best_utility = -float('inf')
         best_seen = {}  # frozenset(params) -> best running utility
+        states_explored = 0
 
         for _depth in range(max_depth):
-            if not beam:
+            if not beam or states_explored >= max_states:
                 break
 
             next_beam = []
@@ -929,21 +922,16 @@ class LLMComposer:
 
                 # Goal check
                 if request.resultant in available and path_services:
-                    chain_qos = aggregate_qos(path_services)
-                    qos_checks = chain_qos.meets_constraints(
-                        request.qos_constraints
-                    )
-                    real_utility = calculate_utility(
-                        chain_qos, request.qos_constraints, qos_checks
-                    )
-                    if real_utility > best_utility:
-                        best_utility = real_utility
+                    # Use running average utility (same as classic Dijkstra)
+                    # for fair comparison
+                    if current_utility > best_utility:
+                        best_utility = current_utility
                         best_solution = {
                             'services': list(path_services),
                             'workflow': list(path_ids),
-                            'utility': real_utility,
-                            'qos': chain_qos,
-                            'explored': len(scored),
+                            'utility': current_utility,
+                            'qos': aggregate_qos(path_services),
+                            'explored': states_explored,
                         }
                     continue  # don't expand completed paths
 
@@ -957,6 +945,10 @@ class LLMComposer:
                     )
                     if not (svc_inputs <= available):
                         continue
+
+                    states_explored += 1
+                    if states_explored >= max_states:
+                        break
 
                     new_available = available | frozenset(service.outputs)
                     new_path_ids = path_ids + [service.id]
@@ -984,21 +976,8 @@ class LLMComposer:
                         continue
                     best_seen[params_key] = new_utility
 
-                    # Goal proximity heuristic for beam ordering
-                    goal_bonus = (
-                        30.0 if request.resultant in service.outputs
-                        else 0.0
-                    )
-                    progress_bonus = 0.0
-                    for out in service.outputs:
-                        if out not in available:
-                            for s2 in self._output_index.get(
-                                    request.resultant, []):
-                                if out in s2.inputs:
-                                    progress_bonus += 10.0
-                                    break
-
-                    priority = -(new_utility + goal_bonus + progress_bonus)
+                    # Use pure utility for beam priority (no artificial bonuses)
+                    priority = -new_utility
                     counter += 1
                     next_beam.append((
                         priority, counter,

@@ -1,1 +1,2458 @@
-[]
+[
+  {
+    "timestamp": "2026-04-05T23:02:04.372803",
+    "composition_id": "classic_composition1-20-16-9_dijkstra",
+    "service_id": "p76a6476955",
+    "co_services": [
+      "p66a5220134",
+      "p23a7496216",
+      "p93a9550878",
+      "p00a2165062"
+    ],
+    "success": true,
+    "utility": 23.85892,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 544.5868968963623
+  },
+  {
+    "timestamp": "2026-04-05T23:02:04.372803",
+    "composition_id": "classic_composition1-20-16-9_dijkstra",
+    "service_id": "p66a5220134",
+    "co_services": [
+      "p76a6476955",
+      "p23a7496216",
+      "p93a9550878",
+      "p00a2165062"
+    ],
+    "success": true,
+    "utility": 23.85892,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 544.5868968963623
+  },
+  {
+    "timestamp": "2026-04-05T23:02:04.372803",
+    "composition_id": "classic_composition1-20-16-9_dijkstra",
+    "service_id": "p23a7496216",
+    "co_services": [
+      "p76a6476955",
+      "p66a5220134",
+      "p93a9550878",
+      "p00a2165062"
+    ],
+    "success": true,
+    "utility": 23.85892,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 544.5868968963623
+  },
+  {
+    "timestamp": "2026-04-05T23:02:04.372803",
+    "composition_id": "classic_composition1-20-16-9_dijkstra",
+    "service_id": "p93a9550878",
+    "co_services": [
+      "p76a6476955",
+      "p66a5220134",
+      "p23a7496216",
+      "p00a2165062"
+    ],
+    "success": true,
+    "utility": 23.85892,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 544.5868968963623
+  },
+  {
+    "timestamp": "2026-04-05T23:02:04.372803",
+    "composition_id": "classic_composition1-20-16-9_dijkstra",
+    "service_id": "p00a2165062",
+    "co_services": [
+      "p76a6476955",
+      "p66a5220134",
+      "p23a7496216",
+      "p93a9550878"
+    ],
+    "success": true,
+    "utility": 23.85892,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 544.5868968963623
+  },
+  {
+    "timestamp": "2026-04-05T23:04:17.107875",
+    "composition_id": "llm_composition1-20-16-9",
+    "service_id": "p76a6476955",
+    "co_services": [
+      "p66a5220134",
+      "p71a8491115",
+      "p69a3587076"
+    ],
+    "success": true,
+    "utility": 16.355489812499997,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 17.279863357543945
+  },
+  {
+    "timestamp": "2026-04-05T23:04:17.107875",
+    "composition_id": "llm_composition1-20-16-9",
+    "service_id": "p66a5220134",
+    "co_services": [
+      "p76a6476955",
+      "p71a8491115",
+      "p69a3587076"
+    ],
+    "success": true,
+    "utility": 16.355489812499997,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 17.279863357543945
+  },
+  {
+    "timestamp": "2026-04-05T23:04:17.107875",
+    "composition_id": "llm_composition1-20-16-9",
+    "service_id": "p71a8491115",
+    "co_services": [
+      "p76a6476955",
+      "p66a5220134",
+      "p69a3587076"
+    ],
+    "success": true,
+    "utility": 16.355489812499997,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 17.279863357543945
+  },
+  {
+    "timestamp": "2026-04-05T23:04:17.107875",
+    "composition_id": "llm_composition1-20-16-9",
+    "service_id": "p69a3587076",
+    "co_services": [
+      "p76a6476955",
+      "p66a5220134",
+      "p71a8491115"
+    ],
+    "success": true,
+    "utility": 16.355489812499997,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 17.279863357543945
+  },
+  {
+    "timestamp": "2026-04-05T23:15:09.631169",
+    "composition_id": "classic_composition1-20-32-9_dijkstra",
+    "service_id": "p97a3166343",
+    "co_services": [
+      "p50a9102115",
+      "p12a5337535",
+      "p32a0404212",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 927.316427230835
+  },
+  {
+    "timestamp": "2026-04-05T23:15:09.631169",
+    "composition_id": "classic_composition1-20-32-9_dijkstra",
+    "service_id": "p50a9102115",
+    "co_services": [
+      "p97a3166343",
+      "p12a5337535",
+      "p32a0404212",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 927.316427230835
+  },
+  {
+    "timestamp": "2026-04-05T23:15:09.631169",
+    "composition_id": "classic_composition1-20-32-9_dijkstra",
+    "service_id": "p12a5337535",
+    "co_services": [
+      "p97a3166343",
+      "p50a9102115",
+      "p32a0404212",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 927.316427230835
+  },
+  {
+    "timestamp": "2026-04-05T23:15:09.631169",
+    "composition_id": "classic_composition1-20-32-9_dijkstra",
+    "service_id": "p32a0404212",
+    "co_services": [
+      "p97a3166343",
+      "p50a9102115",
+      "p12a5337535",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 927.316427230835
+  },
+  {
+    "timestamp": "2026-04-05T23:15:09.631169",
+    "composition_id": "classic_composition1-20-32-9_dijkstra",
+    "service_id": "p54a1168114",
+    "co_services": [
+      "p97a3166343",
+      "p50a9102115",
+      "p12a5337535",
+      "p32a0404212"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 927.316427230835
+  },
+  {
+    "timestamp": "2026-04-05T23:15:19.714613",
+    "composition_id": "llm_composition1-20-32-9",
+    "service_id": "p12a5337535",
+    "co_services": [
+      "p50a9102115",
+      "p32a0404212",
+      "p97a3166343",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 203.85241508483887
+  },
+  {
+    "timestamp": "2026-04-05T23:15:19.714613",
+    "composition_id": "llm_composition1-20-32-9",
+    "service_id": "p50a9102115",
+    "co_services": [
+      "p12a5337535",
+      "p32a0404212",
+      "p97a3166343",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 203.85241508483887
+  },
+  {
+    "timestamp": "2026-04-05T23:15:19.714613",
+    "composition_id": "llm_composition1-20-32-9",
+    "service_id": "p32a0404212",
+    "co_services": [
+      "p12a5337535",
+      "p50a9102115",
+      "p97a3166343",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 203.85241508483887
+  },
+  {
+    "timestamp": "2026-04-05T23:15:19.714613",
+    "composition_id": "llm_composition1-20-32-9",
+    "service_id": "p97a3166343",
+    "co_services": [
+      "p12a5337535",
+      "p50a9102115",
+      "p32a0404212",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 203.85241508483887
+  },
+  {
+    "timestamp": "2026-04-05T23:15:19.714613",
+    "composition_id": "llm_composition1-20-32-9",
+    "service_id": "p54a1168114",
+    "co_services": [
+      "p12a5337535",
+      "p50a9102115",
+      "p32a0404212",
+      "p97a3166343"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 203.85241508483887
+  },
+  {
+    "timestamp": "2026-04-05T23:34:19.714423",
+    "composition_id": "classic_composition1-20-32-9_dijkstra",
+    "service_id": "p97a3166343",
+    "co_services": [
+      "p50a9102115",
+      "p12a5337535",
+      "p32a0404212",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 491.03736877441406
+  },
+  {
+    "timestamp": "2026-04-05T23:34:19.714423",
+    "composition_id": "classic_composition1-20-32-9_dijkstra",
+    "service_id": "p50a9102115",
+    "co_services": [
+      "p97a3166343",
+      "p12a5337535",
+      "p32a0404212",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 491.03736877441406
+  },
+  {
+    "timestamp": "2026-04-05T23:34:19.714423",
+    "composition_id": "classic_composition1-20-32-9_dijkstra",
+    "service_id": "p12a5337535",
+    "co_services": [
+      "p97a3166343",
+      "p50a9102115",
+      "p32a0404212",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 491.03736877441406
+  },
+  {
+    "timestamp": "2026-04-05T23:34:19.714423",
+    "composition_id": "classic_composition1-20-32-9_dijkstra",
+    "service_id": "p32a0404212",
+    "co_services": [
+      "p97a3166343",
+      "p50a9102115",
+      "p12a5337535",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 491.03736877441406
+  },
+  {
+    "timestamp": "2026-04-05T23:34:19.714423",
+    "composition_id": "classic_composition1-20-32-9_dijkstra",
+    "service_id": "p54a1168114",
+    "co_services": [
+      "p97a3166343",
+      "p50a9102115",
+      "p12a5337535",
+      "p32a0404212"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 491.03736877441406
+  },
+  {
+    "timestamp": "2026-04-05T23:34:32.988701",
+    "composition_id": "llm_composition1-20-32-9",
+    "service_id": "p12a5337535",
+    "co_services": [
+      "p50a9102115",
+      "p32a0404212",
+      "p97a3166343",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 197.25370407104492
+  },
+  {
+    "timestamp": "2026-04-05T23:34:32.988701",
+    "composition_id": "llm_composition1-20-32-9",
+    "service_id": "p50a9102115",
+    "co_services": [
+      "p12a5337535",
+      "p32a0404212",
+      "p97a3166343",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 197.25370407104492
+  },
+  {
+    "timestamp": "2026-04-05T23:34:32.988701",
+    "composition_id": "llm_composition1-20-32-9",
+    "service_id": "p32a0404212",
+    "co_services": [
+      "p12a5337535",
+      "p50a9102115",
+      "p97a3166343",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 197.25370407104492
+  },
+  {
+    "timestamp": "2026-04-05T23:34:32.988701",
+    "composition_id": "llm_composition1-20-32-9",
+    "service_id": "p97a3166343",
+    "co_services": [
+      "p12a5337535",
+      "p50a9102115",
+      "p32a0404212",
+      "p54a1168114"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 197.25370407104492
+  },
+  {
+    "timestamp": "2026-04-05T23:34:32.988701",
+    "composition_id": "llm_composition1-20-32-9",
+    "service_id": "p54a1168114",
+    "co_services": [
+      "p12a5337535",
+      "p50a9102115",
+      "p32a0404212",
+      "p97a3166343"
+    ],
+    "success": true,
+    "utility": 24.95906,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 197.25370407104492
+  },
+  {
+    "timestamp": "2026-04-05T23:38:47.903622",
+    "composition_id": "classic_composition1-20-32-7_dijkstra",
+    "service_id": "p53a9607903",
+    "co_services": [
+      "p01a7968535",
+      "p75a5103761",
+      "p65a9200588"
+    ],
+    "success": true,
+    "utility": 24.753687499999998,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 781.9809913635254
+  },
+  {
+    "timestamp": "2026-04-05T23:38:47.903622",
+    "composition_id": "classic_composition1-20-32-7_dijkstra",
+    "service_id": "p01a7968535",
+    "co_services": [
+      "p53a9607903",
+      "p75a5103761",
+      "p65a9200588"
+    ],
+    "success": true,
+    "utility": 24.753687499999998,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 781.9809913635254
+  },
+  {
+    "timestamp": "2026-04-05T23:38:47.903622",
+    "composition_id": "classic_composition1-20-32-7_dijkstra",
+    "service_id": "p75a5103761",
+    "co_services": [
+      "p53a9607903",
+      "p01a7968535",
+      "p65a9200588"
+    ],
+    "success": true,
+    "utility": 24.753687499999998,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 781.9809913635254
+  },
+  {
+    "timestamp": "2026-04-05T23:38:47.903622",
+    "composition_id": "classic_composition1-20-32-7_dijkstra",
+    "service_id": "p65a9200588",
+    "co_services": [
+      "p53a9607903",
+      "p01a7968535",
+      "p75a5103761"
+    ],
+    "success": true,
+    "utility": 24.753687499999998,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 781.9809913635254
+  },
+  {
+    "timestamp": "2026-04-05T23:42:38.142794",
+    "composition_id": "classic_composition1-20-32-7_dijkstra",
+    "service_id": "p53a9607903",
+    "co_services": [
+      "p01a7968535",
+      "p75a5103761",
+      "p65a9200588"
+    ],
+    "success": true,
+    "utility": 24.753687499999998,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 756.5352916717529
+  },
+  {
+    "timestamp": "2026-04-05T23:42:38.142794",
+    "composition_id": "classic_composition1-20-32-7_dijkstra",
+    "service_id": "p01a7968535",
+    "co_services": [
+      "p53a9607903",
+      "p75a5103761",
+      "p65a9200588"
+    ],
+    "success": true,
+    "utility": 24.753687499999998,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 756.5352916717529
+  },
+  {
+    "timestamp": "2026-04-05T23:42:38.142794",
+    "composition_id": "classic_composition1-20-32-7_dijkstra",
+    "service_id": "p75a5103761",
+    "co_services": [
+      "p53a9607903",
+      "p01a7968535",
+      "p65a9200588"
+    ],
+    "success": true,
+    "utility": 24.753687499999998,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 756.5352916717529
+  },
+  {
+    "timestamp": "2026-04-05T23:42:38.142794",
+    "composition_id": "classic_composition1-20-32-7_dijkstra",
+    "service_id": "p65a9200588",
+    "co_services": [
+      "p53a9607903",
+      "p01a7968535",
+      "p75a5103761"
+    ],
+    "success": true,
+    "utility": 24.753687499999998,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 756.5352916717529
+  },
+  {
+    "timestamp": "2026-04-05T23:42:50.022498",
+    "composition_id": "llm_composition1-20-32-7",
+    "service_id": "p53a9607903",
+    "co_services": [
+      "p01a7968535",
+      "p75a5103761",
+      "p65a9200588"
+    ],
+    "success": true,
+    "utility": 24.753687499999998,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 149.87659454345703
+  },
+  {
+    "timestamp": "2026-04-05T23:42:50.022498",
+    "composition_id": "llm_composition1-20-32-7",
+    "service_id": "p01a7968535",
+    "co_services": [
+      "p53a9607903",
+      "p75a5103761",
+      "p65a9200588"
+    ],
+    "success": true,
+    "utility": 24.753687499999998,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 149.87659454345703
+  },
+  {
+    "timestamp": "2026-04-05T23:42:50.022498",
+    "composition_id": "llm_composition1-20-32-7",
+    "service_id": "p75a5103761",
+    "co_services": [
+      "p53a9607903",
+      "p01a7968535",
+      "p65a9200588"
+    ],
+    "success": true,
+    "utility": 24.753687499999998,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 149.87659454345703
+  },
+  {
+    "timestamp": "2026-04-05T23:42:50.022498",
+    "composition_id": "llm_composition1-20-32-7",
+    "service_id": "p65a9200588",
+    "co_services": [
+      "p53a9607903",
+      "p01a7968535",
+      "p75a5103761"
+    ],
+    "success": true,
+    "utility": 24.753687499999998,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 149.87659454345703
+  },
+  {
+    "timestamp": "2026-04-05T23:51:13.508299",
+    "composition_id": "classic_composition1-20-4-10_dijkstra",
+    "service_id": "p30a0579521",
+    "co_services": [
+      "p92a2098982",
+      "p22a6711511",
+      "p20a8747318",
+      "p14a9968435"
+    ],
+    "success": true,
+    "utility": 25.31991,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 397.83310890197754
+  },
+  {
+    "timestamp": "2026-04-05T23:51:13.508299",
+    "composition_id": "classic_composition1-20-4-10_dijkstra",
+    "service_id": "p92a2098982",
+    "co_services": [
+      "p30a0579521",
+      "p22a6711511",
+      "p20a8747318",
+      "p14a9968435"
+    ],
+    "success": true,
+    "utility": 25.31991,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 397.83310890197754
+  },
+  {
+    "timestamp": "2026-04-05T23:51:13.508299",
+    "composition_id": "classic_composition1-20-4-10_dijkstra",
+    "service_id": "p22a6711511",
+    "co_services": [
+      "p30a0579521",
+      "p92a2098982",
+      "p20a8747318",
+      "p14a9968435"
+    ],
+    "success": true,
+    "utility": 25.31991,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 397.83310890197754
+  },
+  {
+    "timestamp": "2026-04-05T23:51:13.508299",
+    "composition_id": "classic_composition1-20-4-10_dijkstra",
+    "service_id": "p20a8747318",
+    "co_services": [
+      "p30a0579521",
+      "p92a2098982",
+      "p22a6711511",
+      "p14a9968435"
+    ],
+    "success": true,
+    "utility": 25.31991,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 397.83310890197754
+  },
+  {
+    "timestamp": "2026-04-05T23:51:13.508299",
+    "composition_id": "classic_composition1-20-4-10_dijkstra",
+    "service_id": "p14a9968435",
+    "co_services": [
+      "p30a0579521",
+      "p92a2098982",
+      "p22a6711511",
+      "p20a8747318"
+    ],
+    "success": true,
+    "utility": 25.31991,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 397.83310890197754
+  },
+  {
+    "timestamp": "2026-04-05T23:51:22.545887",
+    "composition_id": "llm_composition1-20-4-10",
+    "service_id": "p30a0579521",
+    "co_services": [
+      "p92a2098982",
+      "p22a6711511",
+      "p20a8747318",
+      "p14a9968435"
+    ],
+    "success": true,
+    "utility": 25.31991,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 146.20256423950195
+  },
+  {
+    "timestamp": "2026-04-05T23:51:22.545887",
+    "composition_id": "llm_composition1-20-4-10",
+    "service_id": "p92a2098982",
+    "co_services": [
+      "p30a0579521",
+      "p22a6711511",
+      "p20a8747318",
+      "p14a9968435"
+    ],
+    "success": true,
+    "utility": 25.31991,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 146.20256423950195
+  },
+  {
+    "timestamp": "2026-04-05T23:51:22.545887",
+    "composition_id": "llm_composition1-20-4-10",
+    "service_id": "p22a6711511",
+    "co_services": [
+      "p30a0579521",
+      "p92a2098982",
+      "p20a8747318",
+      "p14a9968435"
+    ],
+    "success": true,
+    "utility": 25.31991,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 146.20256423950195
+  },
+  {
+    "timestamp": "2026-04-05T23:51:22.545887",
+    "composition_id": "llm_composition1-20-4-10",
+    "service_id": "p20a8747318",
+    "co_services": [
+      "p30a0579521",
+      "p92a2098982",
+      "p22a6711511",
+      "p14a9968435"
+    ],
+    "success": true,
+    "utility": 25.31991,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 146.20256423950195
+  },
+  {
+    "timestamp": "2026-04-05T23:51:22.545887",
+    "composition_id": "llm_composition1-20-4-10",
+    "service_id": "p14a9968435",
+    "co_services": [
+      "p30a0579521",
+      "p92a2098982",
+      "p22a6711511",
+      "p20a8747318"
+    ],
+    "success": true,
+    "utility": 25.31991,
+    "context": {
+      "device_type": "desktop",
+      "hour": 23,
+      "weekday": 6,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 146.20256423950195
+  },
+  {
+    "timestamp": "2026-04-06T00:05:10.299616",
+    "composition_id": "classic_composition1-20-4-9_dijkstra",
+    "service_id": "p12a1509544",
+    "co_services": [
+      "p61a3181722",
+      "p43a6519085",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 359.0564727783203
+  },
+  {
+    "timestamp": "2026-04-06T00:05:10.299616",
+    "composition_id": "classic_composition1-20-4-9_dijkstra",
+    "service_id": "p61a3181722",
+    "co_services": [
+      "p12a1509544",
+      "p43a6519085",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 359.0564727783203
+  },
+  {
+    "timestamp": "2026-04-06T00:05:10.299616",
+    "composition_id": "classic_composition1-20-4-9_dijkstra",
+    "service_id": "p43a6519085",
+    "co_services": [
+      "p12a1509544",
+      "p61a3181722",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 359.0564727783203
+  },
+  {
+    "timestamp": "2026-04-06T00:05:10.299616",
+    "composition_id": "classic_composition1-20-4-9_dijkstra",
+    "service_id": "p34a3438623",
+    "co_services": [
+      "p12a1509544",
+      "p61a3181722",
+      "p43a6519085"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 359.0564727783203
+  },
+  {
+    "timestamp": "2026-04-06T00:05:12.562898",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p12a1509544",
+    "co_services": [
+      "p61a3181722",
+      "p43a6519085",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 196.95663452148438
+  },
+  {
+    "timestamp": "2026-04-06T00:05:12.562898",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p61a3181722",
+    "co_services": [
+      "p12a1509544",
+      "p43a6519085",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 196.95663452148438
+  },
+  {
+    "timestamp": "2026-04-06T00:05:12.562898",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p43a6519085",
+    "co_services": [
+      "p12a1509544",
+      "p61a3181722",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 196.95663452148438
+  },
+  {
+    "timestamp": "2026-04-06T00:05:12.562898",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p34a3438623",
+    "co_services": [
+      "p12a1509544",
+      "p61a3181722",
+      "p43a6519085"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 196.95663452148438
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-9",
+    "service_id": "servicep45a8220122",
+    "co_services": [
+      "servicep39a2719946",
+      "servicep39a2655235",
+      "servicep34a3438623"
+    ],
+    "success": true,
+    "utility": 1369.022004236,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-9",
+    "service_id": "servicep39a2719946",
+    "co_services": [
+      "servicep45a8220122",
+      "servicep39a2655235",
+      "servicep34a3438623"
+    ],
+    "success": true,
+    "utility": 1369.022004236,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-9",
+    "service_id": "servicep39a2655235",
+    "co_services": [
+      "servicep45a8220122",
+      "servicep39a2719946",
+      "servicep34a3438623"
+    ],
+    "success": true,
+    "utility": 1369.022004236,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-9",
+    "service_id": "servicep34a3438623",
+    "co_services": [
+      "servicep45a8220122",
+      "servicep39a2719946",
+      "servicep39a2655235"
+    ],
+    "success": true,
+    "utility": 1369.022004236,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-7",
+    "service_id": "servicep25a5760665",
+    "co_services": [
+      "servicep10a2342421",
+      "servicep80a3152012",
+      "servicep11a3021899"
+    ],
+    "success": true,
+    "utility": 1262.60685863108,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-7",
+    "service_id": "servicep10a2342421",
+    "co_services": [
+      "servicep25a5760665",
+      "servicep80a3152012",
+      "servicep11a3021899"
+    ],
+    "success": true,
+    "utility": 1262.60685863108,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-7",
+    "service_id": "servicep80a3152012",
+    "co_services": [
+      "servicep25a5760665",
+      "servicep10a2342421",
+      "servicep11a3021899"
+    ],
+    "success": true,
+    "utility": 1262.60685863108,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-7",
+    "service_id": "servicep11a3021899",
+    "co_services": [
+      "servicep25a5760665",
+      "servicep10a2342421",
+      "servicep80a3152012"
+    ],
+    "success": true,
+    "utility": 1262.60685863108,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-1",
+    "service_id": "servicep98a8236027",
+    "co_services": [
+      "servicep92a3173258"
+    ],
+    "success": true,
+    "utility": 680.664673638511,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-1",
+    "service_id": "servicep92a3173258",
+    "co_services": [
+      "servicep98a8236027"
+    ],
+    "success": true,
+    "utility": 680.664673638511,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-10",
+    "service_id": "servicep36a9473080",
+    "co_services": [
+      "servicep58a7661885",
+      "servicep94a4353021",
+      "servicep34a3523331"
+    ],
+    "success": true,
+    "utility": 1491.89061655969,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-10",
+    "service_id": "servicep58a7661885",
+    "co_services": [
+      "servicep36a9473080",
+      "servicep94a4353021",
+      "servicep34a3523331"
+    ],
+    "success": true,
+    "utility": 1491.89061655969,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-10",
+    "service_id": "servicep94a4353021",
+    "co_services": [
+      "servicep36a9473080",
+      "servicep58a7661885",
+      "servicep34a3523331"
+    ],
+    "success": true,
+    "utility": 1491.89061655969,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-10",
+    "service_id": "servicep34a3523331",
+    "co_services": [
+      "servicep36a9473080",
+      "servicep58a7661885",
+      "servicep94a4353021"
+    ],
+    "success": true,
+    "utility": 1491.89061655969,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-2",
+    "service_id": "servicep55a3578074",
+    "co_services": [
+      "servicep45a7265155"
+    ],
+    "success": true,
+    "utility": 383.218060074794,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-2",
+    "service_id": "servicep45a7265155",
+    "co_services": [
+      "servicep55a3578074"
+    ],
+    "success": true,
+    "utility": 383.218060074794,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-11",
+    "service_id": "servicep47a3693539",
+    "co_services": [],
+    "success": true,
+    "utility": 479.217369916844,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-3",
+    "service_id": "servicep71a3899806",
+    "co_services": [
+      "servicep43a1573966"
+    ],
+    "success": true,
+    "utility": 774.76044831416,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-3",
+    "service_id": "servicep43a1573966",
+    "co_services": [
+      "servicep71a3899806"
+    ],
+    "success": true,
+    "utility": 774.76044831416,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-4",
+    "service_id": "servicep35a3343420",
+    "co_services": [
+      "servicep75a5173258",
+      "servicep61a6314745"
+    ],
+    "success": true,
+    "utility": 772.467836253064,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-4",
+    "service_id": "servicep75a5173258",
+    "co_services": [
+      "servicep35a3343420",
+      "servicep61a6314745"
+    ],
+    "success": true,
+    "utility": 772.467836253064,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.599078",
+    "composition_id": "composition1-20-4-4",
+    "service_id": "servicep61a6314745",
+    "co_services": [
+      "servicep35a3343420",
+      "servicep75a5173258"
+    ],
+    "success": true,
+    "utility": 772.467836253064,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.600001",
+    "composition_id": "composition1-20-4-8",
+    "service_id": "servicep30a0644167",
+    "co_services": [
+      "servicep14a7151065",
+      "servicep80a9877999",
+      "servicep59a5688104"
+    ],
+    "success": true,
+    "utility": 1052.66586023694,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.600001",
+    "composition_id": "composition1-20-4-8",
+    "service_id": "servicep14a7151065",
+    "co_services": [
+      "servicep30a0644167",
+      "servicep80a9877999",
+      "servicep59a5688104"
+    ],
+    "success": true,
+    "utility": 1052.66586023694,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.600001",
+    "composition_id": "composition1-20-4-8",
+    "service_id": "servicep80a9877999",
+    "co_services": [
+      "servicep30a0644167",
+      "servicep14a7151065",
+      "servicep59a5688104"
+    ],
+    "success": true,
+    "utility": 1052.66586023694,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.600001",
+    "composition_id": "composition1-20-4-8",
+    "service_id": "servicep59a5688104",
+    "co_services": [
+      "servicep30a0644167",
+      "servicep14a7151065",
+      "servicep80a9877999"
+    ],
+    "success": true,
+    "utility": 1052.66586023694,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.600001",
+    "composition_id": "composition1-20-4-6",
+    "service_id": "servicep30a1599791",
+    "co_services": [
+      "servicep11a8183074",
+      "servicep79a6829911"
+    ],
+    "success": true,
+    "utility": 855.49418361292,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.600001",
+    "composition_id": "composition1-20-4-6",
+    "service_id": "servicep11a8183074",
+    "co_services": [
+      "servicep30a1599791",
+      "servicep79a6829911"
+    ],
+    "success": true,
+    "utility": 855.49418361292,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.600001",
+    "composition_id": "composition1-20-4-6",
+    "service_id": "servicep79a6829911",
+    "co_services": [
+      "servicep30a1599791",
+      "servicep11a8183074"
+    ],
+    "success": true,
+    "utility": 855.49418361292,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.600001",
+    "composition_id": "composition1-20-4-5",
+    "service_id": "servicep74a3174724",
+    "co_services": [
+      "servicep11a0120597",
+      "servicep18a1432312"
+    ],
+    "success": true,
+    "utility": 901.861601372374,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.600001",
+    "composition_id": "composition1-20-4-5",
+    "service_id": "servicep11a0120597",
+    "co_services": [
+      "servicep74a3174724",
+      "servicep18a1432312"
+    ],
+    "success": true,
+    "utility": 901.861601372374,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:13.600001",
+    "composition_id": "composition1-20-4-5",
+    "service_id": "servicep18a1432312",
+    "co_services": [
+      "servicep74a3174724",
+      "servicep11a0120597"
+    ],
+    "success": true,
+    "utility": 901.861601372374,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:06:15.903943",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p12a1509544",
+    "co_services": [
+      "p61a3181722",
+      "p43a6519085",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 179.54254150390625
+  },
+  {
+    "timestamp": "2026-04-06T00:06:15.903943",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p61a3181722",
+    "co_services": [
+      "p12a1509544",
+      "p43a6519085",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 179.54254150390625
+  },
+  {
+    "timestamp": "2026-04-06T00:06:15.903943",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p43a6519085",
+    "co_services": [
+      "p12a1509544",
+      "p61a3181722",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 179.54254150390625
+  },
+  {
+    "timestamp": "2026-04-06T00:06:15.903943",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p34a3438623",
+    "co_services": [
+      "p12a1509544",
+      "p61a3181722",
+      "p43a6519085"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 179.54254150390625
+  },
+  {
+    "timestamp": "2026-04-06T00:13:29.255175",
+    "composition_id": "classic_composition1-20-4-9_dijkstra",
+    "service_id": "p12a1509544",
+    "co_services": [
+      "p61a3181722",
+      "p43a6519085",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 457.871675491333
+  },
+  {
+    "timestamp": "2026-04-06T00:13:29.255175",
+    "composition_id": "classic_composition1-20-4-9_dijkstra",
+    "service_id": "p61a3181722",
+    "co_services": [
+      "p12a1509544",
+      "p43a6519085",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 457.871675491333
+  },
+  {
+    "timestamp": "2026-04-06T00:13:29.255175",
+    "composition_id": "classic_composition1-20-4-9_dijkstra",
+    "service_id": "p43a6519085",
+    "co_services": [
+      "p12a1509544",
+      "p61a3181722",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 457.871675491333
+  },
+  {
+    "timestamp": "2026-04-06T00:13:29.255175",
+    "composition_id": "classic_composition1-20-4-9_dijkstra",
+    "service_id": "p34a3438623",
+    "co_services": [
+      "p12a1509544",
+      "p61a3181722",
+      "p43a6519085"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 457.871675491333
+  },
+  {
+    "timestamp": "2026-04-06T00:13:45.051872",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p12a1509544",
+    "co_services": [
+      "p61a3181722",
+      "p43a6519085",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 186.7964267730713
+  },
+  {
+    "timestamp": "2026-04-06T00:13:45.051872",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p61a3181722",
+    "co_services": [
+      "p12a1509544",
+      "p43a6519085",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 186.7964267730713
+  },
+  {
+    "timestamp": "2026-04-06T00:13:45.051872",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p43a6519085",
+    "co_services": [
+      "p12a1509544",
+      "p61a3181722",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 186.7964267730713
+  },
+  {
+    "timestamp": "2026-04-06T00:13:45.051872",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p34a3438623",
+    "co_services": [
+      "p12a1509544",
+      "p61a3181722",
+      "p43a6519085"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 186.7964267730713
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-9",
+    "service_id": "servicep45a8220122",
+    "co_services": [
+      "servicep39a2719946",
+      "servicep39a2655235",
+      "servicep34a3438623"
+    ],
+    "success": true,
+    "utility": 1369.022004236,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-9",
+    "service_id": "servicep39a2719946",
+    "co_services": [
+      "servicep45a8220122",
+      "servicep39a2655235",
+      "servicep34a3438623"
+    ],
+    "success": true,
+    "utility": 1369.022004236,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-9",
+    "service_id": "servicep39a2655235",
+    "co_services": [
+      "servicep45a8220122",
+      "servicep39a2719946",
+      "servicep34a3438623"
+    ],
+    "success": true,
+    "utility": 1369.022004236,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-9",
+    "service_id": "servicep34a3438623",
+    "co_services": [
+      "servicep45a8220122",
+      "servicep39a2719946",
+      "servicep39a2655235"
+    ],
+    "success": true,
+    "utility": 1369.022004236,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-7",
+    "service_id": "servicep25a5760665",
+    "co_services": [
+      "servicep10a2342421",
+      "servicep80a3152012",
+      "servicep11a3021899"
+    ],
+    "success": true,
+    "utility": 1262.60685863108,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-7",
+    "service_id": "servicep10a2342421",
+    "co_services": [
+      "servicep25a5760665",
+      "servicep80a3152012",
+      "servicep11a3021899"
+    ],
+    "success": true,
+    "utility": 1262.60685863108,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-7",
+    "service_id": "servicep80a3152012",
+    "co_services": [
+      "servicep25a5760665",
+      "servicep10a2342421",
+      "servicep11a3021899"
+    ],
+    "success": true,
+    "utility": 1262.60685863108,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-7",
+    "service_id": "servicep11a3021899",
+    "co_services": [
+      "servicep25a5760665",
+      "servicep10a2342421",
+      "servicep80a3152012"
+    ],
+    "success": true,
+    "utility": 1262.60685863108,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-1",
+    "service_id": "servicep98a8236027",
+    "co_services": [
+      "servicep92a3173258"
+    ],
+    "success": true,
+    "utility": 680.664673638511,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-1",
+    "service_id": "servicep92a3173258",
+    "co_services": [
+      "servicep98a8236027"
+    ],
+    "success": true,
+    "utility": 680.664673638511,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-10",
+    "service_id": "servicep36a9473080",
+    "co_services": [
+      "servicep58a7661885",
+      "servicep94a4353021",
+      "servicep34a3523331"
+    ],
+    "success": true,
+    "utility": 1491.89061655969,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-10",
+    "service_id": "servicep58a7661885",
+    "co_services": [
+      "servicep36a9473080",
+      "servicep94a4353021",
+      "servicep34a3523331"
+    ],
+    "success": true,
+    "utility": 1491.89061655969,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-10",
+    "service_id": "servicep94a4353021",
+    "co_services": [
+      "servicep36a9473080",
+      "servicep58a7661885",
+      "servicep34a3523331"
+    ],
+    "success": true,
+    "utility": 1491.89061655969,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-10",
+    "service_id": "servicep34a3523331",
+    "co_services": [
+      "servicep36a9473080",
+      "servicep58a7661885",
+      "servicep94a4353021"
+    ],
+    "success": true,
+    "utility": 1491.89061655969,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-2",
+    "service_id": "servicep55a3578074",
+    "co_services": [
+      "servicep45a7265155"
+    ],
+    "success": true,
+    "utility": 383.218060074794,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-2",
+    "service_id": "servicep45a7265155",
+    "co_services": [
+      "servicep55a3578074"
+    ],
+    "success": true,
+    "utility": 383.218060074794,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-11",
+    "service_id": "servicep47a3693539",
+    "co_services": [],
+    "success": true,
+    "utility": 479.217369916844,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-3",
+    "service_id": "servicep71a3899806",
+    "co_services": [
+      "servicep43a1573966"
+    ],
+    "success": true,
+    "utility": 774.76044831416,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-3",
+    "service_id": "servicep43a1573966",
+    "co_services": [
+      "servicep71a3899806"
+    ],
+    "success": true,
+    "utility": 774.76044831416,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-4",
+    "service_id": "servicep35a3343420",
+    "co_services": [
+      "servicep75a5173258",
+      "servicep61a6314745"
+    ],
+    "success": true,
+    "utility": 772.467836253064,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-4",
+    "service_id": "servicep75a5173258",
+    "co_services": [
+      "servicep35a3343420",
+      "servicep61a6314745"
+    ],
+    "success": true,
+    "utility": 772.467836253064,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-4",
+    "service_id": "servicep61a6314745",
+    "co_services": [
+      "servicep35a3343420",
+      "servicep75a5173258"
+    ],
+    "success": true,
+    "utility": 772.467836253064,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-8",
+    "service_id": "servicep30a0644167",
+    "co_services": [
+      "servicep14a7151065",
+      "servicep80a9877999",
+      "servicep59a5688104"
+    ],
+    "success": true,
+    "utility": 1052.66586023694,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-8",
+    "service_id": "servicep14a7151065",
+    "co_services": [
+      "servicep30a0644167",
+      "servicep80a9877999",
+      "servicep59a5688104"
+    ],
+    "success": true,
+    "utility": 1052.66586023694,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-8",
+    "service_id": "servicep80a9877999",
+    "co_services": [
+      "servicep30a0644167",
+      "servicep14a7151065",
+      "servicep59a5688104"
+    ],
+    "success": true,
+    "utility": 1052.66586023694,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-8",
+    "service_id": "servicep59a5688104",
+    "co_services": [
+      "servicep30a0644167",
+      "servicep14a7151065",
+      "servicep80a9877999"
+    ],
+    "success": true,
+    "utility": 1052.66586023694,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-6",
+    "service_id": "servicep30a1599791",
+    "co_services": [
+      "servicep11a8183074",
+      "servicep79a6829911"
+    ],
+    "success": true,
+    "utility": 855.49418361292,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-6",
+    "service_id": "servicep11a8183074",
+    "co_services": [
+      "servicep30a1599791",
+      "servicep79a6829911"
+    ],
+    "success": true,
+    "utility": 855.49418361292,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-6",
+    "service_id": "servicep79a6829911",
+    "co_services": [
+      "servicep30a1599791",
+      "servicep11a8183074"
+    ],
+    "success": true,
+    "utility": 855.49418361292,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-5",
+    "service_id": "servicep74a3174724",
+    "co_services": [
+      "servicep11a0120597",
+      "servicep18a1432312"
+    ],
+    "success": true,
+    "utility": 901.861601372374,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-5",
+    "service_id": "servicep11a0120597",
+    "co_services": [
+      "servicep74a3174724",
+      "servicep18a1432312"
+    ],
+    "success": true,
+    "utility": 901.861601372374,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:03.521091",
+    "composition_id": "composition1-20-4-5",
+    "service_id": "servicep18a1432312",
+    "co_services": [
+      "servicep74a3174724",
+      "servicep11a0120597"
+    ],
+    "success": true,
+    "utility": 901.861601372374,
+    "context": {},
+    "response_time_ms": 0.0
+  },
+  {
+    "timestamp": "2026-04-06T00:15:08.029441",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p12a1509544",
+    "co_services": [
+      "p61a3181722",
+      "p43a6519085",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 503.02815437316895
+  },
+  {
+    "timestamp": "2026-04-06T00:15:08.029441",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p61a3181722",
+    "co_services": [
+      "p12a1509544",
+      "p43a6519085",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 503.02815437316895
+  },
+  {
+    "timestamp": "2026-04-06T00:15:08.029441",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p43a6519085",
+    "co_services": [
+      "p12a1509544",
+      "p61a3181722",
+      "p34a3438623"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 503.02815437316895
+  },
+  {
+    "timestamp": "2026-04-06T00:15:08.029441",
+    "composition_id": "llm_composition1-20-4-9",
+    "service_id": "p34a3438623",
+    "co_services": [
+      "p12a1509544",
+      "p61a3181722",
+      "p43a6519085"
+    ],
+    "success": true,
+    "utility": 28.268625,
+    "context": {
+      "device_type": "desktop",
+      "hour": 0,
+      "weekday": 0,
+      "period": "night",
+      "is_business_hours": false,
+      "system_load": 0.0
+    },
+    "response_time_ms": 503.02815437316895
+  }
+]
